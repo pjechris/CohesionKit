@@ -1,17 +1,22 @@
 import Combine
 
+/// Main class of the framework.
+/// Store references to publishers to `Identifiable` objects so you can easily update and get updates for them.
+/// Memory is automatically released when objects are not observed anymore
 public class IdentityMap {
     private var map:[String:Any] = [:]
     
     public init() {
         
     }
-    
+
+    /// Update an object in the storage with its new value
+    /// - Returns: a Publisher emitting new values for the object.
     @discardableResult
     public func update<Model: Identifiable>(_ object: Model) -> AnyPublisher<Model, Never> {
         guard let storage = self[object] else {
             let storage = Storage(object: object, identityMap: self)
-            
+
             self[object] = storage
             
             return storage.publisher
@@ -21,26 +26,46 @@ public class IdentityMap {
         
         return storage.publisher
     }
-    
-    public func get<Model: Identifiable>(_ model: Model.Type, byId id: Model.ID) -> Model? {
+
+    /// Return current object value for `id` if present in storage
+    public func get<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> Model? {
         self[Model.self, id]?.subject.value
     }
-    
-    public func publisher<Model: Identifiable>(_ model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never>? {
+
+    /// Return a publisher emitting event when receiving update for `id` if `id` is already present
+    public func publisherIfPresent<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never>? {
         self[Model.self, id]?.publisher
     }
-    
-    public func remove<Model: Identifiable>(_ object: Model) {
-        print("removing \(Model.self)_\(object.id)")
-        self.map.removeValue(forKey: "\(Model.self)_\(object.id)")
+
+    /// Return a publisher emitting event when receiving update for `id`. Note that `id` might not be present in the storage
+    /// at the time where publisher is requested. Thus this publisher *might* never send any value
+    public func publisher<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never> {
+        guard let storage = self[Model.self, id] else {
+            let storage = Storage<Model>(id: id, identityMap: self)
+
+            self[Model.self, id] = storage
+
+            return storage.publisher
+        }
+
+        return storage.publisher
+    }
+
+    /// Remove object from storage
+    public func remove<Model: Identifiable>(for object: Model) {
+        self[object] = nil
+    }
+
+    func remove<Model: Identifiable>(for model: Model.Type, id: Model.ID) {
+        self[model, id] = nil
     }
     
-    subscript<Model: Identifiable>(type: Model.Type, id: Model.ID) -> Storage<Model>? {
+    private subscript<Model: Identifiable>(type: Model.Type, id: Model.ID) -> Storage<Model>? {
         get { map["\(type)_\(id)"] as? Storage<Model> }
         set { map["\(type)_\(id)"] = newValue }
     }
     
-    subscript<Model: Identifiable>(model: Model) -> Storage<Model>? {
+    private subscript<Model: Identifiable>(model: Model) -> Storage<Model>? {
         get { self[Model.self, model.id] }
         set { self[Model.self, model.id] = newValue }
     }
