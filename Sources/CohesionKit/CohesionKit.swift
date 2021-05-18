@@ -14,28 +14,35 @@ public class IdentityMap<Stamp: Comparable> {
 
     }
 
-    /// Update an object in the storage with its new value.
+    /// Update an object in the storage with its new value. You usually use this method in conjunction with `publisherIfPresent(for:id:)`
     /// - Returns: a Publisher emitting new values for the object. Object is guaranteed to stay in memory as long as someone is using the publisher
     /// - Parameter stamp: a value to determine if object should replace existing one or be discarded. This is useful in realtime services where you might sometimes receive a message with some delay that should be ignored becaused more recent data has already been stored.
     public func update<Model: Identifiable>(_ newObject: Model, stamp objectStamp: Stamp) -> AnyPublisher<Model, Never> {
-        guard let storage = self[newObject] else {
+        guard let publisher = updateIfPresent(newObject, stamp: objectStamp) else {
             let storage = Storage(object: newObject, stamp: objectStamp, identityMap: self)
 
             self[newObject] = storage
-            
+
             return storage.publisher
+        }
+
+        return publisher
+    }
+
+    /// Update an object in the storage if it already has an allocated storage. You usually use this method in conjunction with `publisher(for:id:)`
+    /// - SeeAlso:
+    /// `IdentityMap.update(_,stamp:)`
+    @discardableResult
+    public func updateIfPresent<Model: Identifiable>(_ newObject: Model, stamp objectStamp: Stamp) -> AnyPublisher<Model, Never>? {
+        guard let storage = self[newObject] else {
+            return nil
         }
 
         if storage.subject.value.map({ $0.stamp < objectStamp }) ?? true {
             storage.subject.send(StampedObject(object: newObject, stamp: objectStamp))
         }
-        
-        return storage.publisher
-    }
 
-    /// Update an object in the storage with its new value and use current date as object stamp
-    public func update<Model: Identifiable>(_ newObject: Model) -> AnyPublisher<Model, Never> where Stamp == Date {
-        self.update(newObject, stamp: Date())
+        return storage.publisher
     }
 
     /// Return current object value for `id` if an object with such `id` was previously inserted using `update(_:)` method
@@ -60,6 +67,21 @@ public class IdentityMap<Stamp: Comparable> {
     private subscript<Model: Identifiable>(model: Model) -> Storage<Model, Stamp>? {
         get { self[Model.self, model.id] }
         set { self[Model.self, model.id] = newValue }
+    }
+}
+
+// MARK: Date stamp
+
+extension IdentityMap {
+    /// Update an object in the storage with its new value and use current date as object stamp
+    public func update<Model: Identifiable>(_ newObject: Model) -> AnyPublisher<Model, Never> where Stamp == Date {
+        self.update(newObject, stamp: Date())
+    }
+
+    /// Update an object in the storage if it already has an allocated storage and use current date as object stamp
+    @discardableResult
+    public func updateIfPresent<Model: Identifiable>(_ newObject: Model) -> AnyPublisher<Model, Never>? where Stamp == Date {
+        self.updateIfPresent(newObject, stamp: Date())
     }
 }
 

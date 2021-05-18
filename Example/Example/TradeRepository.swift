@@ -30,13 +30,13 @@ class TradeRepository {
                     let response = try? JSONDecoder().decode(LastPriceResponse.self, from: data)
 
                     response?.data.forEach {
-                        identityMap.update($0)
+                        identityMap.updateIfPresent($0, stamp: $0.t)
                     }
                 case let .string(json):
                     let response = try? JSONDecoder().decode(LastPriceResponse.self, from: json.data(using: .utf8)!)
 
                     response?.data.forEach {
-                        identityMap.update($0)
+                        identityMap.updateIfPresent($0, stamp: $0.t)
                     }
                 }
             }
