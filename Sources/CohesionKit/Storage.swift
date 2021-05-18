@@ -8,31 +8,32 @@
 import Foundation
 import Combine
 
-class Storage<T: Identifiable> {
-    let subject: CurrentValueSubject<T?, Never>
-    private let id: T.ID
-    weak var identityMap: IdentityMap?
-    
-    lazy var publisher: AnyPublisher<T, Never> = subject
-        .compactMap { $0 }
-        .handleEvents(receiveCancel: { [identityMap, subject, id] in
-            identityMap?.remove(for: T.self, id: id)
-        })
-        .multicast(PassthroughSubject.init)
-        .autoconnect()
-        .eraseToAnyPublisher()
+struct StampedObject<D, Stamp> {
+    let object: D
+    let stamp: Stamp
+}
 
-    convenience init(object: T, identityMap: IdentityMap) {
-        self.init(object: object, id: object.id, identityMap: identityMap)
+class Storage<T: Identifiable, Stamp: Comparable> {
+    let subject: CurrentValueSubject<StampedObject<T, Stamp>?, Never>
+    let publisher: AnyPublisher<T, Never>
+
+    convenience init(object: T, stamp: Stamp, identityMap: IdentityMap<Stamp>) {
+        self.init(object: .init(object: object, stamp: stamp), id: object.id, identityMap: identityMap)
     }
 
-    convenience init(id: T.ID, identityMap: IdentityMap) {
+    convenience init(id: T.ID, identityMap: IdentityMap<Stamp>) {
         self.init(object: nil, id: id, identityMap: identityMap)
     }
 
-    private init(object: T?, id: T.ID, identityMap: IdentityMap) {
+    private init(object: StampedObject<T, Stamp>?, id: T.ID, identityMap: IdentityMap<Stamp>) {
         self.subject = CurrentValueSubject(object)
-        self.id = id
-        self.identityMap = identityMap
+        self.publisher = subject
+            .compactMap { $0?.object }
+            .handleEvents(receiveCancel: { [weak identityMap, id] in
+                identityMap?.remove(for: T.self, id: id)
+            })
+            .multicast(PassthroughSubject.init)
+            .autoconnect()
+            .eraseToAnyPublisher()
     }
 }

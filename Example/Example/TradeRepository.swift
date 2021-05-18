@@ -12,7 +12,7 @@ extension URLSessionWebSocketTask {
 }
 
 class TradeRepository {
-    let identityMap = IdentityMap()
+    let identityMap = IdentityMap<Date>()
     lazy var webSocketTask: URLSessionWebSocketTask = URLSession
         .shared
         .webSocketTask(with: URL(string: "wss://ws.finnhub.io?token=c2ha9saad3ifd59bkhsg")!)
