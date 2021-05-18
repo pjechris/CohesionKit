@@ -7,14 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		49A8175D2652DF7900944765 /* Finnhub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49A8175C2652DF7900944765 /* Finnhub.swift */; };
+		49A817612652DFE800944765 /* TradeRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49A817602652DFE800944765 /* TradeRepository.swift */; };
 		49F4DD5126448849004E511B /* ExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F4DD5026448849004E511B /* ExampleApp.swift */; };
 		49F4DD5326448849004E511B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F4DD5226448849004E511B /* ContentView.swift */; };
 		49F4DD552644884A004E511B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49F4DD542644884A004E511B /* Assets.xcassets */; };
 		49F4DD582644884A004E511B /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49F4DD572644884A004E511B /* Preview Assets.xcassets */; };
 		49F4DD6526448931004E511B /* CohesionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 49F4DD6426448931004E511B /* CohesionKit */; };
+		49FAE5852645B80D00C49465 /* CombineExt in Frameworks */ = {isa = PBXBuildFile; productRef = 49FAE5842645B80D00C49465 /* CombineExt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		49A8175C2652DF7900944765 /* Finnhub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Finnhub.swift; sourceTree = "<group>"; };
+		49A817602652DFE800944765 /* TradeRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TradeRepository.swift; sourceTree = "<group>"; };
 		49F4DD4D26448849004E511B /* Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		49F4DD5026448849004E511B /* ExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleApp.swift; sourceTree = "<group>"; };
 		49F4DD5226448849004E511B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -29,6 +34,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				49FAE5852645B80D00C49465 /* CombineExt in Frameworks */,
 				49F4DD6526448931004E511B /* CohesionKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -62,6 +68,8 @@
 				49F4DD542644884A004E511B /* Assets.xcassets */,
 				49F4DD592644884A004E511B /* Info.plist */,
 				49F4DD562644884A004E511B /* Preview Content */,
+				49A8175C2652DF7900944765 /* Finnhub.swift */,
+				49A817602652DFE800944765 /* TradeRepository.swift */,
 			);
 			path = Example;
 			sourceTree = "<group>";
@@ -100,6 +108,7 @@
 			name = Example;
 			packageProductDependencies = (
 				49F4DD6426448931004E511B /* CohesionKit */,
+				49FAE5842645B80D00C49465 /* CombineExt */,
 			);
 			productName = Example;
 			productReference = 49F4DD4D26448849004E511B /* Example.app */;
@@ -128,6 +137,9 @@
 				Base,
 			);
 			mainGroup = 49F4DD4426448849004E511B;
+			packageReferences = (
+				49FAE5832645B80D00C49465 /* XCRemoteSwiftPackageReference "CombineExt" */,
+			);
 			productRefGroup = 49F4DD4E26448849004E511B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -154,6 +166,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				49A817612652DFE800944765 /* TradeRepository.swift in Sources */,
+				49A8175D2652DF7900944765 /* Finnhub.swift in Sources */,
 				49F4DD5326448849004E511B /* ContentView.swift in Sources */,
 				49F4DD5126448849004E511B /* ExampleApp.swift in Sources */,
 			);
@@ -350,6 +364,17 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		49FAE5832645B80D00C49465 /* XCRemoteSwiftPackageReference "CombineExt" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CombineCommunity/CombineExt";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		49F4DD6426448931004E511B /* CohesionKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -358,6 +383,11 @@
 		49F4DD6726448960004E511B /* CohesionKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CohesionKit;
+		};
+		49FAE5842645B80D00C49465 /* CombineExt */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 49FAE5832645B80D00C49465 /* XCRemoteSwiftPackageReference "CombineExt" */;
+			productName = CombineExt;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

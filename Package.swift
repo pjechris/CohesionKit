@@ -12,7 +12,7 @@ let package = Package(
             targets: ["CohesionKit"]),
     ],
     dependencies: [
-        // .package(url: /* package url */, from: "1.0.0"),
+        .package(url: "https://github.com/CombineCommunity/CombineExt", from: "1.3.0"),
     ],
     targets: [
         .target(

@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  Example
-//
-//  Created by JC on 06/05/2021.
-//
-
 import SwiftUI
 
 struct ContentView: View {
@@ -12,13 +5,17 @@ struct ContentView: View {
 
     var body: some View {
         List {
-            ForEach(test.movies) { movie in
-                VStack {
-                    Text(movie.title)
-                    Text(movie.openingCrawl)
+            ForEach(Array(test.trades)) { trade in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(trade.id)
+                        .bold()
+                    Text(String(trade.v))
                 }
             }
         }
+        .navigationBarItems(trailing: Button(action: test.removeAll) {
+            Text("Remove all")
+        })
         .onAppear(perform: test.onAppear)
     }
 }
