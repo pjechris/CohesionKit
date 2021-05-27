@@ -1,22 +1,51 @@
 import SwiftUI
 
+class MatchListViewModel: ObservableObject {
+    @Published var matches: [MatchMarkets] = []
+
+    let repository = MatchRepository()
+
+    func load() {
+        repository
+            .loadMatches()
+            .assign(to: &$matches)
+    }
+}
+
 struct ContentView: View {
-    @StateObject var test = Test()
+    @StateObject var viewModel = MatchListViewModel()
 
     var body: some View {
         List {
-            ForEach(Array(test.trades)) { trade in
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(trade.id)
-                        .bold()
-                    Text(String(trade.v))
+            ForEach(viewModel.matches, id: \.match.id) {
+                let match = $0.match
+                let outcomes = $0.markets.first!.outcomes
+
+                NavigationLink(destination: MatchDetailsView(match: match)) {
+                    VStack(spacing: 8) {
+                        Text("\(match.team1) - \(match.team2)")
+                            .bold()
+                        
+                        HStack(spacing: 16) {
+                            ForEach(outcomes) { outcome in
+                                VStack {
+                                    Text(outcome.name)
+                                        .font(.caption2)
+
+                                    Button(action: { }) {
+                                        Text(String(Int(outcome.odds.rounded())))
+                                    }
+                                    .buttonStyle(OutcomeButtonStyle())
+                                }
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
                 }
             }
         }
-        .navigationBarItems(trailing: Button(action: test.removeAll) {
-            Text("Remove all")
-        })
-        .onAppear(perform: test.onAppear)
+        .onAppear(perform: viewModel.load)
     }
 }
 
