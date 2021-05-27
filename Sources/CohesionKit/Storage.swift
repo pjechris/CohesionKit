@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CombineExt
 
 struct StampedObject<D, Stamp> {
     let object: D
@@ -32,8 +33,7 @@ class Storage<T: Identifiable, Stamp: Comparable> {
             .handleEvents(receiveCancel: { [weak identityMap, id] in
                 identityMap?.remove(for: T.self, id: id)
             })
-            .multicast(PassthroughSubject.init)
-            .autoconnect()
+            .share(replay: 1)
             .eraseToAnyPublisher()
     }
 }
