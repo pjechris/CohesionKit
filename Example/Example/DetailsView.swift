@@ -31,16 +31,14 @@ struct MatchDetailsView: View {
 
     var body: some View {
         VStack {
-            Text("\(match.team1) - \(match.team2)")
-                .font(.title)
-
-            Text("""
-This view observe changes for primary market (1N2).
-They are triggered every 3 secondes.
-If you go back you also see it updated on list view.
-""")
-                .font(.footnote)
-                .italic()
+            VStack(alignment: .leading, spacing: 0) {
+                Text("This view observe changes for primary market (1N2).")
+                Text("They are triggered every 3 secondes.")
+                Text("If you go back you will see updated values on list view.")
+            }
+            .font(Font.footnote.italic())
+            .foregroundColor(.secondary)
+            .padding(.leading)
 
             List {
                 ForEach(markets, id: \.market.id) { market in
@@ -53,6 +51,7 @@ If you go back you also see it updated on list view.
 
             }
         }
+        .navigationTitle(Text("\(match.team1) - \(match.team2)"))
         .onAppear { viewModel.observe() }
     }
 

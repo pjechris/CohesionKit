@@ -58,12 +58,14 @@ public class IdentityMap<Stamp: Comparable> {
     func remove<Model: Identifiable>(for model: Model.Type, id: Model.ID) {
         self[model, id] = nil
     }
-    
+
+    /// Access the storage for id of the given type
     private subscript<Model: Identifiable>(type: Model.Type, id: Model.ID) -> Storage<Model, Stamp>? {
         get { map["\(type)"]?[String(describing:id)] as? Storage<Model, Stamp> }
         set { map["\(type)", default: [:]][String(describing: id)] = newValue }
     }
-    
+
+    /// Access the storage using model type and id
     private subscript<Model: Identifiable>(model: Model) -> Storage<Model, Stamp>? {
         get { self[Model.self, model.id] }
         set { self[Model.self, model.id] = newValue }

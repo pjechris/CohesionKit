@@ -10,11 +10,13 @@ class MatchRepository {
 
     /// load matches with their markets and outcomes from Data.swift
     func loadMatches() -> AnyPublisher<[MatchMarkets], Never> {
-        MatchMarkets.data.map { matchMarkets -> AnyPublisher<MatchMarkets, Never> in
-            let match = identityMap.update(matchMarkets.match)
+        let stamp = MatchMarkets.simulatedFetchedDate
+
+        return MatchMarkets.simulatedData.map { matchMarkets -> AnyPublisher<MatchMarkets, Never> in
+            let match = identityMap.update(matchMarkets.match, stamp: stamp)
             let markets = matchMarkets.markets.map { marketOutcomes -> AnyPublisher<MarketOutcomes, Never> in
-                let market = identityMap.update(marketOutcomes.market)
-                let outcomes = marketOutcomes.outcomes.map { identityMap.update($0) }
+                let market = identityMap.update(marketOutcomes.market, stamp: stamp)
+                let outcomes = marketOutcomes.outcomes.map { identityMap.update($0, stamp: stamp) }
 
                 return market
                     .combineLatest(outcomes.combineLatest())
@@ -33,7 +35,7 @@ class MatchRepository {
     /// observe primary (first) match market changes (for this sample changes are generated randomely
     /// - Returns: the match with all its markets including updates for primary market
     func observePrimaryMarket(for match: Match) -> AnyPublisher<MatchMarkets, Never> {
-        let data = MatchMarkets.data.filter { $0.match.id == match.id }.first!
+        let data = MatchMarkets.simulatedData.filter { $0.match.id == match.id }.first!
 
         return generateMarketChanges(for: data.primaryMarket)
             .map { market in
