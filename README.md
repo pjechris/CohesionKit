@@ -13,12 +13,14 @@ Implemented with latest Swift technologies:
 
 # Why using it?
 
-- 🦕 You don't use (or don't want to use) heavy frameworks like CoreData to keep in-memory data sync
+- 🦕 You don't use (or don't want to use) heavy frameworks like CoreData, Realm,... to keep in-memory data sync
 - 🪶 You want to be able to use structs
 - 💡 You look for a lightweight framework
-- 🔁 You have data coming on realtime in your app (like through websockets)
-- 🛰️ You want to keep track of already loaded objects to update them
+- 🔁 You do realtime in your app (through websockets for instance)
 - 🐛 You have some sync issues in your app and want to deal with it
+- 🛰️ You display same data in multiple screens
+
+It's very unlikely your app will read and write data from only one class. You end up having to come up with all kind of clever mechanisms to communicate between your classes. They have to tell each other when there are changes, and if they should refresh the data they’ve fetched previously. CohesionKit intend to remedy these issues.
 
 # Requirements
 
@@ -34,7 +36,6 @@ dependencies: [
     .package(url: "https://github.com/pjechris/IdentityMap.git", .upToNextMajor(from: "0.1.0"))
 ]
 ```
-
 
 # Examples
 
@@ -88,7 +89,7 @@ func findCurrentUser() -> AnyPublisher<User, Error> {
 }
 ```
 
-> CohesionKit does not keep data in-memory forever. If no one subscribed to data (using sink/assign) then CohesionKit will discard it from its memory.
+> CohesionKit only keep in memory in-use data. When no one is using some data (through subscription with sink/assign) CohesionKit will discard it from its memory. This allow to automatically clean memory.
 
 ## Stale data
 
