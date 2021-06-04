@@ -5,7 +5,7 @@ import Combine
 /// Store and access publishers referencing `Identifiable` objects to have realtime updates on them.
 /// Memory is automatically released when objects have no observers
 public class IdentityMap<Stamp: Comparable> {
-    private var map:[String:[String:Any]] = [:]
+    var map:[String:[String:Any]] = [:]
 
     /// Create an identity map with a compare function determining when data should be considered as stale and replaced.
     /// - Parameter isStale: this function is used when calling `update` to determine whether or not received data should
@@ -60,13 +60,13 @@ public class IdentityMap<Stamp: Comparable> {
     }
 
     /// Access the storage for id of the given type
-    private subscript<Model: Identifiable>(type: Model.Type, id: Model.ID) -> Storage<Model, Stamp>? {
+    subscript<Model: Identifiable>(type: Model.Type, id: Model.ID) -> Storage<Model, Stamp>? {
         get { map["\(type)"]?[String(describing:id)] as? Storage<Model, Stamp> }
         set { map["\(type)", default: [:]][String(describing: id)] = newValue }
     }
 
     /// Access the storage using model type and id
-    private subscript<Model: Identifiable>(model: Model) -> Storage<Model, Stamp>? {
+    subscript<Model: Identifiable>(model: Model) -> Storage<Model, Stamp>? {
         get { self[Model.self, model.id] }
         set { self[Model.self, model.id] = newValue }
     }
@@ -90,24 +90,5 @@ extension IdentityMap {
 // MARK: Combine publishers
 
 extension IdentityMap {
-    /// Return a publisher emitting event when receiving update for `id` if an object with such `id` was previously inserted using `update(_:)` method
-    public func publisherIfPresent<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never>? {
-        self[Model.self, id]?.publisher
-    }
 
-    /// Return a publisher emitting event when receiving update for `id`. Note that object might not be present in the storage
-    /// at the time where publisher is requested. Thus this publisher *might* never send any value.
-    ///
-    /// Object is guaranteed to stay in memory as long as someone is using the publisher
-    public func publisher<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never> {
-        guard let storage = self[Model.self, id] else {
-            let storage = Storage<Model, Stamp>(id: id, identityMap: self)
-
-            self[Model.self, id] = storage
-
-            return storage.publisher
-        }
-
-        return storage.publisher
-    }
 }
