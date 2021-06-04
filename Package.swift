@@ -17,7 +17,7 @@ let package = Package(
     targets: [
         .target(
             name: "CohesionKit",
-            dependencies: []),
+            dependencies: ["CombineExt"]),
         .testTarget(
             name: "CohesionKitTests",
             dependencies: ["CohesionKit"]),
