@@ -17,13 +17,6 @@ struct StampedObject<D, Stamp> {
 class Storage<T, Stamp: Comparable> {
     let subject: CurrentValueSubject<StampedObject<T, Stamp>?, Never>
     let publisher: AnyPublisher<T, Never>
-//    var upstream: AnyPublisher<StampedObject<T, Stamp>, Never>? {
-//        didSet {
-//            upstream?
-//                .sink(receiveValue: { [subject] in subject.send($0) })
-//                .store(in: &cancellables)
-//        }
-//    }
     private var upstreamCancellable: AnyCancellable?
 
     /// init storage with a initial value for a `Idenfitiable` object

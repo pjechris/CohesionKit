@@ -1,28 +1,6 @@
 import Foundation
 import Combine
 
-protocol AnyIdentityMap {
-    func publisher<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never>
-
-    func update<Model: Identifiable>(_ newObject: Model, stamp: Any) -> AnyPublisher<Model, Never>
-
-    func update<Model: IdentityGraph>(_ object: Model, stamp: Any) -> AnyPublisher<Model, Never>
-}
-
-extension IdentityMap: AnyIdentityMap {
-    func update<Model: Identifiable>(_ newObject: Model, stamp: Any) -> AnyPublisher<Model, Never> {
-        guard let stamp = stamp as? Stamp else {
-            return publisher(for: Model.self, id: newObject.id)
-        }
-
-        return update(newObject, stamp: stamp)
-    }
-
-    func update<Model: IdentityGraph>(_ object: Model, stamp: Any) -> AnyPublisher<Model, Never> {
-        return update(object, stamp: stamp as! Stamp)
-    }
-}
-
 /// Framework main class.
 /// Store and access publishers referencing `Identifiable` objects to have realtime updates on them.
 /// Memory is automatically released when objects have no observers
@@ -53,18 +31,6 @@ public class IdentityMap<Stamp: Comparable> {
         return publisher
     }
 
-    func publisher<Model: IdentityGraph>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never> {
-        guard let storage = self[Model.self, id] else {
-            let storage = Storage<Model, Stamp>(id: id, identityMap: self)
-
-            self[Model.self, id] = storage
-
-            return storage.publisher
-        }
-
-        return storage.publisher
-    }
-
     /// Update object in the storage only if it's already in it. Otherwise discard the changes.
     ///
     /// You usually use this method in conjunction with `publisher(for:id:)` which will always create a storage for the
@@ -78,31 +44,6 @@ public class IdentityMap<Stamp: Comparable> {
         }
 
         storage.send(newObject, stampedAt: objectStamp)
-
-        return storage.publisher
-    }
-
-    func update<Model: IdentityGraph>(_ object: Model, stamp: Stamp) -> AnyPublisher<Model, Never> {
-        guard let publisher = updateIfPresent(object, stampedAt: stamp) else {
-            let storage = Storage<Model, Stamp>(id: object.idValue, identityMap: self)
-
-            self[object] = storage
-
-            storage.forward(object.update(in: self, stampedAt: stamp), stampedAt: stamp)
-
-            return storage.publisher
-        }
-
-        return publisher
-    }
-
-    @discardableResult
-    func updateIfPresent<Model: IdentityGraph>(_ object: Model, stampedAt stamp: Stamp) -> AnyPublisher<Model, Never>? {
-        guard let storage = self[object] else {
-            return nil
-        }
-
-        storage.forward(object.update(in: self, stampedAt: stamp), stampedAt: stamp)
 
         return storage.publisher
     }
@@ -132,12 +73,6 @@ public class IdentityMap<Stamp: Comparable> {
         get { self[Model.self, model.id] }
         set { self[Model.self, model.id] = newValue }
     }
-
-    /// Access the storage for a `IdentityGraph` model
-    subscript<Model: IdentityGraph>(model: Model) -> Storage<Model, Stamp>? {
-        get { self[Model.self, model.idValue] }
-        set { self[Model.self, model.idValue] = newValue }
-    }
 }
 
 // MARK: Date stamp extension
@@ -152,5 +87,19 @@ extension IdentityMap {
     @discardableResult
     public func updateIfPresent<Model: Identifiable>(_ newObject: Model) -> AnyPublisher<Model, Never>? where Stamp == Date {
         self.updateIfPresent(newObject, stamp: Date())
+    }
+}
+
+extension IdentityMap: AnyIdentityMap {
+    func update<Model: Identifiable>(_ newObject: Model, stamp: Any) -> AnyPublisher<Model, Never> {
+        guard let stamp = stamp as? Stamp else {
+            return publisher(for: Model.self, id: newObject.id)
+        }
+
+        return update(newObject, stamp: stamp)
+    }
+
+    func update<Model: IdentityGraph>(_ object: Model, stamp: Any) -> AnyPublisher<Model, Never> {
+        return update(object, stamp: stamp as! Stamp)
     }
 }
