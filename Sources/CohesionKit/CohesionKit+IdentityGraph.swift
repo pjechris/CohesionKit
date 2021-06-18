@@ -38,6 +38,10 @@ extension IdentityMap {
         return storage.publisher
     }
 
+    public func get<Model: IdentityGraph>(for model: Model.Type, id: Model.ID) -> Model? {
+        self[Model.self, id]?.subject.value?.object
+    }
+
     /// Access the storage for a `IdentityGraph` model
     subscript<Model: IdentityGraph>(model: Model) -> Storage<Model, Stamp>? {
         get { self[Model.self, model.idValue] }

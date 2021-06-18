@@ -15,6 +15,7 @@ struct StampedObject<D, Stamp> {
 }
 
 class Storage<T, Stamp: Comparable> {
+    // TODO: Set as private
     let subject: CurrentValueSubject<StampedObject<T, Stamp>?, Never>
     let publisher: AnyPublisher<T, Never>
     private var upstreamCancellable: AnyCancellable?
