@@ -1,6 +1,8 @@
 import Combine
 import CombineExt
 
+// MARK: Publisher extension
+
 public extension IdentityMap {
     /// Return a publisher emitting event when receiving update for `id` if an object with such `id` was previously inserted using `update(_:)` method
     func publisherIfPresent<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never>? {
