@@ -14,26 +14,65 @@ struct StampedObject<D, Stamp> {
     let stamp: Stamp
 }
 
-class Storage<T: Identifiable, Stamp: Comparable> {
+class Storage<T, Stamp: Comparable> {
     let subject: CurrentValueSubject<StampedObject<T, Stamp>?, Never>
     let publisher: AnyPublisher<T, Never>
+//    var upstream: AnyPublisher<StampedObject<T, Stamp>, Never>? {
+//        didSet {
+//            upstream?
+//                .sink(receiveValue: { [subject] in subject.send($0) })
+//                .store(in: &cancellables)
+//        }
+//    }
+    private var upstreamCancellable: AnyCancellable?
 
-    convenience init(object: T, stamp: Stamp, identityMap: IdentityMap<Stamp>) {
-        self.init(object: .init(object: object, stamp: stamp), id: object.id, identityMap: identityMap)
+    /// init storage with a initial value for a `Idenfitiable` object
+    convenience init(object: T, stamp: Stamp, identityMap: IdentityMap<Stamp>) where T: Identifiable {
+        self.init(StampedObject(object: object, stamp: stamp)) { [weak identityMap] in
+            identityMap?.remove(object)
+        }
     }
 
-    convenience init(id: T.ID, identityMap: IdentityMap<Stamp>) {
-        self.init(object: nil, id: id, identityMap: identityMap)
+    /// init an empty storage for a `Idenfitiable` object
+    convenience init(id: T.ID, identityMap: IdentityMap<Stamp>) where T: Identifiable {
+        self.init(nil) { [weak identityMap] in
+            identityMap?.remove(for: T.self, id: id)
+        }
     }
 
-    private init(object: StampedObject<T, Stamp>?, id: T.ID, identityMap: IdentityMap<Stamp>) {
+    /// init an empty storage for an `IdentityGraph` object using its id
+    convenience init(id: T.ID, identityMap: IdentityMap<Stamp>) where T: IdentityGraph {
+        self.init(nil) { [weak identityMap] in
+            identityMap?.remove(for: T.self, id: id)
+        }
+    }
+
+    private init(_ object: StampedObject<T, Stamp>?, remove: @escaping () -> Void) {
         self.subject = CurrentValueSubject(object)
         self.publisher = subject
             .compactMap { $0?.object }
-            .handleEvents(receiveCancel: { [weak identityMap, id] in
-                identityMap?.remove(for: T.self, id: id)
+            .handleEvents(receiveCancel: {
+                remove()
             })
             .share(replay: 1)
             .eraseToAnyPublisher()
+    }
+
+    /// Send new input to storage and notify any subscribers when value is updated
+    /// - Returns: true if storage was updated. Storage is updated only if `stampedAt` is sup. to storage stamp
+    @discardableResult
+    func send(_ input: T, stampedAt stamp: Stamp) -> Bool {
+        guard subject.value.map({ stamp > $0.stamp }) ?? true else {
+            return false
+        }
+
+        subject.send(StampedObject(object: input, stamp: stamp))
+        return true
+    }
+
+    /// Forward a `Publisher` and send its value to Storage
+    func forward(_ upstream: AnyPublisher<T, Never>, stampedAt stamp: Stamp) {
+        upstreamCancellable = upstream
+            .sink(receiveValue: { [weak self] in self?.send($0, stampedAt: stamp) })
     }
 }
