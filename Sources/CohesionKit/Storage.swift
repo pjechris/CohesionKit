@@ -56,7 +56,7 @@ class Storage<T, Stamp: Comparable> {
     /// - Returns: true if storage was updated. Storage is updated only if `stampedAt` is sup. to storage stamp
     @discardableResult
     func send(_ input: T, stampedAt stamp: Stamp) -> Bool {
-        guard subject.value.map({ stamp > $0.stamp }) ?? true else {
+        guard subject.value.map({ stamp >= $0.stamp }) ?? true else {
             return false
         }
 
