@@ -18,7 +18,7 @@ extension MatchMarkets {
     /// This is a date to simulate a fetched date time for data
     static let simulatedFetchedDate = Date()
 
-    static let simulatedData: [MatchMarkets] = [
+    static let simulatedMatches: [MatchMarkets] = [
         .init(match: Match(id: UUID().uuidString, team1: "PSG", team2: "Lille"),
               markets: [
                 .init(market: "1N2", outcomes: ["1", "N", "2"]),

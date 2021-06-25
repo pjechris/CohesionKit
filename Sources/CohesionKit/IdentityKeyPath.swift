@@ -14,6 +14,16 @@ public struct IdentityKeyPath<Root> {
         }
     }
 
+    public init<T: IdentityGraph>(_ keyPath: KeyPath<Root, [T]>) {
+        self.keyPath = keyPath
+        update = { root, identityMap, stamp in
+            identityMap
+                .update(root[keyPath: keyPath], stampedAt: stamp)
+                .map { $0 as Any }
+                .eraseToAnyPublisher()
+        }
+    }
+
     public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {
         self.keyPath = keyPath
         update = { root, identityMap, stamp in

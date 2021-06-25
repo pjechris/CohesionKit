@@ -1,7 +1,7 @@
 import Combine
 
 extension IdentityMap {
-    public func update<Model: IdentityGraph>(_ object: Model, stamp: Stamp) -> AnyPublisher<Model, Never> {
+    public func update<Model: IdentityGraph>(_ object: Model, stampedAt stamp: Stamp) -> AnyPublisher<Model, Never> {
         guard let publisher = updateIfPresent(object, stampedAt: stamp) else {
             let storage = Storage<Model, Stamp>(id: object.idValue, identityMap: self)
 
@@ -13,6 +13,12 @@ extension IdentityMap {
         }
 
         return publisher
+    }
+
+    public func update<Model: IdentityGraph>(_ objects: [Model], stampedAt stamp: Stamp) -> AnyPublisher<[Model], Never> {
+        objects
+            .map { object in update(object, stampedAt: stamp) }
+            .combineLatest()
     }
 
     @discardableResult

@@ -9,6 +9,10 @@ public struct IdentityValues<Root> {
         get { values[keyPath] as! T }
     }
 
+    public subscript<T: IdentityGraph>(dynamicMember keyPath: KeyPath<Root, [T]>) -> [T] {
+        get { values[keyPath] as! [T] }
+    }
+
     public subscript<T: Identifiable>(dynamicMember keyPath: KeyPath<Root, T>) -> T {
         get { values[keyPath] as! T }
     }

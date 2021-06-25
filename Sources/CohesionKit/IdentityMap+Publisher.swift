@@ -4,6 +4,14 @@ import CombineExt
 // MARK: Publisher extension
 
 public extension IdentityMap {
+    /// Add or update an object in the storage with its new value and use current date as object stamp
+    func update<Model: Identifiable>(_ objects: [Model], stampedAt stamp: Stamp) -> AnyPublisher<[Model], Never> {
+        return objects
+            .map { update($0, stamp: stamp) }
+            .combineLatest()
+            .eraseToAnyPublisher()
+    }
+
     /// Return a publisher emitting event when receiving update for `id` if an object with such `id` was previously inserted using `update(_:)` method
     func publisherIfPresent<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never>? {
         self[Model.self, id]?.publisher

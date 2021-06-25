@@ -102,4 +102,16 @@ extension IdentityMap: AnyIdentityMap {
     func update<Model: IdentityGraph>(_ object: Model, stamp: Any) -> AnyPublisher<Model, Never> {
         return update(object, stamp: stamp as! Stamp)
     }
+
+    func update<Model: IdentityGraph>(_ object: [Model], stampedAt stamp: Any) -> AnyPublisher<[Model], Never> {
+        guard let stamp = stamp as? Stamp else {
+            return object
+                .map(\.idValue)
+                .map { publisher(for: Model.self, id: $0) }
+                .combineLatest()
+                .eraseToAnyPublisher()
+        }
+
+        return update(object, stampedAt: stamp)
+    }
 }
