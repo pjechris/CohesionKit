@@ -5,7 +5,7 @@ import Combine
 /// Store and access publishers referencing `Identifiable` objects to have realtime updates on them.
 /// Memory is automatically released when objects have no observers
 public class IdentityMap<Stamp: Comparable> {
-    private var map:[String:[String:Any]] = [:]
+    var map:[String:[String:Any]] = [:]
 
     /// Create an identity map with a compare function determining when data should be considered as stale and replaced.
     /// - Parameter isStale: this function is used when calling `update` to determine whether or not received data should
@@ -14,7 +14,9 @@ public class IdentityMap<Stamp: Comparable> {
 
     }
 
-    /// Add or update an object in the storage with its new value. You usually use this method in conjunction with `publisherIfPresent(for:id:)`
+    /// Add or update an object in the storage with its new value.
+    ///
+    /// You usually use this method in conjunction with `publisherIfPresent(for:id:)`
     /// - Returns: a Publisher emitting new values for the object. Object is guaranteed to stay in memory as long as someone is using the publisher
     /// - Parameter stamp: a value to determine if object should replace existing one or be discarded. This is useful in realtime services where you might sometimes receive a message with some delay that should be ignored becaused more recent data has already been stored.
     public func update<Model: Identifiable>(_ newObject: Model, stamp objectStamp: Stamp) -> AnyPublisher<Model, Never> {
@@ -29,7 +31,10 @@ public class IdentityMap<Stamp: Comparable> {
         return publisher
     }
 
-    /// Update object in the storage if it's already in it. You usually use this method in conjunction with `publisher(for:id:)`
+    /// Update object in the storage only if it's already in it. Otherwise discard the changes.
+    ///
+    /// You usually use this method in conjunction with `publisher(for:id:)` which will always create a storage for the
+    /// model with specified id.
     /// - SeeAlso:
     /// `IdentityMap.update(_,stamp:)`
     @discardableResult
@@ -38,9 +43,7 @@ public class IdentityMap<Stamp: Comparable> {
             return nil
         }
 
-        if storage.subject.value.map({ $0.stamp < objectStamp }) ?? true {
-            storage.subject.send(StampedObject(object: newObject, stamp: objectStamp))
-        }
+        storage.send(newObject, stampedAt: objectStamp)
 
         return storage.publisher
     }
@@ -55,24 +58,24 @@ public class IdentityMap<Stamp: Comparable> {
         self[object] = nil
     }
 
-    func remove<Model: Identifiable>(for model: Model.Type, id: Model.ID) {
+    func remove<Model>(for model: Model.Type, id: Any) {
         self[model, id] = nil
     }
 
-    /// Access the storage for id of the given type
-    private subscript<Model: Identifiable>(type: Model.Type, id: Model.ID) -> Storage<Model, Stamp>? {
-        get { map["\(type)"]?[String(describing:id)] as? Storage<Model, Stamp> }
+    /// Access the storage for Model given its type and id
+    subscript<Model>(type: Model.Type, id: Any) -> Storage<Model, Stamp>? {
+        get { map["\(type)"]?[String(describing: id)] as? Storage<Model, Stamp> }
         set { map["\(type)", default: [:]][String(describing: id)] = newValue }
     }
 
-    /// Access the storage using model type and id
-    private subscript<Model: Identifiable>(model: Model) -> Storage<Model, Stamp>? {
+    /// Access the storage for a `Identifiable` model
+    subscript<Model: Identifiable>(model: Model) -> Storage<Model, Stamp>? {
         get { self[Model.self, model.id] }
         set { self[Model.self, model.id] = newValue }
     }
 }
 
-// MARK: Date stamp
+// MARK: Date stamp extension
 
 extension IdentityMap {
     /// Add or update an object in the storage with its new value and use current date as object stamp
@@ -87,27 +90,28 @@ extension IdentityMap {
     }
 }
 
-// MARK: Combine publishers
-
-extension IdentityMap {
-    /// Return a publisher emitting event when receiving update for `id` if an object with such `id` was previously inserted using `update(_:)` method
-    public func publisherIfPresent<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never>? {
-        self[Model.self, id]?.publisher
-    }
-
-    /// Return a publisher emitting event when receiving update for `id`. Note that object might not be present in the storage
-    /// at the time where publisher is requested. Thus this publisher *might* never send any value.
-    ///
-    /// Object is guaranteed to stay in memory as long as someone is using the publisher
-    public func publisher<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never> {
-        guard let storage = self[Model.self, id] else {
-            let storage = Storage<Model, Stamp>(id: id, identityMap: self)
-
-            self[Model.self, id] = storage
-
-            return storage.publisher
+extension IdentityMap: AnyIdentityMap {
+    func update<Model: Identifiable>(_ newObject: Model, stamp: Any) -> AnyPublisher<Model, Never> {
+        guard let stamp = stamp as? Stamp else {
+            return publisher(for: Model.self, id: newObject.id)
         }
 
-        return storage.publisher
+        return update(newObject, stamp: stamp)
+    }
+
+    func update<Model: IdentityGraph>(_ object: Model, stamp: Any) -> AnyPublisher<Model, Never> {
+        return update(object, stamp: stamp as! Stamp)
+    }
+
+    func update<Model: IdentityGraph>(_ object: [Model], stampedAt stamp: Any) -> AnyPublisher<[Model], Never> {
+        guard let stamp = stamp as? Stamp else {
+            return object
+                .map(\.idValue)
+                .map { publisher(for: Model.self, id: $0) }
+                .combineLatest()
+                .eraseToAnyPublisher()
+        }
+
+        return update(object, stampedAt: stamp)
     }
 }

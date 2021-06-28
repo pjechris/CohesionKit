@@ -1,4 +1,5 @@
 import Foundation
+import CohesionKit
 
 struct Match: Identifiable {
     let id: String
@@ -29,6 +30,7 @@ struct MatchMarkets {
         // this is a sample project, we just consider that there is always at least one market
         markets.first!
     }
+
 }
 
 struct MarketOutcomes {
