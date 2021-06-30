@@ -14,7 +14,7 @@ public struct IdentityKeyPath<Root> {
         }
     }
 
-    public init<T: IdentityGraph>(_ keyPath: KeyPath<Root, [T]>) {
+    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: IdentityGraph {
         self.keyPath = keyPath
         update = { root, identityMap, stamp in
             identityMap
@@ -34,7 +34,7 @@ public struct IdentityKeyPath<Root> {
         }
     }
 
-    public init<T: Identifiable>(_ keyPath: KeyPath<Root, [T]>) {
+    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Identifiable {
         self.keyPath = keyPath
         update = { root, identityMap, stamp in
 
@@ -45,9 +45,4 @@ public struct IdentityKeyPath<Root> {
                 .eraseToAnyPublisher()
         }
     }
-
-    // Optional
-    // Set ?
-    // [Optional]
-    // Set<Optional>
 }

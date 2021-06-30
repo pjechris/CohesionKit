@@ -8,5 +8,5 @@ protocol AnyIdentityMap {
 
     func update<Model: IdentityGraph>(_ object: Model, stamp: Any) -> AnyPublisher<Model, Never>
 
-    func update<Model: IdentityGraph>(_ object: [Model], stamp: Any) -> AnyPublisher<[Model], Never>
+    func update<S: Sequence>(_ sequence: S, stamp: Any) -> AnyPublisher<[S.Element], Never> where S.Element: IdentityGraph
 }

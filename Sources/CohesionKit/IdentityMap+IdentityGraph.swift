@@ -15,8 +15,8 @@ extension IdentityMap {
         return publisher
     }
 
-    public func update<Model: IdentityGraph>(_ objects: [Model], stamp: Stamp) -> AnyPublisher<[Model], Never> {
-        objects
+    func update<S: Sequence>(_ sequence: S, stamp: Any) -> AnyPublisher<[S.Element], Never> where S.Element: IdentityGraph {
+        sequence
             .map { object in update(object, stamp: stamp) }
             .combineLatest()
     }
