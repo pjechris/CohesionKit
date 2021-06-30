@@ -12,7 +12,7 @@ class MatchRepository {
     func loadMatches() -> AnyPublisher<[MatchMarkets], Never> {
         let matches = MatchMarkets.simulatedMatches
 
-        return identityMap.update(matches, stampedAt: MatchMarkets.simulatedFetchedDate)
+        return identityMap.update(matches, stamp: MatchMarkets.simulatedFetchedDate)
     }
 
     /// observe primary (first) match market changes (for this sample changes are generated randomely
@@ -31,7 +31,7 @@ class MatchRepository {
                     .prepend(outcome)
             }
             .combineLatest()
-            .map { [identityMap] in identityMap.update($0, stampedAt: Date()) }
+            .map { [identityMap] in identityMap.update($0, stamp: Date()) }
             .map { [identityMap] _ in identityMap.publisher(for: MatchMarkets.self, id: match.id) }
             .switchToLatest()
             .eraseToAnyPublisher()

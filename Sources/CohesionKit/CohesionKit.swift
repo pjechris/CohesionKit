@@ -89,29 +89,3 @@ extension IdentityMap {
         self.updateIfPresent(newObject, stamp: Date())
     }
 }
-
-extension IdentityMap: AnyIdentityMap {
-    func update<Model: Identifiable>(_ newObject: Model, stamp: Any) -> AnyPublisher<Model, Never> {
-        guard let stamp = stamp as? Stamp else {
-            return publisher(for: Model.self, id: newObject.id)
-        }
-
-        return update(newObject, stamp: stamp)
-    }
-
-    func update<Model: IdentityGraph>(_ object: Model, stamp: Any) -> AnyPublisher<Model, Never> {
-        return update(object, stamp: stamp as! Stamp)
-    }
-
-    func update<Model: IdentityGraph>(_ object: [Model], stamp: Any) -> AnyPublisher<[Model], Never> {
-        guard let stamp = stamp as? Stamp else {
-            return object
-                .map(\.idValue)
-                .map { publisher(for: Model.self, id: $0) }
-                .combineLatest()
-                .eraseToAnyPublisher()
-        }
-
-        return update(object, stamp: stamp)
-    }
-}
