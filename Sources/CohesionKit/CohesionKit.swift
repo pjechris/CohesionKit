@@ -43,7 +43,7 @@ public class IdentityMap<Stamp: Comparable> {
             return nil
         }
 
-        storage.send(newObject, stampedAt: objectStamp)
+        storage.send(newObject, stamp: objectStamp)
 
         return storage.publisher
     }
@@ -103,7 +103,7 @@ extension IdentityMap: AnyIdentityMap {
         return update(object, stamp: stamp as! Stamp)
     }
 
-    func update<Model: IdentityGraph>(_ object: [Model], stampedAt stamp: Any) -> AnyPublisher<[Model], Never> {
+    func update<Model: IdentityGraph>(_ object: [Model], stamp: Any) -> AnyPublisher<[Model], Never> {
         guard let stamp = stamp as? Stamp else {
             return object
                 .map(\.idValue)
@@ -112,6 +112,6 @@ extension IdentityMap: AnyIdentityMap {
                 .eraseToAnyPublisher()
         }
 
-        return update(object, stampedAt: stamp)
+        return update(object, stamp: stamp)
     }
 }

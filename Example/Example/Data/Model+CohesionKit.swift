@@ -5,7 +5,7 @@ extension MatchMarkets: IdentityGraph {
         \.match.id
     }
 
-    var identityPaths: [IdentityKeyPath<MatchMarkets>] {
+    var identityKeyPaths: [IdentityKeyPath<MatchMarkets>] {
         [.init(\.match), .init(\.markets)]
     }
 
@@ -20,7 +20,7 @@ extension MarketOutcomes: IdentityGraph {
         \.market.id
     }
 
-    var identityPaths: [IdentityKeyPath<MarketOutcomes>] {
+    var identityKeyPaths: [IdentityKeyPath<MarketOutcomes>] {
         [.init(\.market), .init(\.outcomes)]
     }
 

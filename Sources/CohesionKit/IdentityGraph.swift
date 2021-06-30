@@ -8,7 +8,7 @@ public protocol IdentityGraph {
     var idKeyPath: KeyPath<Self, ID> { get }
 
     /// identities contained into the object that should be mapped
-    var identityPaths: [IdentityKeyPath<Self>] { get }
+    var identityKeyPaths: [IdentityKeyPath<Self>] { get }
 
     /// return a new instance of Self after having applied changes
     func reduce(changes: IdentityValues<Self>) -> Self
@@ -20,11 +20,13 @@ extension IdentityGraph {
 }
 
 extension IdentityGraph {
-    func update(in identityMap: AnyIdentityMap, stampedAt: Any) -> AnyPublisher<Self, Never> {
-        identityPaths
+    /// Recursively update each object subpaths
+    /// - Returns: a Publisher triggering every time a sub path is updated. Returned object is updated with triggered data
+    func update(in identityMap: AnyIdentityMap, stamp: Any) -> AnyPublisher<Self, Never> {
+        identityKeyPaths
             .map { identityPath in
                 identityPath
-                    .update(self, identityMap, stampedAt)
+                    .update(self, identityMap, stamp)
                     .map { (identityPath.keyPath, $0) }
             }
             .combineLatest()

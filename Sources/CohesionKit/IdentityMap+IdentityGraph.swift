@@ -1,13 +1,13 @@
 import Combine
 
 extension IdentityMap {
-    public func update<Model: IdentityGraph>(_ object: Model, stampedAt stamp: Stamp) -> AnyPublisher<Model, Never> {
-        guard let publisher = updateIfPresent(object, stampedAt: stamp) else {
+    public func update<Model: IdentityGraph>(_ object: Model, stamp: Stamp) -> AnyPublisher<Model, Never> {
+        guard let publisher = updateIfPresent(object, stamp: stamp) else {
             let storage = Storage<Model, Stamp>(id: object.idValue, identityMap: self)
 
             self[object] = storage
 
-            storage.forward(object.update(in: self, stampedAt: stamp), stampedAt: stamp)
+            storage.forward(object.update(in: self, stamp: stamp), stamp: stamp)
 
             return storage.publisher
         }
@@ -15,19 +15,19 @@ extension IdentityMap {
         return publisher
     }
 
-    public func update<Model: IdentityGraph>(_ objects: [Model], stampedAt stamp: Stamp) -> AnyPublisher<[Model], Never> {
+    public func update<Model: IdentityGraph>(_ objects: [Model], stamp: Stamp) -> AnyPublisher<[Model], Never> {
         objects
-            .map { object in update(object, stampedAt: stamp) }
+            .map { object in update(object, stamp: stamp) }
             .combineLatest()
     }
 
     @discardableResult
-    public func updateIfPresent<Model: IdentityGraph>(_ object: Model, stampedAt stamp: Stamp) -> AnyPublisher<Model, Never>? {
+    public func updateIfPresent<Model: IdentityGraph>(_ object: Model, stamp: Stamp) -> AnyPublisher<Model, Never>? {
         guard let storage = self[object] else {
             return nil
         }
 
-        storage.forward(object.update(in: self, stampedAt: stamp), stampedAt: stamp)
+        storage.forward(object.update(in: self, stamp: stamp), stamp: stamp)
 
         return storage.publisher
     }

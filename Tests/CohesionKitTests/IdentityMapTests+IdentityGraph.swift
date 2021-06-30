@@ -52,7 +52,7 @@ struct Graph: Identifiable, Equatable {
 extension GraphTest: IdentityGraph {
     var idKeyPath: KeyPath<GraphTest, GraphSingleChild.ID> { \.single.id }
 
-    var identityPaths: [IdentityKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
+    var identityKeyPaths: [IdentityKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
 
     func reduce(changes: IdentityValues<GraphTest>) -> GraphTest {
         GraphTest(single: changes.single, children: changes.children)

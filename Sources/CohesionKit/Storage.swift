@@ -53,9 +53,9 @@ class Storage<T, Stamp: Comparable> {
     }
 
     /// Send new input to storage and notify any subscribers when value is updated
-    /// - Returns: true if storage was updated. Storage is updated only if `stampedAt` is sup. to storage stamp
+    /// - Returns: true if storage was updated. Storage is updated only if `stamp` is sup. to storage stamp
     @discardableResult
-    func send(_ input: T, stampedAt stamp: Stamp) -> Bool {
+    func send(_ input: T, stamp: Stamp) -> Bool {
         guard subject.value.map({ stamp >= $0.stamp }) ?? true else {
             return false
         }
@@ -65,8 +65,8 @@ class Storage<T, Stamp: Comparable> {
     }
 
     /// Forward a `Publisher` and send its value to Storage
-    func forward(_ upstream: AnyPublisher<T, Never>, stampedAt stamp: Stamp) {
+    func forward(_ upstream: AnyPublisher<T, Never>, stamp: Stamp) {
         upstreamCancellable = upstream
-            .sink(receiveValue: { [weak self] in self?.send($0, stampedAt: stamp) })
+            .sink(receiveValue: { [weak self] in self?.send($0, stamp: stamp) })
     }
 }

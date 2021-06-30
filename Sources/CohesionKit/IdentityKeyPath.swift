@@ -18,7 +18,7 @@ public struct IdentityKeyPath<Root> {
         self.keyPath = keyPath
         update = { root, identityMap, stamp in
             identityMap
-                .update(root[keyPath: keyPath], stampedAt: stamp)
+                .update(root[keyPath: keyPath], stamp: stamp)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
