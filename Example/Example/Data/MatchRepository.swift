@@ -23,13 +23,7 @@ class MatchRepository {
         return data
             .primaryMarket
             .outcomes
-            .map { outcome in
-                Timer
-                    .publish(every: 3, on: .main, in: .common)
-                    .autoconnect()
-                    .map { _ in outcome.newOdds(Double.random(in: 0...25)) }
-                    .prepend(outcome)
-            }
+            .map { outcome in self.randomChanges(for: outcome) }
             .combineLatest()
             .map { [identityMap] in identityMap.update($0, stamp: Date()) }
             .map { [identityMap] _ in identityMap.publisher(for: MatchMarkets.self, id: match.id) }
@@ -37,23 +31,13 @@ class MatchRepository {
             .eraseToAnyPublisher()
     }
 
-    /// Generate outcomes changes for the market every 3 secondes
-    private func generateMarketChanges(for market: MarketOutcomes) -> AnyPublisher<MarketOutcomes, Never> {
-        // Generate random values for testing
-        for outcome in market.outcomes {
-            Timer
-                .publish(every: 3, on: .main, in: .common)
-                .autoconnect()
-                .map { _ in outcome.newOdds(Double.random(in: 0...25)) }
-                .sink(receiveValue: { [identityMap] in
-                        identityMap.updateIfPresent($0)
-
-                })
-                .store(in: &cancellables)
-        }
-
-        return identityMap
-            .publisher(for: MarketOutcomes.self, id: market.market.id)
+    private func randomChanges(for outcome: Outcome) -> AnyPublisher<Outcome, Never> {
+        Timer
+            .publish(every: 3, on: .main, in: .common)
+            .autoconnect()
+            .map { _ in outcome.newOdds(Double.random(in: 0...25)) }
+            .prepend(outcome)
+            .eraseToAnyPublisher()
     }
 
 }

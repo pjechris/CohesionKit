@@ -33,7 +33,7 @@ It's very unlikely your app will read and write data from only one class. You en
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/pjechris/IdentityMap.git", .upToNextMajor(from: "0.1.0"))
+    .package(url: "https://github.com/pjechris/CohesionKit.git", .upToNextMajor(from: "0.1.0"))
 ]
 ```
 
@@ -110,21 +110,34 @@ identityMap.update(xxx, stamp: 9000) // you have to provide a Int stamp
 
 ## Relationships
 
-It is up to you to save relationships objects into the identity map. As such we **strongly** recommand to use [Aggregate objects](https://swiftunwrap.com/article/modeling-done-right/) so to avoid duplication data.
+To store relational objects in identity map you must make your model conform to `IdentifiableGraph`. CohesionKit will then lookup for children objects and store them.
 
-For now CohesionKit does not provide any helper to save, load and aggregate these relationships. This might change in upcoming releases.
+Nonetheless we strongly recommand to avoid deep nested relationships and we **strongly** advise to use [Aggregate objects](https://swiftunwrap.com/article/modeling-done-right/).
 
 ```swift
-struct ProductComments {
+// 1. Create your model
+struct ProductComments
   let product: Product
   let comments: [Comment]
 }
 
-identityMap
-    .publisher(for: Product.self, id: 1)
-    .combineLatest([1, 2, 3, 4].map { identityMap.publisher(for: Comment.self, id: $0) }.combineLatest())
-    .map { ProductComments(product: $0.0, comments: $0.1) }
-    .eraseToAnyPublisher()
+// 2. Conform your model to IdentifiableGraph
+extension ProductComments: IdentifiableGraph {
+
+  var idKeyPath: KeyPath<Self, Product.ID> { \.product.id }
+  var identityKeyPaths: [IdentityKeyPath<Self>] { [.init(\.product), .init(\.comments)]}
+
+  func reduce(changes: IdentityValues<Self>) -> ProductComments {
+      ProductComments(
+          product: changes.product,
+          comments: changes.comments
+      )
+  }
+}
+
+// 3. Then you can get/store it from/into IdentityMap
+identityMap.update(ProductComment(...))
+identityMap.publisher(for: ProductComments.self, id: xx)
 ```
 
 # License
