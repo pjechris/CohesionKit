@@ -2,7 +2,7 @@ import XCTest
 @testable import CohesionKit
 
 class IdentityMapIdentityGraphTests: XCTestCase {
-    func test_get_objectAdded_itReturnObject() {
+    func test_update_graphObjectIsStored() {
         let identityMap = IdentityMap<Date>()
         let graph = GraphTest(
             single: .init(id: 1, value: "single node"),
@@ -14,7 +14,7 @@ class IdentityMapIdentityGraphTests: XCTestCase {
         XCTAssertEqual(identityMap.get(for: GraphTest.self, id: 1), graph)
     }
 
-    func test_get_childIsUpdated_itReturnUpdatedObject() {
+    func test_update_whenChildIsUpdated_graphObjectIsUpdated() {
         let expectation = XCTestExpectation()
         let identityMap = IdentityMap<Date>()
         let graph = GraphTest(
@@ -32,6 +32,21 @@ class IdentityMapIdentityGraphTests: XCTestCase {
         XCTAssertEqual(identityMap.get(for: GraphSingleChild.self, id: 1), childUpdate)
         XCTAssertEqual(identityMap.get(for: GraphTest.self, id: 1)?.single, childUpdate)
     }
+
+  func test_publisher_whenCanceled_noSubscriber_objectIsRemoved() {
+    let identityMap = IdentityMap<Date>()
+    let graph = GraphTest(
+      single: .init(id: 1, value: "single node"),
+      children: [.init(id: 1, key: "child 1")]
+    )
+
+    let publisher = identityMap.update(graph, stamp: Date())
+    let cancellable = publisher.sink(receiveValue: { _ in })
+
+    cancellable.cancel()
+
+    XCTAssertNil(identityMap.get(for: GraphTest.self, id: 1))
+  }
 }
 
 struct GraphTest: Equatable {
