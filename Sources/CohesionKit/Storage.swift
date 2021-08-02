@@ -17,7 +17,7 @@ struct StampedObject<D, Stamp> {
 class Storage<T, Stamp: Comparable> {
     // TODO: Set as private
     let subject: CurrentValueSubject<StampedObject<T, Stamp>?, Never>
-    let publisher: AnyPublisher<T, Never>
+    private(set) var publisher: AnyPublisher<T, Never>!
     private var upstreamCancellable: AnyCancellable?
 
     /// init storage with a initial value for a `Idenfitiable` object
@@ -45,7 +45,10 @@ class Storage<T, Stamp: Comparable> {
         self.subject = CurrentValueSubject(object)
         self.publisher = subject
             .compactMap { $0?.object }
-            .handleEvents(receiveCancel: {
+            .handleEvents(receiveCancel: { [weak self] in
+                // avoid some exclusive memory access by first releasing upstream
+                // which might itself remove content from identity map
+                self?.upstreamCancellable?.cancel()
                 remove()
             })
             .share(replay: 1)
