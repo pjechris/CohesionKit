@@ -5,9 +5,9 @@ import CombineExt
 
 public extension IdentityMap {
     /// Add or update an object in the storage with its new value and use current date as object stamp
-    func update<S: Sequence>(_ sequence: S, stamp: Stamp) -> AnyPublisher<[S.Element], Never> where S.Element: Identifiable {
+    func update<S: Sequence>(_ sequence: S, modifiedAt: ModificationStamp) -> AnyPublisher<[S.Element], Never> where S.Element: Identifiable {
         return sequence
-            .map { update($0, stamp: stamp) }
+            .map { update($0, modifiedAt: modifiedAt) }
             .combineLatest()
             .eraseToAnyPublisher()
     }
@@ -23,7 +23,7 @@ public extension IdentityMap {
     /// Object is guaranteed to stay in memory as long as someone is using the publisher
     func publisher<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never> {
         guard let storage = self[Model.self, id] else {
-            let storage = Storage<Model, Stamp>(id: id, identityMap: self)
+            let storage = Storage<Model>(id: id, identityMap: self)
 
             self[Model.self, id] = storage
 
