@@ -5,7 +5,7 @@ import CombineExt
 
 public extension IdentityMap {
     /// Add or update an object in the storage with its new value and use current date as object stamp
-    func update<S: Sequence>(_ sequence: S, modifiedAt: Stamp) -> AnyPublisher<[S.Element], Never> where S.Element: Identifiable {
+    func update<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<[S.Element], Never> where S.Element: Identifiable {
         return sequence
             .map { update($0, modifiedAt: modifiedAt) }
             .combineLatest()

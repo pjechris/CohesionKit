@@ -4,7 +4,7 @@ import CohesionKit
 import CombineExt
 
 class MatchRepository {
-    private static let identityMap = IdentityMap<Date>()
+    private static let identityMap = IdentityMap()
     private lazy var identityMap = Self.identityMap
     private var cancellables: Set<AnyCancellable> = []
 
@@ -12,7 +12,7 @@ class MatchRepository {
     func loadMatches() -> AnyPublisher<[MatchMarkets], Never> {
         let matches = MatchMarkets.simulatedMatches
 
-        return identityMap.update(matches, stamp: MatchMarkets.simulatedFetchedDate)
+        return identityMap.update(matches, modifiedAt: MatchMarkets.simulatedFetchedDate.stamp)
     }
 
     /// observe primary (first) match market changes (for this sample changes are generated randomely
@@ -25,7 +25,7 @@ class MatchRepository {
             .outcomes
             .map { outcome in self.randomChanges(for: outcome) }
             .combineLatest()
-            .map { [identityMap] in identityMap.update($0, stamp: Date()) }
+            .map { [identityMap] in identityMap.update($0) }
             .map { [identityMap] _ in identityMap.publisher(for: MatchMarkets.self, id: match.id) }
             .switchToLatest()
             .eraseToAnyPublisher()
