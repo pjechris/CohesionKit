@@ -22,7 +22,7 @@ extension IdentityGraph {
 extension IdentityGraph {
     /// Recursively update each object subpaths
     /// - Returns: a Publisher triggering every time a sub path is updated. Returned object is updated with triggered data
-    func update(in identityMap: IdentityMap, modifiedAt: ModificationStamp) -> AnyPublisher<Self, Never> {
+    func update(in identityMap: IdentityMap, modifiedAt: Stamp) -> AnyPublisher<Self, Never> {
         identityKeyPaths
             .map { identityPath in
                 identityPath

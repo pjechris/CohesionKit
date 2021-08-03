@@ -11,7 +11,7 @@ import CombineExt
 
 struct StampedObject<D> {
     let object: D
-    let lastModification: ModificationStamp
+    let lastModification: Stamp
 }
 
 class Storage<T> {
@@ -21,7 +21,7 @@ class Storage<T> {
     private var upstreamCancellable: AnyCancellable?
 
     /// init storage with a initial value for a `Idenfitiable` object
-    convenience init(object: T, modifiedAt: ModificationStamp, identityMap: IdentityMap) where T: Identifiable {
+    convenience init(object: T, modifiedAt: Stamp, identityMap: IdentityMap) where T: Identifiable {
         self.init(StampedObject(object: object, lastModification: modifiedAt)) { [weak identityMap] in
             identityMap?.remove(object)
         }
@@ -58,7 +58,7 @@ class Storage<T> {
     /// Send new input to storage and notify any subscribers when value is updated
     /// - Returns: true if storage was updated. Storage is updated only if `stamp` is sup. to storage stamp
     @discardableResult
-    func send(_ input: T, modifiedAt: ModificationStamp) -> Bool {
+    func send(_ input: T, modifiedAt: Stamp) -> Bool {
         guard subject.value.map({ modifiedAt >= $0.lastModification }) ?? true else {
             return false
         }
@@ -68,7 +68,7 @@ class Storage<T> {
     }
 
     /// Forward a `Publisher` and send its value to Storage
-    func forward(_ upstream: AnyPublisher<T, Never>, modifiedAt: ModificationStamp) {
+    func forward(_ upstream: AnyPublisher<T, Never>, modifiedAt: Stamp) {
         upstreamCancellable = upstream
             .sink(receiveValue: { [weak self] in self?.send($0, modifiedAt: modifiedAt) })
     }

@@ -2,7 +2,7 @@ import Combine
 
 public struct IdentityKeyPath<Root> {
     let keyPath: AnyKeyPath
-    let update: (Root, IdentityMap, ModificationStamp) -> AnyPublisher<Any, Never>
+    let update: (Root, IdentityMap, Stamp) -> AnyPublisher<Any, Never>
 
     public init<T: IdentityGraph>(_ keyPath: KeyPath<Root, T>) {
         self.keyPath = keyPath

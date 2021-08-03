@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 extension IdentityMap {
-    public func update<Model: IdentityGraph>(_ object: Model, modifiedAt: ModificationStamp = Date().timeIntervalSinceReferenceDate) -> AnyPublisher<Model, Never> {
+    public func update<Model: IdentityGraph>(_ object: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never> {
         guard let publisher = updateIfPresent(object, modifiedAt: modifiedAt) else {
             let storage = Storage<Model>(id: object.idValue, identityMap: self)
 
@@ -16,14 +16,14 @@ extension IdentityMap {
         return publisher
     }
 
-    public func update<S: Sequence>(_ sequence: S, modifiedAt: ModificationStamp = Date().timeIntervalSinceReferenceDate) -> AnyPublisher<[S.Element], Never> where S.Element: IdentityGraph {
+    public func update<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<[S.Element], Never> where S.Element: IdentityGraph {
         sequence
             .map { object in update(object, modifiedAt: modifiedAt) }
             .combineLatest()
     }
 
     @discardableResult
-    public func updateIfPresent<Model: IdentityGraph>(_ object: Model, modifiedAt: ModificationStamp = Date().timeIntervalSinceReferenceDate) -> AnyPublisher<Model, Never>? {
+    public func updateIfPresent<Model: IdentityGraph>(_ object: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never>? {
         guard let storage = self[object] else {
             return nil
         }

@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 
-public typealias ModificationStamp = Double
 
 /// Framework main class.
 /// Store and access publishers referencing `Identifiable` objects to have realtime updates on them.
@@ -20,8 +19,8 @@ public class IdentityMap {
     ///
     /// You usually use this method in conjunction with `publisherIfPresent(for:id:)`
     /// - Returns: a Publisher emitting new values for the object. Object is guaranteed to stay in memory as long as someone is using the publisher
-    /// - Parameter stamp: a value to determine if object should replace existing one or be discarded. This is useful in realtime services where you might sometimes receive a message with some delay that should be ignored becaused more recent data has already been stored.
-    public func update<Model: Identifiable>(_ newObject: Model, modifiedAt: ModificationStamp = Date().timeIntervalSinceReferenceDate) -> AnyPublisher<Model, Never> {
+    /// - Parameter modifiedAt: If object has a higher modifiedAt value than previous store value then it will be updated with it, otherwise newObject value will be discarded. By default Date time is used to track `newObject` but you can use anything you want (an incremental id for example).
+    public func update<Model: Identifiable>(_ newObject: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never> {
         guard let publisher = updateIfPresent(newObject, modifiedAt: modifiedAt) else {
             let storage = Storage(object: newObject, modifiedAt: modifiedAt, identityMap: self)
 
@@ -38,9 +37,9 @@ public class IdentityMap {
     /// You usually use this method in conjunction with `publisher(for:id:)` which will always create a storage for the
     /// model with specified id.
     /// - SeeAlso:
-    /// `IdentityMap.update(_,stamp:)`
+    /// `IdentityMap.update(_,modifiedAt:)`
     @discardableResult
-    public func updateIfPresent<Model: Identifiable>(_ newObject: Model, modifiedAt: ModificationStamp = Date().timeIntervalSinceReferenceDate) -> AnyPublisher<Model, Never>? {
+    public func updateIfPresent<Model: Identifiable>(_ newObject: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never>? {
         guard let storage = self[newObject] else {
             return nil
         }

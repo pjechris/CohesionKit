@@ -23,8 +23,8 @@ class IdentityMapIdentityGraphTests: XCTestCase {
         )
         let childUpdate = GraphSingleChild(id: 1, value: "single node updated")
 
-        _ = identityMap.update(graph, modifiedAt: Date().timeIntervalSinceReferenceDate)
-        _ = identityMap.update(childUpdate, modifiedAt: Date().advanced(by: 1).timeIntervalSinceReferenceDate)
+        _ = identityMap.update(graph, modifiedAt: Date().stamp)
+        _ = identityMap.update(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
 
         expectation.isInverted = true
         wait(for: [expectation], timeout: 1)
