@@ -1,13 +1,14 @@
 import Combine
+import Foundation
 
 extension IdentityMap {
-    public func update<Model: IdentityGraph>(_ object: Model, stamp: Stamp) -> AnyPublisher<Model, Never> {
-        guard let publisher = updateIfPresent(object, stamp: stamp) else {
-            let storage = Storage<Model, Stamp>(id: object.idValue, identityMap: self)
+    public func update<Model: IdentityGraph>(_ object: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never> {
+        guard let publisher = updateIfPresent(object, modifiedAt: modifiedAt) else {
+            let storage = Storage<Model>(id: object.idValue, identityMap: self)
 
             self[object] = storage
 
-            storage.forward(object.update(in: self, stamp: stamp), stamp: stamp)
+            storage.forward(object.update(in: self, modifiedAt: modifiedAt), modifiedAt: modifiedAt)
 
             return storage.publisher
         }
@@ -15,26 +16,26 @@ extension IdentityMap {
         return publisher
     }
 
-    public func update<S: Sequence>(_ sequence: S, stamp: Stamp) -> AnyPublisher<[S.Element], Never> where S.Element: IdentityGraph {
+    public func update<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<[S.Element], Never> where S.Element: IdentityGraph {
         sequence
-            .map { object in update(object, stamp: stamp) }
+            .map { object in update(object, modifiedAt: modifiedAt) }
             .combineLatest()
     }
 
     @discardableResult
-    public func updateIfPresent<Model: IdentityGraph>(_ object: Model, stamp: Stamp) -> AnyPublisher<Model, Never>? {
+    public func updateIfPresent<Model: IdentityGraph>(_ object: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never>? {
         guard let storage = self[object] else {
             return nil
         }
 
-        storage.forward(object.update(in: self, stamp: stamp), stamp: stamp)
+        storage.forward(object.update(in: self, modifiedAt: modifiedAt), modifiedAt: modifiedAt)
 
         return storage.publisher
     }
 
     public func publisher<Model: IdentityGraph>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never> {
         guard let storage = self[Model.self, id] else {
-            let storage = Storage<Model, Stamp>(id: id, identityMap: self)
+            let storage = Storage<Model>(id: id, identityMap: self)
 
             self[Model.self, id] = storage
 
@@ -49,7 +50,7 @@ extension IdentityMap {
     }
 
     /// Access the storage for a `IdentityGraph` model
-    subscript<Model: IdentityGraph>(model: Model) -> Storage<Model, Stamp>? {
+    subscript<Model: IdentityGraph>(model: Model) -> Storage<Model>? {
         get { self[Model.self, model.idValue] }
         set { self[Model.self, model.idValue] = newValue }
     }

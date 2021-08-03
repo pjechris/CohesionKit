@@ -6,7 +6,7 @@ import Combine
 class IdentityMapTests: XCTestCase {
 
     func test_getForId_entityWasAdded_itReturnEntity() {
-        let map = IdentityMap<Date>()
+        let map = IdentityMap()
 
         _ = map.update(Entity.hello)
 
@@ -14,7 +14,7 @@ class IdentityMapTests: XCTestCase {
     }
 
     func test_getForId_entityWasAdded_allPublishersWereUnsubscribed_entityIsNotStored() {
-        let map = IdentityMap<Date>()
+        let map = IdentityMap()
         var cancellables: Set<AnyCancellable> = []
 
         map.update(Entity.hello)
@@ -27,13 +27,13 @@ class IdentityMapTests: XCTestCase {
     }
 
     func test_updateIfPresent_valueIsNotPresent_itReturnNil() {
-        let map = IdentityMap<Date>()
+        let map = IdentityMap()
 
         XCTAssertNil(map.updateIfPresent(Entity.hello))
     }
 
     func test_publisherForId_entityIsAddedAfterRequestingPublisher_entityIsEmitted() {
-        let map = IdentityMap<Date>()
+        let map = IdentityMap()
         let publisher = map.publisher(for: Entity.self, id: Entity.hello.id)
         var receivedValue: Entity?
         var cancellables: Set<AnyCancellable> = []
