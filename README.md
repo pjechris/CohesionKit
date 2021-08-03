@@ -57,7 +57,7 @@ CohesionKit is based on [Identity Map pattern](http://martinfowler.com/eaaCatalo
 First create an `IdentityMap`:
 
 ```swift
-let identityMap = IdentityMap<Date>()
+let identityMap = IdentityMap()
 ```
 
 Then add your object inside it:
@@ -84,7 +84,7 @@ func loadCurrentUser() -> AnyPublisher<User, Error> {
         .eraseToAnyPublisher()
 }
 
-func findCurrentUser() -> AnyPublisher<User, Error> {
+func findCurrentUser() -> AnyPublisher<User, Never> {
     identityMap.publisher(for: User.self, id: 42)
 }
 ```
@@ -93,19 +93,16 @@ func findCurrentUser() -> AnyPublisher<User, Error> {
 
 ## Stale data
 
-When updating data into the identity map CohesionKit actually require you to set a stamp on it (like for mails). Stamp is used to make sure you're actually pass more recent data rather than old one.
+When updating data into the identity map CohesionKit actually require you to set a modification stamp on it. Stamp is used to make sure you're actually pass more recent data rather than old one.
 
-You can use whatever you want as stamp as long as the type is `Comparable`. When using `Date` CohesionKit will use current date as default stamp:
+You can use whatever you want as stamp as long as the type is `Double`
 
 ```swift
-let identityMap = IdentityMap<Date>() // stamp is of type Date
+let identityMap = IdentityMap()
 
 identityMap.update(xxx) // use default stamp: current date
-identityMap.update(xxx, stamp: myCustomDate)
-
-let identityMap = Identitymap<Int>() // stamp is of type Int
-
-identityMap.update(xxx, stamp: 9000) // you have to provide a Int stamp
+identityMap.update(xxx, modifiedAt: Date().stamp) // explicitly use Date time stamp
+identityMap.update(xxx, modifiedAt: 9000) // any Double value is valid
 ```
 
 ## Relationships
