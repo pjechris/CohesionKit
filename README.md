@@ -2,6 +2,7 @@
 
 ![swift](https://img.shields.io/badge/Swift-5.1%2B-orange?logo=swift&logoColor=white)
 ![platforms](https://img.shields.io/badge/Platforms-iOS%20%7C%20macOS-lightgrey)
+![tests](https://github.com/pjechris/CohesionKit/actions/workflows/test.yml/badge.svg)
 [![twitter](https://img.shields.io/badge/twitter-pjechris-1DA1F2?logo=twitter&logoColor=white)](https://twitter.com/pjechris)
 
 Stop having your data not always up-to-date and not synchronized between screens! 
