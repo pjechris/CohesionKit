@@ -1,0 +1,23 @@
+name: test and build sample
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+    
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Run tests
+      run: fastlane test
+
+    - name: Build sample app
+      run: fastlane build
