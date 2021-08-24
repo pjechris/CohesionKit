@@ -1,5 +1,7 @@
 ## Main branch
 
+## 0.3.0
+
 ### Breaking changes
 
 - `IdentityMap<Stamp>` was replaced with `IdentityMap`
