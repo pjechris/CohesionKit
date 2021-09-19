@@ -2,29 +2,30 @@ import Combine
 import CombineExt
 
 /// A model having relationships you want to store separately into an `IdentityMap`
-public protocol IdentityGraph {
-    associatedtype ID: Hashable
+public protocol Relational {
+    associatedtype Identity: Identifiable
 
-    /// key path to an `Ìdentity.ID` property which represent this map
-    var idKeyPath: KeyPath<Self, ID> { get }
+    /// key path to the "primary" `Identifiable` object which is used to define the object
+    /// identity
+    var primaryKeyPath: KeyPath<Self, Identity> { get }
 
     /// identities contained into the object that should be mapped
-    var identityKeyPaths: [IdentityKeyPath<Self>] { get }
+    var relations: [RelationKeyPath<Self>] { get }
 
     /// return a new instance of Self after having applied changes
-    func reduce(changes: IdentityValues<Self>) -> Self
+    func reduce(changes: KeyPathUpdates<Self>) -> Self
 }
 
-extension IdentityGraph {
+extension Relational {
     // don't use `id` naming in case it's already used by the object
-    var idValue: ID { self[keyPath: idKeyPath] }
+    var primaryID: Identity.ID { self[keyPath: primaryKeyPath].id }
 }
 
-extension IdentityGraph {
+extension Relational {
     /// Recursively update each object subpaths
     /// - Returns: a Publisher triggering every time a sub path is updated. Returned object is updated with triggered data
     func store(in identityMap: IdentityMap, modifiedAt: Stamp) -> AnyPublisher<Self, Never> {
-        identityKeyPaths
+        relations
             .map { identityPath in
                 identityPath
                     .update(self, identityMap, modifiedAt)
@@ -33,7 +34,7 @@ extension IdentityGraph {
             .combineLatest()
             // aggregate updates if multiple children are updated at once
             .debounce(for: 0.1, scheduler: DispatchQueue.global(qos: .utility))
-            .map { reduce(changes: IdentityValues(values: Dictionary(uniqueKeysWithValues: $0))) }
+            .map { reduce(changes: KeyPathUpdates(values: Dictionary(uniqueKeysWithValues: $0))) }
             .prepend(self)
             .eraseToAnyPublisher()
     }

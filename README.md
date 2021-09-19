@@ -5,7 +5,7 @@
 ![tests](https://github.com/pjechris/CohesionKit/actions/workflows/test.yml/badge.svg)
 [![twitter](https://img.shields.io/badge/twitter-pjechris-1DA1F2?logo=twitter&logoColor=white)](https://twitter.com/pjechris)
 
-Stop having your data not always up-to-date and not synchronized between screens! 
+Stop having your data not always up-to-date and not synchronized between screens!
 
 Implemented with latest Swift technologies:
 
@@ -108,7 +108,7 @@ identityMap.store(xxx, modifiedAt: 9000) // any Double value is valid
 
 ## Relationships
 
-To store relational objects in identity map you must make your model conform to `IdentifiableGraph`. CohesionKit will then lookup for children objects and store them.
+To store relational objects in identity map you must make your model conform to `Relational`. CohesionKit will then lookup for children objects and store them.
 
 Nonetheless we strongly recommand to avoid deep nested relationships and we **strongly** advise to use [Aggregate objects](https://swiftunwrap.com/article/modeling-done-right/).
 
@@ -119,13 +119,13 @@ struct ProductComments
   let comments: [Comment]
 }
 
-// 2. Conform your model to IdentifiableGraph
-extension ProductComments: IdentifiableGraph {
+// 2. Conform your model to Relational
+extension ProductComments: Relational {
 
-  var idKeyPath: KeyPath<Self, Product.ID> { \.product.id }
-  var identityKeyPaths: [IdentityKeyPath<Self>] { [.init(\.product), .init(\.comments)]}
+  var primaryKeyPath: KeyPath<Self, Product> { \.product }
+  var relations: [RelationKeyPath<Self>] { [.init(\.product), .init(\.comments)]}
 
-  func reduce(changes: IdentityValues<Self>) -> ProductComments {
+  func reduce(changes: KeyPathUpdates<Self>) -> ProductComments {
       ProductComments(
           product: changes.product,
           comments: changes.comments

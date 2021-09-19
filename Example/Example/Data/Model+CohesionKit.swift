@@ -1,30 +1,30 @@
 import CohesionKit
 
-extension MatchMarkets: IdentityGraph {
-    var idKeyPath: KeyPath<MatchMarkets, Match.ID> {
-        \.match.id
+extension MatchMarkets: Relational {
+    var primaryKeyPath: KeyPath<MatchMarkets, Match> {
+        \.match
     }
 
-    var identityKeyPaths: [IdentityKeyPath<MatchMarkets>] {
+    var relations: [RelationKeyPath<MatchMarkets>] {
         [.init(\.match), .init(\.markets)]
     }
 
-    func reduce(changes: IdentityValues<MatchMarkets>) -> MatchMarkets {
+    func reduce(changes: KeyPathUpdates<MatchMarkets>) -> MatchMarkets {
         MatchMarkets(match: changes.match, markets: changes.markets)
     }
     
 }
 
-extension MarketOutcomes: IdentityGraph {
-    var idKeyPath: KeyPath<MarketOutcomes, Market.ID> {
-        \.market.id
+extension MarketOutcomes: Relational {
+    var primaryKeyPath: KeyPath<MarketOutcomes, Market> {
+        \.market
     }
 
-    var identityKeyPaths: [IdentityKeyPath<MarketOutcomes>] {
+    var relations: [RelationKeyPath<MarketOutcomes>] {
         [.init(\.market), .init(\.outcomes)]
     }
 
-    func reduce(changes: IdentityValues<MarketOutcomes>) -> MarketOutcomes {
+    func reduce(changes: KeyPathUpdates<MarketOutcomes>) -> MarketOutcomes {
         MarketOutcomes(market: changes.market, outcomes: changes.outcomes)
     }
 }

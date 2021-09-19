@@ -1,16 +1,16 @@
 
 import Foundation
 
-/// Query reltionships from Root using `KeyPath`
+/// a struct containing updates made on `Root`
 @dynamicMemberLookup
-public struct IdentityValues<Root> {
+public struct KeyPathUpdates<Root> {
     let values: [AnyKeyPath: Any]
 
-    public subscript<T: IdentityGraph>(dynamicMember keyPath: KeyPath<Root, T>) -> T {
+    public subscript<T: Relational>(dynamicMember keyPath: KeyPath<Root, T>) -> T {
         get { values[keyPath] as! T }
     }
 
-    public subscript<T: IdentityGraph>(dynamicMember keyPath: KeyPath<Root, [T]>) -> [T] {
+    public subscript<T: Relational>(dynamicMember keyPath: KeyPath<Root, [T]>) -> [T] {
         get { values[keyPath] as! [T] }
     }
 

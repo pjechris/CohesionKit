@@ -2,7 +2,7 @@ import XCTest
 import CohesionKit
 import Combine
 
-class IdentityMapIdentityGraphTests: XCTestCase {
+class IdentityMapRelationalTests: XCTestCase {
     func test_update_graphObjectIsStored() {
         let identityMap = IdentityMap()
         let graph = GraphTest(
@@ -102,12 +102,12 @@ struct Graph: Identifiable, Equatable {
     let key: String
 }
 
-extension GraphTest: IdentityGraph {
-    var idKeyPath: KeyPath<GraphTest, GraphSingleChild.ID> { \.single.id }
+extension GraphTest: Relational {
+    var primaryKeyPath: KeyPath<GraphTest, GraphSingleChild> { \.single }
 
-    var identityKeyPaths: [IdentityKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
+    var relations: [RelationKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
 
-    func reduce(changes: IdentityValues<GraphTest>) -> GraphTest {
+    func reduce(changes: KeyPathUpdates<GraphTest>) -> GraphTest {
         GraphTest(single: changes.single, children: changes.children)
     }
 }
