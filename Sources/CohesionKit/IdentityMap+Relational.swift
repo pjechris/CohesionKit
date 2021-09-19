@@ -33,7 +33,7 @@ extension IdentityMap {
         return storage.publisher
     }
 
-    public func publisher<Model: Relational>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never> {
+    public func publisher<Model: Relational>(for model: Model.Type, id: Model.Identity.ID) -> AnyPublisher<Model, Never> {
         guard let storage = self[Model.self, id] else {
             let storage = Storage<Model>(id: id, identityMap: self)
 
@@ -45,7 +45,7 @@ extension IdentityMap {
         return storage.publisher
     }
 
-    public func get<Model: Relational>(for model: Model.Type, id: Model.ID) -> Model? {
+    public func get<Model: Relational>(for model: Model.Type, id: Model.Identity.ID) -> Model? {
         self[Model.self, id]?.subject.value?.object
     }
 

@@ -3,10 +3,11 @@ import CombineExt
 
 /// A model having relationships you want to store separately into an `IdentityMap`
 public protocol Relational {
-    associatedtype ID: Hashable
+    associatedtype Identity: Identifiable
 
-    /// key path to an `Ìdentity.ID` property which represent this map
-    var idKeyPath: KeyPath<Self, ID> { get }
+    /// key path to the "primary" `Identifiable` object which is used to define the object
+    /// identity
+    var primaryKeyPath: KeyPath<Self, Identity> { get }
 
     /// identities contained into the object that should be mapped
     var relations: [IdentityKeyPath<Self>] { get }
@@ -17,7 +18,7 @@ public protocol Relational {
 
 extension Relational {
     // don't use `id` naming in case it's already used by the object
-    var primaryID: ID { self[keyPath: idKeyPath] }
+    var primaryID: Identity.ID { self[keyPath: primaryKeyPath].id }
 }
 
 extension Relational {

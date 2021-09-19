@@ -103,7 +103,7 @@ struct Graph: Identifiable, Equatable {
 }
 
 extension GraphTest: Relational {
-    var idKeyPath: KeyPath<GraphTest, GraphSingleChild.ID> { \.single.id }
+    var primaryKeyPath: KeyPath<GraphTest, GraphSingleChild> { \.single }
 
     var relations: [IdentityKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
 
