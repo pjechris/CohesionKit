@@ -32,7 +32,7 @@ class IdentityMapTests: XCTestCase {
         XCTAssertNil(map.updateIfPresent(Entity.hello))
     }
 
-    func test_publisherForId_entityIsAddedAfterRequestingPublisher_entityIsEmitted() {
+    func test_publisherForId_entityIsAddedAfterRequesting_entityIsEmitted() {
         let map = IdentityMap()
         let publisher = map.publisher(for: Entity.self, id: Entity.hello.id)
         var receivedValue: Entity?

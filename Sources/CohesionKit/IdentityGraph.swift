@@ -30,7 +30,10 @@ extension IdentityGraph {
                     .map { (identityPath.keyPath, $0) }
             }
             .combineLatest()
+            // aggregate updates if multiple children are updated at once
+            .debounce(for: 0.1, scheduler: DispatchQueue.global(qos: .utility))
             .map { reduce(changes: IdentityValues(values: Dictionary(uniqueKeysWithValues: $0))) }
+            .prepend(self)
             .eraseToAnyPublisher()
     }
 }

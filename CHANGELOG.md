@@ -1,5 +1,9 @@
 ## Main branch
 
+### Fixed
+
+- When updating a graph relationships only one update should be triggered
+
 ## 0.3.0
 
 ### Breaking changes

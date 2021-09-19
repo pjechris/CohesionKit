@@ -1,5 +1,6 @@
 import XCTest
-@testable import CohesionKit
+import CohesionKit
+import Combine
 
 class IdentityMapIdentityGraphTests: XCTestCase {
     func test_update_graphObjectIsStored() {
@@ -15,7 +16,7 @@ class IdentityMapIdentityGraphTests: XCTestCase {
     }
 
     func test_update_whenChildIsUpdated_graphObjectIsUpdated() {
-        let expectation = XCTestExpectation()
+        let expectation = XCTestExpectation(description: "wait for updates")
         let identityMap = IdentityMap()
         let graph = GraphTest(
             single: .init(id: 1, value: "single node"),
@@ -27,7 +28,7 @@ class IdentityMapIdentityGraphTests: XCTestCase {
         _ = identityMap.update(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
 
         expectation.isInverted = true
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 0.5)
 
         XCTAssertEqual(identityMap.get(for: GraphSingleChild.self, id: 1), childUpdate)
         XCTAssertEqual(identityMap.get(for: GraphTest.self, id: 1)?.single, childUpdate)
@@ -47,6 +48,43 @@ class IdentityMapIdentityGraphTests: XCTestCase {
 
     XCTAssertNil(identityMap.get(for: GraphTest.self, id: 1))
   }
+    
+    func test_publisherForId_childrenAreUpdatedAsBatch_oneUpdateIsSent() {
+        let identityMap = IdentityMap()
+        let expectation = XCTestExpectation()
+        let id = 1
+        let updates = [
+            Graph(id: 1, key: "Hello1"),
+            Graph(id: 2, key: "Hello2"),
+            Graph(id: 3, key: "Hello3")
+        ]
+        let graph =
+            GraphTest(
+                single: GraphSingleChild(id: id, value: "Single"),
+                children: [
+                    Graph(id: 1, key: "Child1"),
+                    Graph(id: 2, key: "Child2"),
+                    Graph(id: 3, key: "Child3"),
+                ]
+            )
+        var receivedValueCount = 0
+        var cancellables: Set<AnyCancellable> = []
+        
+        _ = identityMap.update(graph)
+        
+        identityMap
+            .publisher(for: GraphTest.self, id: id)
+            .sink(receiveValue: { _ in receivedValueCount += 1 })
+            .store(in: &cancellables)
+        
+        _ = identityMap.update(updates)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) {
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 1)
+    }
 }
 
 struct GraphTest: Equatable {
