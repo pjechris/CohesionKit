@@ -1,6 +1,7 @@
 import Combine
 import CombineExt
 
+/// A model having relationships you want to store separately into an `IdentityMap`
 public protocol IdentityGraph {
     associatedtype ID: Hashable
 

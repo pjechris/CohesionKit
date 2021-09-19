@@ -1,7 +1,7 @@
 
 import Foundation
 
-/// Store values from an object inside a Dictionary which is queryable using `KeyPath`
+/// Query reltionships from Root using `KeyPath`
 @dynamicMemberLookup
 public struct IdentityValues<Root> {
     let values: [AnyKeyPath: Any]
