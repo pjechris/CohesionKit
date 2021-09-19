@@ -102,12 +102,12 @@ struct Graph: Identifiable, Equatable {
     let key: String
 }
 
-extension GraphTest: IdentityGraph {
+extension GraphTest: Relational {
     var idKeyPath: KeyPath<GraphTest, GraphSingleChild.ID> { \.single.id }
 
-    var identityKeyPaths: [IdentityKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
+    var relations: [IdentityKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
 
-    func reduce(changes: IdentityValues<GraphTest>) -> GraphTest {
+    func reduce(changes: KeyPathUpdates<GraphTest>) -> GraphTest {
         GraphTest(single: changes.single, children: changes.children)
     }
 }

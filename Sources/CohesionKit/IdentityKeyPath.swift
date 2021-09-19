@@ -5,7 +5,7 @@ public struct IdentityKeyPath<Root> {
     let keyPath: AnyKeyPath
     let update: (Root, IdentityMap, Stamp) -> AnyPublisher<Any, Never>
 
-    public init<T: IdentityGraph>(_ keyPath: KeyPath<Root, T>) {
+    public init<T: Relational>(_ keyPath: KeyPath<Root, T>) {
         self.keyPath = keyPath
         update = { root, identityMap, modificationId in
             identityMap
@@ -15,7 +15,7 @@ public struct IdentityKeyPath<Root> {
         }
     }
 
-    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: IdentityGraph {
+    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Relational {
         self.keyPath = keyPath
         update = { root, identityMap, modificationId in
             identityMap
