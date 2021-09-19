@@ -3,6 +3,7 @@
 ### Breaking changes
 
 - Methods named `update` and `updateIfPresent` were renamed `store` and `storeIfPresent`
+- `IdentityGraph` was renamed `Relational` and its attributes were renamed too. Have a look to the README for more details.
 
 ### Fixed
 
