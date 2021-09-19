@@ -2,13 +2,13 @@ import Combine
 import Foundation
 
 extension IdentityMap {
-    public func update<Model: IdentityGraph>(_ object: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never> {
-        guard let publisher = updateIfPresent(object, modifiedAt: modifiedAt) else {
+    public func store<Model: IdentityGraph>(_ object: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never> {
+        guard let publisher = storeIfPresent(object, modifiedAt: modifiedAt) else {
             let storage = Storage<Model>(id: object.idValue, identityMap: self)
 
             self[object] = storage
 
-            storage.forward(object.update(in: self, modifiedAt: modifiedAt), modifiedAt: modifiedAt)
+            storage.forward(object.store(in: self, modifiedAt: modifiedAt), modifiedAt: modifiedAt)
 
             return storage.publisher
         }
@@ -16,19 +16,19 @@ extension IdentityMap {
         return publisher
     }
 
-    public func update<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<[S.Element], Never> where S.Element: IdentityGraph {
+    public func store<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<[S.Element], Never> where S.Element: IdentityGraph {
         sequence
-            .map { object in update(object, modifiedAt: modifiedAt) }
+            .map { object in store(object, modifiedAt: modifiedAt) }
             .combineLatest()
     }
 
     @discardableResult
-    public func updateIfPresent<Model: IdentityGraph>(_ object: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never>? {
+    public func storeIfPresent<Model: IdentityGraph>(_ object: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never>? {
         guard let storage = self[object] else {
             return nil
         }
 
-        storage.forward(object.update(in: self, modifiedAt: modifiedAt), modifiedAt: modifiedAt)
+        storage.forward(object.store(in: self, modifiedAt: modifiedAt), modifiedAt: modifiedAt)
 
         return storage.publisher
     }

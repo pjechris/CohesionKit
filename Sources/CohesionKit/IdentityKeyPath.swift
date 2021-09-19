@@ -9,7 +9,7 @@ public struct IdentityKeyPath<Root> {
         self.keyPath = keyPath
         update = { root, identityMap, modificationId in
             identityMap
-                .update(root[keyPath: keyPath], modifiedAt: modificationId)
+                .store(root[keyPath: keyPath], modifiedAt: modificationId)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
@@ -19,7 +19,7 @@ public struct IdentityKeyPath<Root> {
         self.keyPath = keyPath
         update = { root, identityMap, modificationId in
             identityMap
-                .update(root[keyPath: keyPath], modifiedAt: modificationId)
+                .store(root[keyPath: keyPath], modifiedAt: modificationId)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
@@ -29,7 +29,7 @@ public struct IdentityKeyPath<Root> {
         self.keyPath = keyPath
         update = { root, identityMap, modificationId in
              identityMap
-                .update(root[keyPath: keyPath], modifiedAt: modificationId)
+                .store(root[keyPath: keyPath], modifiedAt: modificationId)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
@@ -40,7 +40,7 @@ public struct IdentityKeyPath<Root> {
         update = { root, identityMap, modificationId in
 
             root[keyPath: keyPath]
-                .map { identityMap.update($0, modifiedAt: modificationId) }
+                .map { identityMap.store($0, modifiedAt: modificationId) }
                 .combineLatest()
                 .map { $0 as Any }
                 .eraseToAnyPublisher()

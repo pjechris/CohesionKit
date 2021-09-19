@@ -80,7 +80,7 @@ More realistic example would be to load and save User when calling a webservice,
 ```swift
 func loadCurrentUser() -> AnyPublisher<User, Error> {
     loadMyUserFromWS()
-        .map { identityMap.update($0) }
+        .map { identityMap.store($0) }
         .switchToLatest()
         .eraseToAnyPublisher()
 }
@@ -101,9 +101,9 @@ You can use whatever you want as stamp as long as the type is `Double`
 ```swift
 let identityMap = IdentityMap()
 
-identityMap.update(xxx) // use default stamp: current date
-identityMap.update(xxx, modifiedAt: Date().stamp) // explicitly use Date time stamp
-identityMap.update(xxx, modifiedAt: 9000) // any Double value is valid
+identityMap.store(xxx) // use default stamp: current date
+identityMap.store(xxx, modifiedAt: Date().stamp) // explicitly use Date time stamp
+identityMap.store(xxx, modifiedAt: 9000) // any Double value is valid
 ```
 
 ## Relationships

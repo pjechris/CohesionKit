@@ -7,9 +7,9 @@ extension IdentityMap {
     /// You usually use this method in conjunction with `publisher(for:id:)` which will always create a storage for the
     /// model with specified id.
     /// - SeeAlso:
-    /// `IdentityMap.update(_,modifiedAt:)`
+    /// `IdentityMap.store(_,modifiedAt:)`
     @discardableResult
-    public func updateIfPresent<Model: Identifiable>(_ newObject: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never>? {
+    public func storeIfPresent<Model: Identifiable>(_ newObject: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never>? {
         guard let storage = self[newObject] else {
             return nil
         }
@@ -44,8 +44,8 @@ extension IdentityMap {
     /// You usually use this method in conjunction with `publisherIfPresent(for:id:)`
     /// - Returns: a Publisher emitting new values for the object. Object is guaranteed to stay in memory as long as someone is using the publisher
     /// - Parameter modifiedAt: If object has a higher modifiedAt value than previous store value then it will be updated with it, otherwise newObject value will be discarded. By default Date time is used to track `newObject` but you can use anything you want (an incremental id for example).
-    public func update<Model: Identifiable>(_ newObject: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never> {
-        guard let publisher = updateIfPresent(newObject, modifiedAt: modifiedAt) else {
+    public func store<Model: Identifiable>(_ newObject: Model, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<Model, Never> {
+        guard let publisher = storeIfPresent(newObject, modifiedAt: modifiedAt) else {
             let storage = Storage(object: newObject, modifiedAt: modifiedAt, identityMap: self)
 
             self[newObject] = storage
@@ -57,9 +57,9 @@ extension IdentityMap {
     }
     
     /// Add or update an object in the storage with its new value and use current date as object stamp
-    public func update<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<[S.Element], Never> where S.Element: Identifiable {
+    public func store<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp) -> AnyPublisher<[S.Element], Never> where S.Element: Identifiable {
         return sequence
-            .map { update($0, modifiedAt: modifiedAt) }
+            .map { store($0, modifiedAt: modifiedAt) }
             .combineLatest()
             .eraseToAnyPublisher()
     }

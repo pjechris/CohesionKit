@@ -1,5 +1,9 @@
 ## Main branch
 
+### Breaking changes
+
+- Methods named `update` and `updateIfPresent` were renamed `store` and `storeIfPresent`
+
 ### Fixed
 
 - When updating a graph relationships only one update should be triggered

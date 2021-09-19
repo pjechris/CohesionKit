@@ -10,12 +10,12 @@ class IdentityMapIdentityGraphTests: XCTestCase {
             children: [.init(id: 1, key: "child 1")]
         )
 
-        _ = identityMap.update(graph)
+        _ = identityMap.store(graph)
 
         XCTAssertEqual(identityMap.get(for: GraphTest.self, id: 1), graph)
     }
 
-    func test_update_whenChildIsUpdated_graphObjectIsUpdated() {
+    func test_store_whenChildIsUpdated_graphObjectIsUpdated() {
         let expectation = XCTestExpectation(description: "wait for updates")
         let identityMap = IdentityMap()
         let graph = GraphTest(
@@ -24,8 +24,8 @@ class IdentityMapIdentityGraphTests: XCTestCase {
         )
         let childUpdate = GraphSingleChild(id: 1, value: "single node updated")
 
-        _ = identityMap.update(graph, modifiedAt: Date().stamp)
-        _ = identityMap.update(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
+        _ = identityMap.store(graph, modifiedAt: Date().stamp)
+        _ = identityMap.store(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
 
         expectation.isInverted = true
         wait(for: [expectation], timeout: 0.5)
@@ -41,7 +41,7 @@ class IdentityMapIdentityGraphTests: XCTestCase {
       children: [.init(id: 1, key: "child 1")]
     )
 
-    let publisher = identityMap.update(graph)
+    let publisher = identityMap.store(graph)
     let cancellable = publisher.sink(receiveValue: { _ in })
 
     cancellable.cancel()
@@ -70,14 +70,14 @@ class IdentityMapIdentityGraphTests: XCTestCase {
         var receivedValueCount = 0
         var cancellables: Set<AnyCancellable> = []
         
-        _ = identityMap.update(graph)
+        _ = identityMap.store(graph)
         
         identityMap
             .publisher(for: GraphTest.self, id: id)
             .sink(receiveValue: { _ in receivedValueCount += 1 })
             .store(in: &cancellables)
         
-        _ = identityMap.update(updates)
+        _ = identityMap.store(updates)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) {
             expectation.fulfill()
