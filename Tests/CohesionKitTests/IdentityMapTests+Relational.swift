@@ -2,7 +2,7 @@ import XCTest
 import CohesionKit
 import Combine
 
-class IdentityMapIdentityGraphTests: XCTestCase {
+class IdentityMapRelationalTests: XCTestCase {
     func test_update_graphObjectIsStored() {
         let identityMap = IdentityMap()
         let graph = GraphTest(
