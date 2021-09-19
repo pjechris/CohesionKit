@@ -1,7 +1,7 @@
 import Combine
 
-/// A wrapper around a `Identifiable` or `IdentityGraph` relationship `KeyPath`
-public struct IdentityKeyPath<Root> {
+/// A `KeyPath` describing a `Identifiable` or `IdentityGraph` relationship on Root
+public struct RelationKeyPath<Root> {
     let keyPath: AnyKeyPath
     let update: (Root, IdentityMap, Stamp) -> AnyPublisher<Any, Never>
 

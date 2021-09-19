@@ -105,7 +105,7 @@ struct Graph: Identifiable, Equatable {
 extension GraphTest: Relational {
     var primaryKeyPath: KeyPath<GraphTest, GraphSingleChild> { \.single }
 
-    var relations: [IdentityKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
+    var relations: [RelationKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
 
     func reduce(changes: KeyPathUpdates<GraphTest>) -> GraphTest {
         GraphTest(single: changes.single, children: changes.children)

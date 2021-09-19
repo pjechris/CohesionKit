@@ -119,13 +119,13 @@ struct ProductComments
   let comments: [Comment]
 }
 
-// 2. Conform your model to IdentifiableGraph
-extension ProductComments: IdentifiableGraph {
+// 2. Conform your model to Relational
+extension ProductComments: Relational {
 
-  var idKeyPath: KeyPath<Self, Product.ID> { \.product.id }
-  var identityKeyPaths: [IdentityKeyPath<Self>] { [.init(\.product), .init(\.comments)]}
+  var primaryKeyPath: KeyPath<Self, Product> { \.product }
+  var relations: [IdentityKeyPath<Self>] { [.init(\.product), .init(\.comments)]}
 
-  func reduce(changes: IdentityValues<Self>) -> ProductComments {
+  func reduce(changes: KeyPathUpdates<Self>) -> ProductComments {
       ProductComments(
           product: changes.product,
           comments: changes.comments

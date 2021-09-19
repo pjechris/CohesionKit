@@ -5,7 +5,7 @@ extension MatchMarkets: Relational {
         \.match
     }
 
-    var relations: [IdentityKeyPath<MatchMarkets>] {
+    var relations: [RelationKeyPath<MatchMarkets>] {
         [.init(\.match), .init(\.markets)]
     }
 
@@ -20,7 +20,7 @@ extension MarketOutcomes: Relational {
         \.market
     }
 
-    var relations: [IdentityKeyPath<MarketOutcomes>] {
+    var relations: [RelationKeyPath<MarketOutcomes>] {
         [.init(\.market), .init(\.outcomes)]
     }
 

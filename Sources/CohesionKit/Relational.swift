@@ -10,7 +10,7 @@ public protocol Relational {
     var primaryKeyPath: KeyPath<Self, Identity> { get }
 
     /// identities contained into the object that should be mapped
-    var relations: [IdentityKeyPath<Self>] { get }
+    var relations: [RelationKeyPath<Self>] { get }
 
     /// return a new instance of Self after having applied changes
     func reduce(changes: KeyPathUpdates<Self>) -> Self
