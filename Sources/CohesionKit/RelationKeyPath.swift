@@ -5,7 +5,7 @@ public struct RelationKeyPath<Root> {
     let keyPath: AnyKeyPath
     let update: (Root, IdentityMap, Stamp) -> AnyPublisher<Any, Never>
     
-    init<T, Identity: Identifiable>(_ keyPath: KeyPath<Root, T>, relation: Relation<T, Identity>) {
+    public init<T, Identity: Identifiable>(_ keyPath: KeyPath<Root, T>, relation: Relation<T, Identity>) {
         self.keyPath = keyPath
         update = { root, identityMap, stamp in
             identityMap
@@ -14,22 +14,12 @@ public struct RelationKeyPath<Root> {
                 .eraseToAnyPublisher()
         }
     }
-
-    public init<T: Relational>(_ keyPath: KeyPath<Root, T>) {
+    
+    public init<T, Identity: Identifiable>(_ keyPath: KeyPath<Root, [T]>, relation: Relation<T, Identity>) {
         self.keyPath = keyPath
         update = { root, identityMap, modificationId in
             identityMap
-                .store(root[keyPath: keyPath], modifiedAt: modificationId)
-                .map { $0 as Any }
-                .eraseToAnyPublisher()
-        }
-    }
-
-    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Relational {
-        self.keyPath = keyPath
-        update = { root, identityMap, modificationId in
-            identityMap
-                .store(root[keyPath: keyPath], modifiedAt: modificationId)
+                .store(root[keyPath: keyPath], relation: relation, modifiedAt: modificationId)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
