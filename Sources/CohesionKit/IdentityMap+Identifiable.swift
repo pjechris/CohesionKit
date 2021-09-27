@@ -21,7 +21,7 @@ extension IdentityMap {
 
     /// Return current object value for `id` if an object with such `id` was previously inserted using `update(_:)` method
     public func get<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> Model? {
-        self[Model.self, id]?.subject.value?.object
+        self[Model.self, id: id]?.subject.value?.object
     }
 
     /// Remove object from storage
@@ -31,8 +31,8 @@ extension IdentityMap {
     
     /// Access the storage for a `Identifiable` model
     subscript<Model: Identifiable>(model: Model) -> Storage<Model>? {
-        get { self[Model.self, model.id] }
-        set { self[Model.self, model.id] = newValue }
+        get { self[Model.self, id: model.id] }
+        set { self[Model.self, id: model.id] = newValue }
     }
 }
 
@@ -66,7 +66,7 @@ extension IdentityMap {
 
     /// Return a publisher emitting event when receiving update for `id` if an object with such `id` was previously inserted using `update(_:)` method
     public func publisherIfPresent<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never>? {
-        self[Model.self, id]?.publisher
+        self[Model.self, id: id]?.publisher
     }
 
     /// Return a publisher emitting event when receiving update for `id`. Note that object might not be present in the storage
@@ -74,10 +74,10 @@ extension IdentityMap {
     ///
     /// Object is guaranteed to stay in memory as long as someone is using the publisher
     public func publisher<Model: Identifiable>(for model: Model.Type, id: Model.ID) -> AnyPublisher<Model, Never> {
-        guard let storage = self[Model.self, id] else {
+        guard let storage = self[Model.self, id: id] else {
             let storage = Storage<Model>(id: id, identityMap: self)
 
-            self[Model.self, id] = storage
+            self[Model.self, id: id] = storage
 
             return storage.publisher
         }

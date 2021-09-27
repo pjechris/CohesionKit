@@ -34,10 +34,10 @@ extension IdentityMap {
     }
 
     public func publisher<Model: Relational>(for model: Model.Type, id: Model.Identity.ID) -> AnyPublisher<Model, Never> {
-        guard let storage = self[Model.self, id] else {
+        guard let storage = self[Model.self, id: id] else {
             let storage = Storage<Model>(id: id, identityMap: self)
 
-            self[Model.self, id] = storage
+            self[Model.self, id: id] = storage
 
             return storage.publisher
         }
@@ -46,12 +46,12 @@ extension IdentityMap {
     }
 
     public func get<Model: Relational>(for model: Model.Type, id: Model.Identity.ID) -> Model? {
-        self[Model.self, id]?.subject.value?.object
+        self[Model.self, id: id]?.subject.value?.object
     }
 
     /// Access the storage for a `IdentityGraph` model
     subscript<Model: Relational>(model: Model) -> Storage<Model>? {
-        get { self[Model.self, model.primaryID] }
-        set { self[Model.self, model.primaryID] = newValue }
+        get { self[Model.self, id: model.primaryID] }
+        set { self[Model.self, id: model.primaryID] = newValue }
     }
 }

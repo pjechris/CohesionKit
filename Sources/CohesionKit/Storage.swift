@@ -27,17 +27,10 @@ class Storage<T> {
         }
     }
 
-    /// init an empty storage for a `Idenfitiable` object
-    convenience init(id: T.ID, identityMap: IdentityMap) where T: Identifiable {
+    /// init an empty storage
+    convenience init<ID: Hashable>(id: ID, identityMap: IdentityMap) {
         self.init(nil) { [weak identityMap] in
-            identityMap?.remove(for: T.self, id: id)
-        }
-    }
-
-    /// init an empty storage for an `IdentityGraph` object using its id
-    convenience init(id: T.Identity.ID, identityMap: IdentityMap) where T: Relational {
-        self.init(nil) { [weak identityMap] in
-            identityMap?.remove(for: T.self, id: id)
+            identityMap?[T.self, id: id] = nil
         }
     }
 

@@ -16,11 +16,11 @@ public class IdentityMap {
     }
     
     func remove<Model>(for model: Model.Type, id: Any) {
-        self[model, id] = nil
+        self[model, id: id] = nil
     }
 
     /// Access the storage for Model given its type and id
-    subscript<Model>(type: Model.Type, id: Any) -> Storage<Model>? {
+    subscript<Model>(type: Model.Type, id id: Any) -> Storage<Model>? {
         get { map["\(type)"]?[String(describing: id)] as? Storage<Model> }
         set { map["\(type)", default: [:]][String(describing: id)] = newValue }
     }
