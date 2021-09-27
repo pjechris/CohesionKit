@@ -22,5 +22,8 @@ public struct KeyPathUpdates<Root> {
         get { values[keyPath] as! [T] }
     }
 
-
+    /// a subscript used internally when using StorageDefinition
+    subscript<T>(keyPath: KeyPath<Root, T>) -> T {
+        get { values[keyPath] as! T }
+    }
 }

@@ -4,6 +4,16 @@ import Combine
 public struct RelationKeyPath<Root> {
     let keyPath: AnyKeyPath
     let update: (Root, IdentityMap, Stamp) -> AnyPublisher<Any, Never>
+    
+    init<T, Identity: Identifiable>(_ keyPath: KeyPath<Root, T>, relation: Relation<T, Identity>) {
+        self.keyPath = keyPath
+        update = { root, identityMap, stamp in
+            identityMap
+                .store(root[keyPath: keyPath], relation: relation, modifiedAt: stamp)
+                .map { $0 as Any }
+                .eraseToAnyPublisher()
+        }
+    }
 
     public init<T: Relational>(_ keyPath: KeyPath<Root, T>) {
         self.keyPath = keyPath
