@@ -1,6 +1,8 @@
 import Combine
 import CombineExt
 
+public typealias RelationIdentifiable<Element: Identifiable> = Relation<Element, Element>
+
 public struct Relation<Element, ElementIdentity: Identifiable> {
     /// key path to whose id will be used as `Element` identity
     let primaryKeyPath: KeyPath<Element, ElementIdentity>

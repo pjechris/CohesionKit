@@ -29,7 +29,7 @@ public struct RelationKeyPath<Root> {
         self.keyPath = keyPath
         update = { root, identityMap, modificationId in
              identityMap
-                .store(root[keyPath: keyPath], modifiedAt: modificationId)
+                .store(root[keyPath: keyPath], relation: RelationIdentifiable<T>(), modifiedAt: modificationId)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
@@ -38,9 +38,8 @@ public struct RelationKeyPath<Root> {
     public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Identifiable {
         self.keyPath = keyPath
         update = { root, identityMap, modificationId in
-
             root[keyPath: keyPath]
-                .map { identityMap.store($0, modifiedAt: modificationId) }
+                .map { identityMap.store($0, relation: RelationIdentifiable<S.Element>(), modifiedAt: modificationId) }
                 .combineLatest()
                 .map { $0 as Any }
                 .eraseToAnyPublisher()

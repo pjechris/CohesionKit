@@ -23,7 +23,7 @@ class Storage<T> {
     /// init storage with a initial value for a `Idenfitiable` object
     convenience init(object: T, modifiedAt: Stamp, identityMap: IdentityMap) where T: Identifiable {
         self.init(StampedObject(object: object, lastModification: modifiedAt)) { [weak identityMap] in
-            identityMap?.remove(object)
+            identityMap?[T.self, id: object.id] = nil
         }
     }
 
