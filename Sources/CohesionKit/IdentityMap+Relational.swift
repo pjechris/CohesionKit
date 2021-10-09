@@ -21,7 +21,10 @@ extension IdentityMap {
 
             self[Element.self, id: id] = storage
 
-            storage.forward(recursiveStore(element, relation: relation, modifiedAt: modifiedAt), modifiedAt: modifiedAt)
+            storage.forward(
+                recursiveStore(element, relation: relation, modifiedAt: modifiedAt),
+                modifiedAt: modifiedAt
+            )
 
             return storage.publisher
         }
@@ -57,7 +60,10 @@ extension IdentityMap {
             return nil
         }
 
-        storage.send(element, modifiedAt: modifiedAt)
+        storage.forward(
+            recursiveStore(element, relation: relation, modifiedAt: modifiedAt),
+            modifiedAt: modifiedAt
+        )
 
         return storage.publisher
     }

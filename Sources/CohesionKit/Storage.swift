@@ -20,13 +20,6 @@ class Storage<T> {
     private(set) var publisher: AnyPublisher<T, Never>!
     private var upstreamCancellable: AnyCancellable?
 
-    /// init storage with a initial value for a `Idenfitiable` object
-    convenience init(object: T, modifiedAt: Stamp, identityMap: IdentityMap) where T: Identifiable {
-        self.init(StampedObject(object: object, lastModification: modifiedAt)) { [weak identityMap] in
-            identityMap?[T.self, id: object.id] = nil
-        }
-    }
-
     /// init an empty storage
     convenience init<ID: Hashable>(id: ID, identityMap: IdentityMap) {
         self.init(nil) { [weak identityMap] in

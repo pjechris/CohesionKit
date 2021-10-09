@@ -11,9 +11,4 @@ public struct KeyPathUpdates<Root> {
     public subscript<T>(dynamicMember keyPath: KeyPath<Root, T>) -> T {
         get { updates[keyPath] as? T ?? root[keyPath: keyPath] }
     }
-
-    /// a subscript used internally when using StorageDefinition
-    subscript<T>(keyPath: KeyPath<Root, T>) -> T {
-        get { updates[keyPath] as? T ?? root[keyPath: keyPath] }
-    }
 }

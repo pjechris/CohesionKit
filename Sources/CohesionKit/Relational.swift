@@ -27,9 +27,9 @@ public struct Relation<Element, ElementIdentity: Identifiable> {
     
     public init() where Element == ElementIdentity {
         self.init(
-            primaryKeyPath: \Element.self,
-            identities: [.init(\Element.self)],
-            reduce: { $0[\Element.self] }
+            primaryKeyPath: \.self,
+            identities: [],
+            reduce: { $0.root }
         )
     }
 }
