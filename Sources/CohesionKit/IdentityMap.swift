@@ -24,5 +24,4 @@ public class IdentityMap {
         get { map["\(type)"]?[String(describing: id)] as? Storage<Model> }
         set { map["\(type)", default: [:]][String(describing: id)] = newValue }
     }
-
 }

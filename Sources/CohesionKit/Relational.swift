@@ -4,17 +4,17 @@ import CombineExt
 public typealias RelationIdentifiable<Element: Identifiable> = Relation<Element, Element>
 
 public struct Relation<Element, ElementIdentity: Identifiable> {
-    /// key path to whose id will be used as `Element` identity
-    let primaryKeyPath: KeyPath<Element, ElementIdentity>
-    
-    var idKeyPath: KeyPath<Element, ElementIdentity.ID> { primaryKeyPath.appending(path: \.id) }
-    
+    /// key path to an `Identifiable` object whose id will be used as identity
+    public let primaryKeyPath: KeyPath<Element, ElementIdentity>
+        
     /// object with their own identity contained in `Element` and that should be stored
     /// apart (to track them idepedently)
-    let identities: [RelationKeyPath<Element>]
+    public let identities: [RelationKeyPath<Element>]
     
-    /// create a new `Element` based on updates on item relations
-    let reduce: (KeyPathUpdates<Element>) -> Element
+    /// a function creating a new `Element` from updates
+    public let reduce: (KeyPathUpdates<Element>) -> Element
+    
+    var idKeyPath: KeyPath<Element, ElementIdentity.ID> { primaryKeyPath.appending(path: \.id) }
     
     public init(primaryKeyPath: KeyPath<Element, ElementIdentity>,
                 identities: [RelationKeyPath<Element>],
