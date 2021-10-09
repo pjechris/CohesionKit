@@ -5,30 +5,15 @@ import Foundation
 @dynamicMemberLookup
 public struct KeyPathUpdates<Root> {
     let root: Root
-    let values: [AnyKeyPath: Any]
-
-//    public subscript<T: Relational>(dynamicMember keyPath: KeyPath<Root, T>) -> T {
-//        get { values[keyPath] as! T }
-//    }
-//
-//    public subscript<T: Relational>(dynamicMember keyPath: KeyPath<Root, [T]>) -> [T] {
-//        get { values[keyPath] as! [T] }
-//    }
-
-//    public subscript<T: Identifiable>(dynamicMember keyPath: KeyPath<Root, T>) -> T {
-//        get { values[keyPath] as! T }
-//    }
-//
-//    public subscript<T: Identifiable>(dynamicMember keyPath: KeyPath<Root, [T]>) -> [T] {
-//        get { values[keyPath] as! [T] }
-//    }
+    let updates: [AnyKeyPath: Any]
     
-    subscript<T>(dynamicMember keyPath: KeyPath<Root, T>) -> T {
-        get { values[keyPath] as? T ?? root[keyPath: keyPath] }
+    /// return registered update or value from root
+    public subscript<T>(dynamicMember keyPath: KeyPath<Root, T>) -> T {
+        get { updates[keyPath] as? T ?? root[keyPath: keyPath] }
     }
 
     /// a subscript used internally when using StorageDefinition
     subscript<T>(keyPath: KeyPath<Root, T>) -> T {
-        get { values[keyPath] as? T ?? root[keyPath: keyPath] }
+        get { updates[keyPath] as? T ?? root[keyPath: keyPath] }
     }
 }
