@@ -21,7 +21,7 @@ extension IdentityMap {
 
             self[Element.self, id: id] = storage
 
-            storage.forward(
+            storage.merge(
                 recursiveStore(element, relation: relation, modifiedAt: modifiedAt),
                 modifiedAt: modifiedAt
             )
@@ -60,7 +60,7 @@ extension IdentityMap {
             return nil
         }
 
-        storage.forward(
+        storage.merge(
             recursiveStore(element, relation: relation, modifiedAt: modifiedAt),
             modifiedAt: modifiedAt
         )
@@ -93,15 +93,17 @@ extension IdentityMap {
         for relation: Relation<Element, Identity>,
         id: Identity.ID
     ) -> Element? {
-        self[Element.self, id: id]?.subject.value?.object
+        self[Element.self, id: id]?.value
     }
     
     private func recursiveStore<Element, Identity: Identifiable>(_ element: Element, relation: Relation<Element, Identity>, modifiedAt: Stamp) -> AnyPublisher<Element, Never> {
         relation
             .identities
             .map { identityPath in
+                // self.store()
+                
                 identityPath
-                    .update(element, self, modifiedAt)
+                    .store(element, self, modifiedAt)
                     .map { (identityPath.keyPath, $0) }
             }
             .combineLatest()
