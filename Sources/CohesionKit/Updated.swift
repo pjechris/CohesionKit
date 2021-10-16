@@ -1,9 +1,10 @@
-
 import Foundation
+
+public typealias Updater<Element> = (Updated<Element>) -> Element
 
 /// a container with updates made on `Root`
 @dynamicMemberLookup
-public struct KeyPathUpdates<Root> {
+public struct Updated<Root> {
     let root: Root
     let updates: [AnyKeyPath: Any]
     

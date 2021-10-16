@@ -12,13 +12,13 @@ public struct Relation<Element, Identity: Identifiable> {
     let identities: [RelationKeyPath<Element>]
     
     /// a function creating a new `Element` from updates
-    let reduce: (KeyPathUpdates<Element>) -> Element
+    let reduce: Updater<Element>
     
     /// - Parameter primaryKeyPath: key path to a `Identifiable` attribute which will be used as `Element` identity
     /// - Parameter identities: identities contained in Element. Don't include the one referenced by `primaryKeyPath`
     public init(primaryKeyPath: KeyPath<Element, Identity>,
                 identities: [RelationKeyPath<Element>],
-                reduce: @escaping (KeyPathUpdates<Element>) -> Element) {
+                reduce: @escaping Updater<Element>) {
         
         let isKeyPathSelf = primaryKeyPath == \Element.self
         // remove any identity relating to primaryKeyPath

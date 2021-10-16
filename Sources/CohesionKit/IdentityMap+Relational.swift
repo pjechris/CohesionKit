@@ -115,7 +115,7 @@ extension IdentityMap {
             .combineLatest()
             // aggregate updates if multiple children are updated in short time
             .debounce(for: 0.1, scheduler: DispatchQueue.global(qos: .utility))
-            .map { relation.reduce(KeyPathUpdates(root: element, updates: Dictionary(uniqueKeysWithValues: $0))) }
+            .map { relation.reduce(Updated(root: element, updates: Dictionary(uniqueKeysWithValues: $0))) }
             .prepend(element)
             .eraseToAnyPublisher()
     }
