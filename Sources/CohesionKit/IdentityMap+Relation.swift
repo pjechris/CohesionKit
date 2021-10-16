@@ -101,12 +101,12 @@ extension IdentityMap {
         relation: Relation<Element, Identity>,
         modifiedAt: Stamp)
     -> AnyPublisher<Element, Never> {
-        guard !relation.identities.isEmpty else {
+        guard !relation.children.isEmpty else {
             return Just(element).eraseToAnyPublisher()
         }
         
         return relation
-            .identities
+            .children
             .map { identityPath in
                 identityPath
                     .store(element, self, modifiedAt)

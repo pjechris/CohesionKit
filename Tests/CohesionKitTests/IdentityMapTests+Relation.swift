@@ -104,8 +104,8 @@ struct Graph: Identifiable, Equatable {
 
 extension Relation where Element == GraphTest, Identity == GraphSingleChild {
     static let graphTest = Relation(
-        primaryKeyPath: \.single,
-        identities: [RelationKeyPath(\.single), RelationKeyPath(\.children)],
+        primaryPath: \.single,
+        children: [RelationKeyPath(\.single), RelationKeyPath(\.children)],
         reduce: { GraphTest(single: $0.single, children: $0.children) }
     )
 }

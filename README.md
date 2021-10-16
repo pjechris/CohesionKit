@@ -122,7 +122,7 @@ struct ProductComments
 // 2. Conform your model to Relational
 extension ProductComments: Relational {
 
-  var primaryKeyPath: KeyPath<Self, Product> { \.product }
+  var primaryPath: KeyPath<Self, Product> { \.product }
   var relations: [RelationKeyPath<Self>] { [.init(\.product), .init(\.comments)]}
 
   func reduce(changes: KeyPathUpdates<Self>) -> ProductComments {

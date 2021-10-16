@@ -1,7 +1,7 @@
 import CohesionKit
 
 extension MatchMarkets: Relational {
-    var primaryKeyPath: KeyPath<MatchMarkets, Match> {
+    var primaryPath: KeyPath<MatchMarkets, Match> {
         \.match
     }
 
@@ -16,7 +16,7 @@ extension MatchMarkets: Relational {
 }
 
 extension MarketOutcomes: Relational {
-    var primaryKeyPath: KeyPath<MarketOutcomes, Market> {
+    var primaryPath: KeyPath<MarketOutcomes, Market> {
         \.market
     }
 
