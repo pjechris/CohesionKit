@@ -19,13 +19,13 @@ class Storage<T> {
     var value: T? { subject.value?.object }
 
     /// init an empty storage
-    convenience init<ID: Hashable>(id: ID, identityMap: IdentityMap) {
+    convenience init(id: Any, identityMap: IdentityMap) {
         self.init() { [weak identityMap] in
             identityMap?[T.self, id: id] = nil
         }
     }
 
-    private init(remove: @escaping () -> Void) {
+    init(remove: @escaping () -> Void) {
         self.subject = CurrentValueSubject(nil)
         self.publisher = subject
             .compactMap { $0?.object }

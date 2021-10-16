@@ -102,7 +102,7 @@ struct Graph: Identifiable, Equatable {
     let key: String
 }
 
-extension Relation where Element == GraphTest, ElementIdentity == GraphSingleChild {
+extension Relation where Element == GraphTest, Identity == GraphSingleChild {
     static let graphTest = Relation(
         primaryKeyPath: \.single,
         identities: [RelationKeyPath(\.single), RelationKeyPath(\.children)],

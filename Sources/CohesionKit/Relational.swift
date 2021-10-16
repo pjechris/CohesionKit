@@ -1,31 +1,36 @@
 import Combine
 import CombineExt
 
-public typealias RelationIdentifiable<Element: Identifiable> = Relation<Element, Element>
+public typealias IdentifiableRelation<Identity: Identifiable> = Relation<Identity, Identity>
 
-public struct Relation<Element, ElementIdentity: Identifiable> {
-    /// key path to an `Identifiable` object whose id will be used as identity
-    public let primaryKeyPath: KeyPath<Element, ElementIdentity>
+public struct Relation<Element, Identity: Identifiable> {
+    /// key path to `Element` id
+    let idKeyPath: KeyPath<Element, Identity.ID>
         
     /// object with their own identity contained in `Element` and that should be stored
     /// apart (to track them idepedently)
-    public let identities: [RelationKeyPath<Element>]
+    let identities: [RelationKeyPath<Element>]
     
     /// a function creating a new `Element` from updates
-    public let reduce: (KeyPathUpdates<Element>) -> Element
+    let reduce: (KeyPathUpdates<Element>) -> Element
     
-    var idKeyPath: KeyPath<Element, ElementIdentity.ID> { primaryKeyPath.appending(path: \.id) }
-    
-    public init(primaryKeyPath: KeyPath<Element, ElementIdentity>,
+    /// - Parameter primaryKeyPath: key path to a `Identifiable` attribute which will be used as `Element` identity
+    /// - Parameter identities: identities contained in Element. Don't include the one referenced by `primaryKeyPath`
+    public init(primaryKeyPath: KeyPath<Element, Identity>,
                 identities: [RelationKeyPath<Element>],
                 reduce: @escaping (KeyPathUpdates<Element>) -> Element) {
         
-        self.primaryKeyPath = primaryKeyPath
-        self.identities = identities
+        let isKeyPathSelf = primaryKeyPath == \Element.self
+        // remove any identity relating to primaryKeyPath
+        let identities = identities.filter { $0.keyPath != primaryKeyPath }
+        
+        self.idKeyPath = primaryKeyPath.appending(path: \.id)
+        // add primaryKeyPath in identities if it's not self
+        self.identities = identities + (isKeyPathSelf ? [] : [RelationKeyPath(primaryKeyPath)])
         self.reduce = reduce
     }
     
-    public init() where Element == ElementIdentity {
+    public init() where Element == Identity {
         self.init(
             primaryKeyPath: \.self,
             identities: [],

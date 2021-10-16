@@ -1,6 +1,6 @@
 import Combine
 
-/// A `KeyPath` describing a `Identifiable` or `IdentityGraph` relationship on Root
+/// A `KeyPath` to with its associated `Relation`
 public struct RelationKeyPath<Root> {
     let keyPath: AnyKeyPath
     /// method called when storing the element into IdentityMap
@@ -9,12 +9,12 @@ public struct RelationKeyPath<Root> {
     
     /// Build a relation from root with an `Identifiable` child
     public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {
-        self.init(keyPath, relation: Relation())
+        self.init(keyPath, relation: IdentifiableRelation())
     }
     
     /// Build a relation from root with a `Identifiable` sequence child
     public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Identifiable {
-        self.init(keyPath, relation: Relation())
+        self.init(keyPath, relation: IdentifiableRelation())
     }
     
     /// Build a relation from root with a child

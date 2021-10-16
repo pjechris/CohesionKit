@@ -96,12 +96,18 @@ extension IdentityMap {
         self[Element.self, id: id]?.value
     }
     
-    private func recursiveStore<Element, Identity: Identifiable>(_ element: Element, relation: Relation<Element, Identity>, modifiedAt: Stamp) -> AnyPublisher<Element, Never> {
-        relation
+    private func recursiveStore<Element, Identity: Identifiable>(
+        _ element: Element,
+        relation: Relation<Element, Identity>,
+        modifiedAt: Stamp)
+    -> AnyPublisher<Element, Never> {
+        guard !relation.identities.isEmpty else {
+            return Just(element).eraseToAnyPublisher()
+        }
+        
+        return relation
             .identities
             .map { identityPath in
-                // self.store()
-                
                 identityPath
                     .store(element, self, modifiedAt)
                     .map { (identityPath.keyPath, $0) }

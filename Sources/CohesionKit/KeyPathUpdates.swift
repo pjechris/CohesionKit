@@ -1,7 +1,7 @@
 
 import Foundation
 
-/// a struct containing updates made on `Root`
+/// a container with updates made on `Root`
 @dynamicMemberLookup
 public struct KeyPathUpdates<Root> {
     let root: Root
