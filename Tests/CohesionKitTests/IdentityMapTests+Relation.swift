@@ -102,10 +102,10 @@ struct Graph: Identifiable, Equatable {
     let key: String
 }
 
-extension Relation where Element == GraphTest, Identity == GraphSingleChild {
+extension Relation where Element == GraphTest, ID == GraphSingleChild.ID {
     static let graphTest = Relation(
-        primaryPath: \.single,
-        children: [RelationKeyPath(\.single), RelationKeyPath(\.children)],
+        primaryChildPath: \.single,
+        otherChildren: [RelationKeyPath(\.single), RelationKeyPath(\.children)],
         reduce: { GraphTest(single: $0.single, children: $0.children) }
     )
 }

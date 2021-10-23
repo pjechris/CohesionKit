@@ -32,10 +32,10 @@ public class IdentityMap {
     /// - Parameter element: the element to add or update
     /// - Parameter relation: Describe the element and how it will be inserted into the identity map.
     /// - Parameter modifiedAt: If value is higher than previous update then the element will be updated. Otherwise changes will be ignored.
-    public func store<Element, Identity: Identifiable>(
+    public func store<Element, ID: Hashable>(
         _ element: Element,
-        relation: Relation<Element, Identity>,
-        modifiedAt: Stamp
+        relation: Relation<Element, ID>,
+        modifiedAt: Stamp = Date().stamp
     ) -> AnyPublisher<Element, Never> {
         let id = element[keyPath: relation.idKeyPath]
         
@@ -57,10 +57,10 @@ public class IdentityMap {
     
     /// Add or update multiple elements at once into the storage
     /// - Returns: a Publisher emitting a new value when any element from `sequence` is updated in the identity map
-    public func store<S: Sequence, Identity: Identifiable>(
+    public func store<S: Sequence, ID: Hashable>(
         _ sequence: S,
-        relation: Relation<S.Element, Identity>,
-        modifiedAt: Stamp
+        relation: Relation<S.Element, ID>,
+        modifiedAt: Stamp = Date().stamp
     ) -> AnyPublisher<[S.Element], Never> {
         sequence
             .map { object in store(object, relation: relation, modifiedAt: modifiedAt) }
@@ -74,10 +74,10 @@ public class IdentityMap {
     /// - SeeAlso:
     /// `IdentityMap.store(_,relation:,modifiedAt:)`
     @discardableResult
-    public func storeIfPresent<Element, Identity: Identifiable>(
+    public func storeIfPresent<Element, ID: Hashable>(
         _ element: Element,
-        relation: Relation<Element, Identity>,
-        modifiedAt: Stamp
+        relation: Relation<Element, ID>,
+        modifiedAt: Stamp = Date().stamp
     ) -> AnyPublisher<Element, Never>? {
         guard let storage = self[Element.self, id: element[keyPath: relation.idKeyPath]] else {
             return nil
@@ -96,9 +96,9 @@ public class IdentityMap {
     /// Thus this publisher *might* never send any value.
     ///
     /// Object stay in memory as long as someone is using the publisher
-    public func publisher<Element, Identity: Identifiable>(
-        for relation: Relation<Element, Identity>,
-        id: Identity.ID
+    public func publisher<Element, ID: Hashable>(
+        for relation: Relation<Element, ID>,
+        id: ID
     ) -> AnyPublisher<Element, Never> {
         guard let storage = self[Element.self, id: id] else {
             let storage = Storage<Element>(id: id, identityMap: self)
@@ -112,24 +112,24 @@ public class IdentityMap {
     }
 
     /// Return element with matching `id` if an object with such `id` was previously inserted
-    public func get<Element, Identity: Identifiable>(
-        for relation: Relation<Element, Identity>,
-        id: Identity.ID
+    public func get<Element, ID: Hashable>(
+        for relation: Relation<Element, ID>,
+        id: ID
     ) -> Element? {
         self[Element.self, id: id]?.value
     }
     
-    private func recursiveStore<Element, Identity: Identifiable>(
+    private func recursiveStore<Element, ID: Hashable>(
         _ element: Element,
-        relation: Relation<Element, Identity>,
-        modifiedAt: Stamp)
-    -> AnyPublisher<Element, Never> {
-        guard !relation.children.isEmpty else {
+        relation: Relation<Element, ID>,
+        modifiedAt: Stamp = Date().stamp
+    ) -> AnyPublisher<Element, Never> {
+        guard !relation.allChildren.isEmpty else {
             return Just(element).eraseToAnyPublisher()
         }
         
         return relation
-            .children
+            .allChildren
             .map { identityPath in
                 identityPath
                     .store(element, self, modifiedAt)

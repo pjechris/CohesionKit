@@ -9,17 +9,17 @@ public struct RelationKeyPath<Root> {
     
     /// Build a relation from root with an `Identifiable` child
     public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {
-        self.init(keyPath, relation: SingleRelation())
+        self.init(keyPath, relation: Relation.single())
     }
     
     /// Build a relation from root with a `Identifiable` sequence child
     public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Identifiable {
-        self.init(keyPath, relation: SingleRelation())
+        self.init(keyPath, relation: Relation.single())
     }
     
     /// Build a relation from root with a child
     /// - Parameter relation: the object describing the child own relations
-    public init<T, Identity: Identifiable>(_ keyPath: KeyPath<Root, T>, relation: Relation<T, Identity>) {
+    public init<T, ID: Hashable>(_ keyPath: KeyPath<Root, T>, relation: Relation<T, ID>) {
         self.keyPath = keyPath
         store = { root, identityMap, stamp in
             identityMap
@@ -30,7 +30,7 @@ public struct RelationKeyPath<Root> {
     }
     
     /// Build a relation from root with a sequence child
-    public init<S: Sequence, Identity: Identifiable>(_ keyPath: KeyPath<Root, S>, relation: Relation<S.Element, Identity>) {
+    public init<S: Sequence, ID: Hashable>(_ keyPath: KeyPath<Root, S>, relation: Relation<S.Element, ID>) {
         self.keyPath = keyPath
         store = { root, identityMap, modificationId in
             identityMap
