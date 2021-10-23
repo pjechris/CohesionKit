@@ -7,7 +7,7 @@ extension IdentityMap {
         _ element: Element,
         modifiedAt: Stamp = Date().stamp)
     -> AnyPublisher<Element, Never> {
-        store(element, relation: Relation.single(), modifiedAt: modifiedAt)
+        store(element, using: Relation.single(), modifiedAt: modifiedAt)
     }
     
     /// Add or update multiple `Identifiable` elements at once into the storage
@@ -16,7 +16,7 @@ extension IdentityMap {
         modifiedAt: Stamp = Date().stamp
     ) -> AnyPublisher<[S.Element], Never>
     where S.Element: Identifiable {
-        store(sequence, relation: Relation.single(), modifiedAt: modifiedAt)
+        store(sequence, using: Relation.single(), modifiedAt: modifiedAt)
     }
     
     /// Update `Identifiable` element in the storage only if it's already in it. Otherwise discard the changes.
@@ -25,16 +25,16 @@ extension IdentityMap {
         _ element: Element,
         modifiedAt: Stamp = Date().stamp
     ) -> AnyPublisher<Element, Never>? {
-        storeIfPresent(element, relation: Relation.single(), modifiedAt: modifiedAt)
+        storeIfPresent(element, using: Relation.single(), modifiedAt: modifiedAt)
     }
     
     /// Return a publisher emitting event when receiving update for `id`.
     public func publisher<Element: Identifiable>(for element: Element.Type, id: Element.ID) -> AnyPublisher<Element, Never> {
-        publisher(for: Relation.single(), id: id)
+        publisher(using: Relation.single(), id: id)
     }
     
     /// Return element with matching `id` if an object with such `id` was previously inserted
     public func get<Element: Identifiable>(for element: Element.Type, id: Element.ID) -> Element? {
-        get(for: Relation.single(), id: id)
+        get(using: Relation.single(), id: id)
     }
 }

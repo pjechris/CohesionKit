@@ -10,7 +10,7 @@ class IdentityMapRelationalTests: XCTestCase {
             children: [.init(id: 1, key: "child 1")]
         )
 
-        _ = identityMap.store(graph, relation: Relation.graphTest, modifiedAt: Date().stamp)
+        _ = identityMap.store(graph, using: Relation.graphTest, modifiedAt: Date().stamp)
 
         XCTAssertEqual(identityMap.get(for: Relation.graphTest, id: 1), graph)
     }
@@ -24,7 +24,7 @@ class IdentityMapRelationalTests: XCTestCase {
         )
         let childUpdate = GraphSingleChild(id: 1, value: "single node updated")
 
-        _ = identityMap.store(graph, relation: Relation.graphTest, modifiedAt: Date().stamp)
+        _ = identityMap.store(graph, using: Relation.graphTest, modifiedAt: Date().stamp)
         _ = identityMap.store(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
 
         expectation.isInverted = true
@@ -41,7 +41,7 @@ class IdentityMapRelationalTests: XCTestCase {
       children: [.init(id: 1, key: "child 1")]
     )
 
-    let publisher = identityMap.store(graph, relation: Relation.graphTest, modifiedAt: Date().stamp)
+    let publisher = identityMap.store(graph, using: Relation.graphTest, modifiedAt: Date().stamp)
     let cancellable = publisher.sink(receiveValue: { _ in })
 
     cancellable.cancel()
@@ -70,7 +70,7 @@ class IdentityMapRelationalTests: XCTestCase {
         var receivedValueCount = 0
         var cancellables: Set<AnyCancellable> = []
         
-        _ = identityMap.store(graph, relation: Relation.graphTest, modifiedAt: Date().stamp)
+        _ = identityMap.store(graph, using: Relation.graphTest, modifiedAt: Date().stamp)
         
         identityMap
             .publisher(for: Relation.graphTest.self, id: id)

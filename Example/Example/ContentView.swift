@@ -8,6 +8,7 @@ class MatchListViewModel: ObservableObject {
     func load() {
         repository
             .loadMatches()
+            .receive(on: DispatchQueue.main)
             .assign(to: &$matches)
     }
 }

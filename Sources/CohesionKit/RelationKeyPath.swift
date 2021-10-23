@@ -23,7 +23,7 @@ public struct RelationKeyPath<Root> {
         self.keyPath = keyPath
         store = { root, identityMap, stamp in
             identityMap
-                .store(root[keyPath: keyPath], relation: relation, modifiedAt: stamp)
+                .store(root[keyPath: keyPath], using: relation, modifiedAt: stamp)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
@@ -34,7 +34,7 @@ public struct RelationKeyPath<Root> {
         self.keyPath = keyPath
         store = { root, identityMap, modificationId in
             identityMap
-                .store(root[keyPath: keyPath], relation: relation, modifiedAt: modificationId)
+                .store(root[keyPath: keyPath], using: relation, modifiedAt: modificationId)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
