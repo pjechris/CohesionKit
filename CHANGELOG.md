@@ -3,7 +3,7 @@
 ### Breaking changes
 
 - Methods named `update` and `updateIfPresent` were renamed `store` and `storeIfPresent`
-- `IdentityGraph` was renamed `Relational` and its attributes were renamed too. Have a look to the README for more details.
+- `IdentityGraph` is replaced by `Relation`. You should create relation objects in order to store data in IdentityMap. Have a look to the README for more details.
 
 ### Fixed
 

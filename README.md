@@ -53,7 +53,7 @@ CohesionKit is based on [Identity Map pattern](http://martinfowler.com/eaaCatalo
 1. You ask `IdentityMap` for the data which will be returned to you as `Combine.AnyPublisher`. Now any updates that will be made into `IdentityMap` will be sent to you.
 2. Send updates for these data to `IdentityMap`. Anyone that asked for them will then be notified of the updates thanks to `Combine.AnyPublisher`.
 
-## Adding an object
+## Adding a (Identifiable) object
 
 First create an `IdentityMap`:
 
@@ -61,12 +61,12 @@ First create an `IdentityMap`:
 let identityMap = IdentityMap()
 ```
 
-Then add your object inside it:
+If your object is `Identifiable` then you can store it directly in the identity map:
 
 ```swift
 let user = User(id: 42, name: "John Doe")
 
-identityMap.update(user)
+identityMap.store(user)
 ```
 
 Your object is now in the identity map and can be retrieved by **anyone**:
@@ -106,11 +106,11 @@ identityMap.store(xxx, modifiedAt: Date().stamp) // explicitly use Date time sta
 identityMap.store(xxx, modifiedAt: 9000) // any Double value is valid
 ```
 
-## Relationships
+## Relationships / Non Identifiable objects
 
-To store relational objects in identity map you must make your model conform to `Relational`. CohesionKit will then lookup for children objects and store them.
+When dealing with complex objects containing other identity objects you'll have to use an additional object: `Relation`. `Relation` describe how to store (and update) each object children in order to keep it up-to-date.
 
-Nonetheless we strongly recommand to avoid deep nested relationships and we **strongly** advise to use [Aggregate objects](https://swiftunwrap.com/article/modeling-done-right/).
+> While complex objects DO exist in projects, we recommend to avoid deep nested relationships and we **strongly** advise to use [Aggregate objects](https://swiftunwrap.com/article/modeling-done-right/).
 
 ```swift
 // 1. Create your model
@@ -119,23 +119,19 @@ struct ProductComments
   let comments: [Comment]
 }
 
-// 2. Conform your model to Relational
-extension ProductComments: Relational {
-
-  var primaryKeyPath: KeyPath<Self, Product> { \.product }
-  var relations: [RelationKeyPath<Self>] { [.init(\.product), .init(\.comments)]}
-
-  func reduce(changes: KeyPathUpdates<Self>) -> ProductComments {
-      ProductComments(
-          product: changes.product,
-          comments: changes.comments
-      )
-  }
+// 2. Create a Relation object describing it
+enum Relations {
+  static let productComments =
+    Relation(
+        primaryChildPath: \.product,
+        otherChildren: [.init(\.product), .init(\.comments)],
+        reduce: { ProductComments(product: $0.product, comments: $0.comments) }
+    )
 }
 
 // 3. Then you can get/store it from/into IdentityMap
-identityMap.update(ProductComment(...))
-identityMap.publisher(for: ProductComments.self, id: xx)
+identityMap.store(ProductComment(...), using: Relations.productComments)
+identityMap.publisher(using: Relations.productComments, id: xx)
 ```
 
 # License

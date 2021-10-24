@@ -10,9 +10,9 @@ class IdentityMapRelationalTests: XCTestCase {
             children: [.init(id: 1, key: "child 1")]
         )
 
-        _ = identityMap.store(graph)
+        _ = identityMap.store(graph, using: Relations.graphTest)
 
-        XCTAssertEqual(identityMap.get(for: GraphTest.self, id: 1), graph)
+        XCTAssertEqual(identityMap.get(using: Relations.graphTest, id: 1), graph)
     }
 
     func test_store_whenChildIsUpdated_graphObjectIsUpdated() {
@@ -24,14 +24,14 @@ class IdentityMapRelationalTests: XCTestCase {
         )
         let childUpdate = GraphSingleChild(id: 1, value: "single node updated")
 
-        _ = identityMap.store(graph, modifiedAt: Date().stamp)
+        _ = identityMap.store(graph, using: Relations.graphTest)
         _ = identityMap.store(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
 
         expectation.isInverted = true
         wait(for: [expectation], timeout: 0.5)
 
         XCTAssertEqual(identityMap.get(for: GraphSingleChild.self, id: 1), childUpdate)
-        XCTAssertEqual(identityMap.get(for: GraphTest.self, id: 1)?.single, childUpdate)
+        XCTAssertEqual(identityMap.get(using: Relations.graphTest, id: 1)?.single, childUpdate)
     }
 
   func test_publisher_whenCanceled_noSubscriber_objectIsRemoved() {
@@ -41,12 +41,12 @@ class IdentityMapRelationalTests: XCTestCase {
       children: [.init(id: 1, key: "child 1")]
     )
 
-    let publisher = identityMap.store(graph)
+    let publisher = identityMap.store(graph, using: Relations.graphTest)
     let cancellable = publisher.sink(receiveValue: { _ in })
 
     cancellable.cancel()
 
-    XCTAssertNil(identityMap.get(for: GraphTest.self, id: 1))
+    XCTAssertNil(identityMap.get(using: Relations.graphTest, id: 1))
   }
     
     func test_publisherForId_childrenAreUpdatedAsBatch_oneUpdateIsSent() {
@@ -70,10 +70,10 @@ class IdentityMapRelationalTests: XCTestCase {
         var receivedValueCount = 0
         var cancellables: Set<AnyCancellable> = []
         
-        _ = identityMap.store(graph)
+        _ = identityMap.store(graph, using: Relations.graphTest)
         
         identityMap
-            .publisher(for: GraphTest.self, id: id)
+            .publisher(using: Relations.graphTest, id: id)
             .sink(receiveValue: { _ in receivedValueCount += 1 })
             .store(in: &cancellables)
         
@@ -102,12 +102,10 @@ struct Graph: Identifiable, Equatable {
     let key: String
 }
 
-extension GraphTest: Relational {
-    var primaryKeyPath: KeyPath<GraphTest, GraphSingleChild> { \.single }
-
-    var relations: [RelationKeyPath<GraphTest>] { [.init(\.single), .init(\.children)] }
-
-    func reduce(changes: KeyPathUpdates<GraphTest>) -> GraphTest {
-        GraphTest(single: changes.single, children: changes.children)
-    }
+enum Relations {
+    static let graphTest = Relation(
+        primaryChildPath: \.single,
+        otherChildren: [RelationKeyPath(\.single), RelationKeyPath(\.children)],
+        reduce: { GraphTest(single: $0.single, children: $0.children) }
+    )
 }

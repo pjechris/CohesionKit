@@ -1,47 +1,40 @@
 import Combine
 
-/// A `KeyPath` describing a `Identifiable` or `IdentityGraph` relationship on Root
+/// A `KeyPath` with its associated `Relation`
 public struct RelationKeyPath<Root> {
     let keyPath: AnyKeyPath
-    let update: (Root, IdentityMap, Stamp) -> AnyPublisher<Any, Never>
-
-    public init<T: Relational>(_ keyPath: KeyPath<Root, T>) {
-        self.keyPath = keyPath
-        update = { root, identityMap, modificationId in
-            identityMap
-                .store(root[keyPath: keyPath], modifiedAt: modificationId)
-                .map { $0 as Any }
-                .eraseToAnyPublisher()
-        }
-    }
-
-    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Relational {
-        self.keyPath = keyPath
-        update = { root, identityMap, modificationId in
-            identityMap
-                .store(root[keyPath: keyPath], modifiedAt: modificationId)
-                .map { $0 as Any }
-                .eraseToAnyPublisher()
-        }
-    }
-
+    /// method called when storing the element into IdentityMap
+    /// we define it here in order to access the keypath exact type in `init`
+    let store: (Root, IdentityMap, Stamp) -> AnyPublisher<Any, Never>
+    
+    /// Build a relation from root with an `Identifiable` child
     public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {
+        self.init(keyPath, relation: Relation.single())
+    }
+    
+    /// Build a relation from root with a `Identifiable` sequence child
+    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Identifiable {
+        self.init(keyPath, relation: Relation.single())
+    }
+    
+    /// Build a relation from root with a child
+    /// - Parameter relation: the object describing the child own relations
+    public init<T, ID: Hashable>(_ keyPath: KeyPath<Root, T>, relation: Relation<T, ID>) {
         self.keyPath = keyPath
-        update = { root, identityMap, modificationId in
-             identityMap
-                .store(root[keyPath: keyPath], modifiedAt: modificationId)
+        store = { root, identityMap, stamp in
+            identityMap
+                .store(root[keyPath: keyPath], using: relation, modifiedAt: stamp)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }
     }
-
-    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S.Element: Identifiable {
+    
+    /// Build a relation from root with a sequence child
+    public init<S: Sequence, ID: Hashable>(_ keyPath: KeyPath<Root, S>, relation: Relation<S.Element, ID>) {
         self.keyPath = keyPath
-        update = { root, identityMap, modificationId in
-
-            root[keyPath: keyPath]
-                .map { identityMap.store($0, modifiedAt: modificationId) }
-                .combineLatest()
+        store = { root, identityMap, modificationId in
+            identityMap
+                .store(root[keyPath: keyPath], using: relation, modifiedAt: modificationId)
                 .map { $0 as Any }
                 .eraseToAnyPublisher()
         }

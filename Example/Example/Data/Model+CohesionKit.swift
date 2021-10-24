@@ -1,30 +1,17 @@
 import CohesionKit
 
-extension MatchMarkets: Relational {
-    var primaryKeyPath: KeyPath<MatchMarkets, Match> {
-        \.match
-    }
-
-    var relations: [RelationKeyPath<MatchMarkets>] {
-        [.init(\.match), .init(\.markets)]
-    }
-
-    func reduce(changes: KeyPathUpdates<MatchMarkets>) -> MatchMarkets {
-        MatchMarkets(match: changes.match, markets: changes.markets)
-    }
+enum Relations {
+    static let matchMarkets =
+        Relation(
+            primaryChildPath: \.match,
+            otherChildren: [.init(\.markets, relation: Relations.marketOutcomes)],
+            reduce: { MatchMarkets(match: $0.match, markets: $0.markets) }
+        )
     
-}
-
-extension MarketOutcomes: Relational {
-    var primaryKeyPath: KeyPath<MarketOutcomes, Market> {
-        \.market
-    }
-
-    var relations: [RelationKeyPath<MarketOutcomes>] {
-        [.init(\.market), .init(\.outcomes)]
-    }
-
-    func reduce(changes: KeyPathUpdates<MarketOutcomes>) -> MarketOutcomes {
-        MarketOutcomes(market: changes.market, outcomes: changes.outcomes)
-    }
+    static let marketOutcomes =
+        Relation(
+            primaryChildPath: \.market,
+            otherChildren: [.init(\.outcomes)],
+            reduce: { MarketOutcomes(market: $0.market, outcomes: $0.outcomes) }
+        )
 }
