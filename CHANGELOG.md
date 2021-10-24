@@ -1,5 +1,7 @@
 ## Main branch
 
+## 0.4.0
+
 ### Breaking changes
 
 - Methods named `update` and `updateIfPresent` were renamed `store` and `storeIfPresent`
