@@ -50,7 +50,7 @@ public class IdentityMap {
     }
     
     /// Register a storage under a given alias. Values will be accessible using this alias
-    func register<Model>(storage valueStorage: Storage<Model>, alias: String?) {
+    func register<Model>(alias: String?, storage valueStorage: Storage<Model>) {
         guard let key = alias else {
             return
         }
@@ -102,7 +102,7 @@ public class IdentityMap {
             modifiedAt: modifiedAt
         )
         
-        register(storage: storage, alias: alias)
+        register(alias: alias, storage: storage)
 
         return storage.publisher
     }
