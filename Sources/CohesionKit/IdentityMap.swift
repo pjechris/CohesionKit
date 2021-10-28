@@ -55,7 +55,7 @@ public class IdentityMap {
             return
         }
         
-        let storage = storage(aliased: key) as Storage<Model>
+        let storage = self.storage(aliased: key) as Storage<Model>
         
         storage.merge(valueStorage.publisher, modifiedAt: Date().stamp)
         
