@@ -69,7 +69,7 @@ let user = User(id: 42, name: "John Doe")
 identityMap.store(user)
 ```
 
-Your object is can now be retrieved by **anyone**:
+Your object can now be retrieved by **anyone**:
 
 ```swift
 /// somewhere else in the code
