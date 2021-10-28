@@ -5,9 +5,10 @@ extension IdentityMap {
     /// Add or update an `Identifiable` element in the storage with its new value.
     public func store<Element: Identifiable>(
         _ element: Element,
+        alias: String? = nil,
         modifiedAt: Stamp = Date().stamp)
     -> AnyPublisher<Element, Never> {
-        store(element, using: Relation.single(), modifiedAt: modifiedAt)
+        store(element, using: Relation.single(), alias: alias, modifiedAt: modifiedAt)
     }
     
     /// Add or update multiple `Identifiable` elements at once into the storage
@@ -23,9 +24,10 @@ extension IdentityMap {
     @discardableResult
     public func storeIfPresent<Element: Identifiable>(
         _ element: Element,
+        alias: String? = nil,
         modifiedAt: Stamp = Date().stamp
     ) -> AnyPublisher<Element, Never>? {
-        storeIfPresent(element, using: Relation.single(), modifiedAt: modifiedAt)
+        storeIfPresent(element, using: Relation.single(), alias: alias, modifiedAt: modifiedAt)
     }
     
     /// Return a publisher emitting event when receiving update for `id`.

@@ -1,5 +1,9 @@
 ## Main branch
 
+### Added
+
+- Ability to define aliases on stored values. This allow you to retrieve them without knowing their id.
+
 ## 0.4.0
 
 ### Breaking changes
