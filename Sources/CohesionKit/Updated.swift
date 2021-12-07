@@ -1,8 +1,11 @@
 import Foundation
 
+/// a function transforming `Updated<Element>` into `Element`
 public typealias Updater<Element> = (Updated<Element>) -> Element
 
-/// a container with updates made on `Root`
+/// A container with updates made on `Root`
+///
+/// You can access updates using `Root` member names: `Updated<User>(..).username`
 @dynamicMemberLookup
 public struct Updated<Root> {
     let root: Root

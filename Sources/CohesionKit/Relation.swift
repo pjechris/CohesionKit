@@ -1,7 +1,7 @@
 import Combine
 import CombineExt
 
-/// A representation of `Root` structure for storing in a `IdentityMap`
+/// A representation of `Root` structure for storing in `IdentityMap`
 public struct Relation<Element, ID: Hashable> {
     /// key path to `Element` id
     let idKeyPath: KeyPath<Element, ID>
@@ -13,7 +13,9 @@ public struct Relation<Element, ID: Hashable> {
     let reduce: Updater<Element>
 
     /// - Parameter primaryChildPath: key path to a `Identifiable` attribute which will be used as `Element` identity
-    /// - Parameter otherChildren: identities contained in Element. Don't include the one referenced by `primaryPath`
+    /// - Parameter otherChildren: identities contained in Element that should be stored separately. Don't include the one referenced by `primaryPath`
+    /// - Parameter reduce: Swift has no proper reflection API so we need you to tell us how to create `Element` when
+    /// receiving updates (basically: `MyStruct(param1: $0.param1)`)
     public init<Identity: Identifiable>(
         primaryChildPath: KeyPath<Element, Identity>,
         otherChildren: [RelationKeyPath<Element>],
