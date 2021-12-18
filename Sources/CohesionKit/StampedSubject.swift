@@ -1,17 +1,13 @@
-//
-//  File.swift
-//  
-//
-//  Created by JC on 06/05/2021.
-//
-
 import Foundation
 import Combine
 import CombineExt
 
 typealias StampedObject<D> = (object: D, modifiedAt: Stamp)
 
-class Storage<T> {
+/// A "subject" wrapping a `StampedObject` and publishing a new element whenever the value change.
+///
+/// This "subject" can have only one subscriber
+class StampedSubject<T> {
     private let subject: CurrentValueSubject<StampedObject<T>?, Never>
     private(set) var publisher: AnyPublisher<T, Never>!
     private var upstreamCancellable: AnyCancellable?

@@ -4,7 +4,7 @@ import CombineExt
 /// An `IdentityMap` coupled to an element type using its `Relation` description.
 ///
 /// This object is generated when using `RegistryIdentityMap`
-public struct TiedIdentityMap<Element, ID: Hashable> {
+public struct RegisteredIdentityMap<Element, ID: Hashable> {
     public typealias ElementPublisher = AnyPublisher<Element, Never>
     public typealias ElementArrayPublisher = AnyPublisher<[Element], Never>
     

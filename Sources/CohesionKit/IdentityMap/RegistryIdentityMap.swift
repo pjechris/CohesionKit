@@ -1,6 +1,6 @@
 import Foundation
 
-/// An `IdentityMap` coupled to a `Relation` allowing to use identitymap with strong types.
+/// An `IdentityMap` wrapper generating simpler and more typed API
 public struct RegistryIdentityMap {
     private let identityMap: IdentityMap
     
@@ -14,11 +14,11 @@ public struct RegistryIdentityMap {
     /// with provided relation object. This make those methods shorter and easier to understand
     ///
     /// - Returns: a `TiedEntityMap` allowing to use `IdentityMap` but solely with received `Relation` object
-    public func identityMap<Element, ID: Hashable>(for relation: Relation<Element, ID>) -> TiedIdentityMap<Element, ID> {
-        TiedIdentityMap(identityMap: identityMap, tiedTo: relation)
+    public func identityMap<Element, ID: Hashable>(for relation: Relation<Element, ID>) -> RegisteredIdentityMap<Element, ID> {
+        RegisteredIdentityMap(identityMap: identityMap, tiedTo: relation)
     }
     
-    public func identityMap<Element: Identifiable>(for element: Element.Type) -> TiedIdentityMap<Element, Element.ID> {
-        TiedIdentityMap(identityMap: identityMap, tiedTo: .single())
+    public func identityMap<Element: Identifiable>(for element: Element.Type) -> RegisteredIdentityMap<Element, Element.ID> {
+        RegisteredIdentityMap(identityMap: identityMap, tiedTo: .single())
     }
 }
