@@ -1,17 +1,17 @@
 import CohesionKit
 
 enum Relations {
-    static let matchMarkets =
+    static let matchMarket =
         Relation(
             primaryChildPath: \.match,
-            otherChildren: [.init(\.markets, relation: Relations.marketOutcomes)],
+            otherChildren: [.init(\.markets, relation: Relations.marketOutcome)],
             reduce: { MatchMarkets(match: $0.match, markets: $0.markets) }
         )
     
-    static let marketOutcomes =
+    static let marketOutcome =
         Relation(
             primaryChildPath: \.market,
             otherChildren: [.init(\.outcomes)],
             reduce: { MarketOutcomes(market: $0.market, outcomes: $0.outcomes) }
-        )
+        )    
 }

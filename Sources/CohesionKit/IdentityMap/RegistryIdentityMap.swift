@@ -1,16 +1,11 @@
 import Foundation
 
-/// An `IdentityMap` coupled to an entity allowing to use identitymap with strong typed keypaths.
-///
-/// You define relations in an object "Registry" which then allow to access identity map through its keypath
-@dynamicMemberLookup
-public struct RegistryIdentityMap<Registry> {
+/// An `IdentityMap` coupled to a `Relation` allowing to use identitymap with strong types.
+public struct RegistryIdentityMap {
     private let identityMap: IdentityMap
-    private let registry: Registry
     
-    public init(registry: Registry, identityMap: IdentityMap = IdentityMap()) {
+    public init(identityMap: IdentityMap) {
         self.identityMap = identityMap
-        self.registry = registry
     }
     
     /// Return a `TiedEntityMap` tying a relation to the identity map.
@@ -18,10 +13,12 @@ public struct RegistryIdentityMap<Registry> {
     /// This entity will provide same methods than IdentityMap but to use only
     /// with provided relation object. This make those methods shorter and easier to understand
     ///
-    /// - Parameter keyPath: a keypath from `Registry` returning a `Relation` object
     /// - Returns: a `TiedEntityMap` allowing to use `IdentityMap` but solely with received `Relation` object
-    public subscript<Element, ID: Hashable>(dynamicMember keyPath: KeyPath<Registry, Relation<Element, ID>>)
-    -> TiedEntityMap<Element, ID> {
-        TiedEntityMap(identityMap: identityMap, relation: registry[keyPath: keyPath])
+    public func identityMap<Element, ID: Hashable>(for relation: Relation<Element, ID>) -> TiedIdentityMap<Element, ID> {
+        TiedIdentityMap(identityMap: identityMap, tiedTo: relation)
+    }
+    
+    public func identityMap<Element: Identifiable>(for element: Element.Type) -> TiedIdentityMap<Element, Element.ID> {
+        TiedIdentityMap(identityMap: identityMap, tiedTo: .single())
     }
 }

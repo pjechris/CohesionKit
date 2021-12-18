@@ -4,14 +4,14 @@ import CombineExt
 /// An `IdentityMap` coupled to an element type using its `Relation` description.
 ///
 /// This object is generated when using `RegistryIdentityMap`
-public struct TiedEntityMap<Element, ID: Hashable> {
+public struct TiedIdentityMap<Element, ID: Hashable> {
     public typealias ElementPublisher = AnyPublisher<Element, Never>
     public typealias ElementArrayPublisher = AnyPublisher<[Element], Never>
     
     private let identityMap: IdentityMap
     private let relation: Relation<Element, ID>
     
-    init(identityMap: IdentityMap, relation: Relation<Element, ID>) {
+    init(identityMap: IdentityMap, tiedTo relation: Relation<Element, ID>) {
         self.identityMap = identityMap
         self.relation = relation
     }
@@ -34,8 +34,16 @@ public struct TiedEntityMap<Element, ID: Hashable> {
     public func publisher(for id: ID) -> ElementPublisher {
         identityMap.publisher(using: relation, id: id)
     }
+    
+    public func publisher(aliased alias: String) -> AnyPublisher<Element, Never> {
+        identityMap.publisher(for: Element.self, aliased: alias)
+    }
  
     public func get(for id: ID) -> Element? {
         identityMap.get(using: relation, id: id)
+    }
+    
+    public func get(aliased alias: String) -> Element? {
+        identityMap.get(for: Element.self, aliased: alias)
     }
 }

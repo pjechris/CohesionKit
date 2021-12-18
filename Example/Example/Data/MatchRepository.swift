@@ -4,32 +4,30 @@ import CohesionKit
 import CombineExt
 
 class MatchRepository {
-    private static let identityMap = IdentityMap()
-    private lazy var identityMap = Self.identityMap
+    private static let registry = RegistryIdentityMap(identityMap: IdentityMap())
+    private lazy var registry = Self.registry
     private var cancellables: Set<AnyCancellable> = []
 
     /// load matches with their markets and outcomes from Data.swift
     func loadMatches() -> AnyPublisher<[MatchMarkets], Never> {
         let matches = MatchMarkets.simulatedMatches
 
-        return identityMap.store(
-            matches,
-            using: Relations.matchMarkets,
-            modifiedAt: MatchMarkets.simulatedFetchedDate.stamp
-        )
+        return registry
+            .identityMap(for: Relations.matchMarket)
+            .store(matches, modifiedAt: MatchMarkets.simulatedFetchedDate.stamp)
     }
 
     /// observe primary (first) match market changes (for this sample changes are generated randomely
     /// - Returns: the match with all its markets including updates for primary market
     func observePrimaryMarket(for match: Match) -> AnyPublisher<MatchMarkets, Never> {
         let data = MatchMarkets.simulatedMatches.first { $0.match.id == match.id }!
-        let outcomes = data.primaryMarket.outcomes.map { identityMap.get(for: Outcome.self, id: $0.id) ?? $0 }
+        let outcomes = data.primaryMarket.outcomes.map { registry.identityMap(for: Outcome.self).get(for: $0.id) ?? $0 }
 
         return outcomes
             .map { outcome in self.randomChanges(for: outcome) }
             .combineLatest()
-            .map { [identityMap] in identityMap.store($0) }
-            .map { [identityMap] _ in identityMap.publisher(using: Relations.matchMarkets, id: match.id) }
+            .map { [registry] in registry.identityMap(for: Outcome.self).store($0) }
+            .map { [registry] _ in registry.identityMap(for: Relations.matchMarket).publisher(for: match.id) }
             .switchToLatest()
             .eraseToAnyPublisher()
     }
