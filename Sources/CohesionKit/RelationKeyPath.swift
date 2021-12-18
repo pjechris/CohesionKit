@@ -1,6 +1,6 @@
 import Combine
 
-/// A `KeyPath` with its associated `Relation`
+/// A `KeyPath` link between the keyPath and its `Relation`
 public struct RelationKeyPath<Root> {
     let keyPath: AnyKeyPath
     /// method called when storing the element into IdentityMap

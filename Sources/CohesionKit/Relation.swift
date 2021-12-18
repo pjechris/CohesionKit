@@ -1,7 +1,7 @@
 import Combine
 import CombineExt
 
-/// A representation of `Root` structure for storing in `IdentityMap`
+/// A representation of `Element` structure for storing in `IdentityMap`
 public struct Relation<Element, ID: Hashable> {
     /// key path to `Element` id
     let idKeyPath: KeyPath<Element, ID>
