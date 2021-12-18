@@ -22,15 +22,15 @@ public struct TiedIdentityMap<Element, ID: Hashable> {
     
     public func store<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp)
     -> ElementArrayPublisher where S.Element == Element {
-        sequence
-            .map { object in identityMap.store(object, using: relation, modifiedAt: modifiedAt) }
-            .combineLatest()
+        identityMap.store(sequence, using: relation, modifiedAt: modifiedAt)
     }
-    
-    public func updateIfPresent(for id: ID, modifiedAt: Stamp = Date().stamp, update: (Element) -> Element) {
-        identityMap.updateIfPresent(for: id, using: relation, modifiedAt: modifiedAt, update: update)
+
+    @discardableResult
+    public func storeIfPresent(_ element: Element, alias: String? = nil, modifiedAt: Stamp = Date().stamp)
+    -> ElementPublisher? {
+        identityMap.storeIfPresent(element, using: relation, alias: alias, modifiedAt: modifiedAt)
     }
-    
+
     public func publisher(for id: ID) -> ElementPublisher {
         identityMap.publisher(using: relation, id: id)
     }
