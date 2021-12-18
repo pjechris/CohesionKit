@@ -28,14 +28,14 @@ public class IdentityMap {
     }
 
     /// Access and set the storage for Model given its type and id
-    subscript<Model>(type: Model.Type, id id: Any) -> StampedSubject<Model>? {
-        get { values[key(for: type, id: id)] as? StampedSubject<Model> }
+    subscript<Model>(type: Model.Type, id id: Any) -> Storage<Model>? {
+        get { values[key(for: type, id: id)] as? Storage<Model> }
         set { values[key(for: type, id: id)] = newValue }
     }
     
     /// Access the storage and initialize it if value is not present
-    subscript<Model>(type: Model.Type, id id: Any, init default: @autoclosure () -> StampedSubject<Model>) -> StampedSubject<Model> {
-        guard let storage = values[key(for: type, id: id)] as? StampedSubject<Model> else {
+    subscript<Model>(type: Model.Type, id id: Any, init default: @autoclosure () -> Storage<Model>) -> Storage<Model> {
+        guard let storage = values[key(for: type, id: id)] as? Storage<Model> else {
             let storage = `default`()
             
             values[key(for: type, id: id)] = storage
@@ -47,12 +47,12 @@ public class IdentityMap {
     }
     
     /// Register a storage under a given alias. Values will be accessible using this alias
-    func register<Model>(alias: String?, storage valueStorage: StampedSubject<Model>) {
+    func register<Model>(alias: String?, storage valueStorage: Storage<Model>) {
         guard let key = alias else {
             return
         }
         
-        let storage = self.storage(aliased: key) as StampedSubject<Model>
+        let storage = self.storage(aliased: key) as Storage<Model>
         
         storage.merge(valueStorage.publisher, modifiedAt: Date().stamp)
         
@@ -60,12 +60,12 @@ public class IdentityMap {
     }
     
     /// Find an aliased storage. Be careful: This is storage from `values` but from `aliases`
-    func storage<Model>(aliased key: String) -> StampedSubject<Model> {
-        if let storage = aliases[key]?.storage as? StampedSubject<Model> {
+    func storage<Model>(aliased key: String) -> Storage<Model> {
+        if let storage = aliases[key]?.storage as? Storage<Model> {
             return storage
         }
         
-        let alias = (storage: StampedSubject<Model> { }, token: AnyCancellable?.none)
+        let alias = (storage: Storage<Model> { }, token: AnyCancellable?.none)
         
         aliases[key] = alias
         
@@ -92,7 +92,7 @@ public class IdentityMap {
     ) -> AnyPublisher<Element, Never> {
         let id = element[keyPath: relation.idKeyPath]
         
-        let storage = self[Element.self, id: id, init: StampedSubject<Element>(id: id, identityMap: self)]
+        let storage = self[Element.self, id: id, init: Storage<Element>(id: id, identityMap: self)]
         
         storage.merge(
             recursiveStore(element, using: relation, modifiedAt: modifiedAt),
@@ -146,7 +146,7 @@ public class IdentityMap {
         using relation: Relation<Element, ID>,
         id: ID
     ) -> AnyPublisher<Element, Never> {
-        let storage = self[Element.self, id: id, init: StampedSubject<Element>(id: id, identityMap: self)]
+        let storage = self[Element.self, id: id, init: Storage<Element>(id: id, identityMap: self)]
         
         return storage.publisher
     }

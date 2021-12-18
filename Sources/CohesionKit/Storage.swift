@@ -7,7 +7,7 @@ typealias StampedObject<D> = (object: D, modifiedAt: Stamp)
 /// A "subject" wrapping a `StampedObject` and publishing a new element whenever the value change.
 ///
 /// This "subject" can have only one subscriber
-class StampedSubject<T> {
+class Storage<T> {
     private let subject: CurrentValueSubject<StampedObject<T>?, Never>
     private(set) var publisher: AnyPublisher<T, Never>!
     private var upstreamCancellable: AnyCancellable?
