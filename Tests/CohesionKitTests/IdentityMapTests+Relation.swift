@@ -3,16 +3,29 @@ import CohesionKit
 import Combine
 
 class IdentityMapRelationalTests: XCTestCase {
+    var cancellables: Set<AnyCancellable> = []
+    
+    override func tearDown() {
+        cancellables = []
+    }
+    
     func test_update_graphObjectIsStored() {
+        let expectation = XCTestExpectation()
         let identityMap = IdentityMap()
         let graph = GraphTest(
             single: .init(id: 1, value: "single node"),
             children: [.init(id: 1, key: "child 1")]
         )
 
-        _ = identityMap.store(graph, using: Relations.graphTest)
+        identityMap
+            .store(graph, using: Relations.graphTest)
+            .sink(receiveValue: { _ in
+                XCTAssertEqual(identityMap.get(using: Relations.graphTest, id: 1), graph)
+                expectation.fulfill()
+            })
+            .store(in: &cancellables)
 
-        XCTAssertEqual(identityMap.get(using: Relations.graphTest, id: 1), graph)
+        wait(for: [expectation], timeout: 1)
     }
 
     func test_store_whenChildIsUpdated_graphObjectIsUpdated() {
@@ -24,14 +37,22 @@ class IdentityMapRelationalTests: XCTestCase {
         )
         let childUpdate = GraphSingleChild(id: 1, value: "single node updated")
 
-        _ = identityMap.store(graph, using: Relations.graphTest)
-        _ = identityMap.store(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
+        identityMap
+            .store(graph, using: Relations.graphTest)
+            .sink(receiveValue: { _ in })
+            .store(in: &cancellables)
+        
+        identityMap
+            .store(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
+            .delay(for: 0.1, scheduler: RunLoop.main)
+            .sink(receiveValue: { _ in
+                XCTAssertEqual(identityMap.get(for: GraphSingleChild.self, id: 1), childUpdate)
+                XCTAssertEqual(identityMap.get(using: Relations.graphTest, id: 1)?.single, childUpdate)
+                expectation.fulfill()
+            })
+            .store(in: &cancellables)
 
-        expectation.isInverted = true
-        wait(for: [expectation], timeout: 0.5)
-
-        XCTAssertEqual(identityMap.get(for: GraphSingleChild.self, id: 1), childUpdate)
-        XCTAssertEqual(identityMap.get(using: Relations.graphTest, id: 1)?.single, childUpdate)
+        wait(for: [expectation], timeout: 1)
     }
 
   func test_publisher_whenCanceled_noSubscriber_objectIsRemoved() {
