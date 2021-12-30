@@ -2,10 +2,10 @@ import Combine
 
 /// A `KeyPath` link between the keyPath and its `Relation`
 public struct RelationKeyPath<Root> {
-    let keyPath: AnyKeyPath
+    let keyPath: PartialKeyPath<Root>
     /// method called when storing the element into IdentityMap
     /// we define it here in order to access the keypath exact type in `init`
-    let store: (Root, IdentityMap, Stamp) -> AnyPublisher<Any, Never>
+    let store: (Root, IdentityMap, Stamp) -> AnyPublisher<(Any, Stamp), Never>
     
     /// Build a relation from root with an `Identifiable` child
     public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {
@@ -23,8 +23,8 @@ public struct RelationKeyPath<Root> {
         self.keyPath = keyPath
         store = { root, identityMap, stamp in
             identityMap
-                .store(root[keyPath: keyPath], using: relation, modifiedAt: stamp)
-                .map { $0 as Any }
+                ._store(root[keyPath: keyPath], using: relation, modifiedAt: stamp)
+                .map { $0 as (Any, Stamp) }
                 .eraseToAnyPublisher()
         }
     }
@@ -34,8 +34,8 @@ public struct RelationKeyPath<Root> {
         self.keyPath = keyPath
         store = { root, identityMap, modificationId in
             identityMap
-                .store(root[keyPath: keyPath], using: relation, modifiedAt: modificationId)
-                .map { $0 as Any }
+                ._store(root[keyPath: keyPath], using: relation, modifiedAt: modificationId)
+                .map { $0 as (Any, Stamp) }
                 .eraseToAnyPublisher()
         }
     }
