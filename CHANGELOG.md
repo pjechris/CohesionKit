@@ -3,7 +3,7 @@
 ### Added
 
 - Ability to define aliases on stored values. This allow you to retrieve them without knowing their id.
-- Added `RegistryIdentityMap` on top of `IdentityMap`
+- Added `Registry` on top of `IdentityMap`
 
 ### Fixed
 

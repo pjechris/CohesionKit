@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 
-/// Framework main class.
 /// Store and access publishers referencing objects to have realtime updates on them.
 /// Memory is automatically released when objects have no observers
 public class IdentityMap {
