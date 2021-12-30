@@ -4,6 +4,10 @@
 
 - Ability to define aliases on stored values. This allow you to retrieve them without knowing their id.
 
+### Fixed
+
+- Fixed potential conflict in update when stamp was equal to previous update
+
 ## 0.4.0
 
 ### Breaking changes
