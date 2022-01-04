@@ -13,9 +13,9 @@ class MatchRepository {
         let matches = MatchMarkets.simulatedMatches
 
         return identityMap.store(
-            matches,
-            using: Relations.matchMarkets,
-            modifiedAt: MatchMarkets.simulatedFetchedDate.stamp
+          matches,
+          using: Relations.matchMarkets,
+          modifiedAt: MatchMarkets.simulatedFetchedDate.stamp
         )
     }
 

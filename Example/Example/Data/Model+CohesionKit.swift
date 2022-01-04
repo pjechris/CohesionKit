@@ -13,5 +13,5 @@ enum Relations {
             primaryChildPath: \.market,
             otherChildren: [.init(\.outcomes)],
             reduce: { MarketOutcomes(market: $0.market, outcomes: $0.outcomes) }
-        )
+        )    
 }

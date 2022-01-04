@@ -11,15 +11,16 @@ Implemented with latest Swift technologies:
 
 - 📇 `Identifiable` protocol
 - 🧰 `Combine` framework
+- 👀 `@dynamicMemberLookup`
 
 # Why using it?
 
-- 🦕 You don't use (or don't want to use) heavy frameworks like CoreData, Realm,... to keep in-memory data sync
-- 🪶 You want to be able to use structs
-- 💡 You look for a lightweight framework
-- 🔁 You do realtime in your app (through websockets for instance)
-- 🐛 You have some sync issues in your app and want to deal with it
-- 🛰️ You display same data in multiple screens
+- 🦕 You don't use and/or don't want to use heavy frameworks like CoreData, Realm,... to keep in-memory data sync
+- 🪶 You look for a lightweight tool
+- 🗃️ You want to use structs
+- 🔁 You have realtime data in your app (through websockets for instance)
+- 🐛 You have data sync issues and want to get rid of it
+- 📱 You display same data in multiple screens
 
 It's very unlikely your app will read and write data from only one class. You end up having to come up with all kind of clever mechanisms to communicate between your classes. They have to tell each other when there are changes, and if they should refresh the data they’ve fetched previously. CohesionKit intend to remedy these issues.
 

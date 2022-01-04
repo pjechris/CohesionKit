@@ -1,8 +1,6 @@
 import Foundation
 import Combine
 
-
-/// Framework main class.
 /// Store and access publishers referencing objects to have realtime updates on them.
 /// Memory is automatically released when objects have no observers
 public class IdentityMap {
@@ -16,9 +14,7 @@ public class IdentityMap {
     /// - Parameter token: token on alias `storage.publisher` the storage alive
     var aliases: [String:(storage: Any, token: AnyCancellable?)] = [:]
 
-    public init() {
-    
-    }
+    public init() { }
     
     func remove<Model>(for type: Model.Type, id: Any) {
         self[type, id: id] = nil
