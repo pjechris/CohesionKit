@@ -212,10 +212,10 @@ public class IdentityMap {
                 }
             }
             .map {
-                (
-                    object: relation.reduce(Updated(root: element, updates: $0.updates)),
-                    modifiedAt: $0.modifiedAt
-                )
+              (
+                object: Updated(root: element, updates: $0.updates).reduce(),
+                modifiedAt: $0.modifiedAt
+              )
             }
             .eraseToAnyPublisher()
     }
