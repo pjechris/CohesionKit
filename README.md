@@ -119,9 +119,8 @@ struct ProductComments
 enum Relations {
   static let productComments =
     Relation(
-        primaryChildPath: \.product,
-        otherChildren: [.init(\.product), .init(\.comments)],
-        reduce: { ProductComments(product: $0.product, comments: $0.comments) }
+        primaryChildPath: \ProductComments.product,
+        otherChildren: [.init(\.product), .init(\.comments)]
     )
 }
 
