@@ -213,7 +213,7 @@ public class IdentityMap {
             }
             .map {
               (
-                object: Updated<Element>.reduce(root: element, updates: $0.updates),
+                object: Updated(root: element, updates: $0.updates).reduce(),
                 modifiedAt: $0.modifiedAt
               )
             }
