@@ -4,14 +4,14 @@ import CombineExt
 /// An `IdentityMap` coupled to an element type using its `Relation` description.
 ///
 /// This object is generated when using `RegistryIdentityMap`
-public struct RegisteredIdentityMap<Element, ID: Hashable> {
+public struct IdentityMapRelation<Element, ID: Hashable> {
     public typealias ElementPublisher = AnyPublisher<Element, Never>
     public typealias ElementArrayPublisher = AnyPublisher<[Element], Never>
     
     private let identityMap: IdentityMap
     private let relation: Relation<Element, ID>
     
-    init(identityMap: IdentityMap, tiedTo relation: Relation<Element, ID>) {
+    init(identityMap: IdentityMap, referring relation: Relation<Element, ID>) {
         self.identityMap = identityMap
         self.relation = relation
     }
