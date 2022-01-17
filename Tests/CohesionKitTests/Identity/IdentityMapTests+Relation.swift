@@ -1,5 +1,5 @@
 import XCTest
-import CohesionKit
+@testable import CohesionKit
 import Combine
 
 class IdentityMapRelationalTests: XCTestCase {
@@ -43,10 +43,10 @@ class IdentityMapRelationalTests: XCTestCase {
             .store(in: &cancellables)
         
         identityMap
-            .store(childUpdate, modifiedAt: Date().advanced(by: 1).stamp)
+            .store(childUpdate, using: Relation.single(), modifiedAt: Date().advanced(by: 1).stamp)
             .delay(for: 0.1, scheduler: RunLoop.main)
             .sink(receiveValue: { _ in
-                XCTAssertEqual(identityMap.get(for: GraphSingleChild.self, id: 1), childUpdate)
+                XCTAssertEqual(identityMap.get(using: SingleRelation<GraphSingleChild>(), id: 1), childUpdate)
                 XCTAssertEqual(identityMap.get(using: Relations.graphTest, id: 1)?.single, childUpdate)
                 expectation.fulfill()
             })
@@ -98,7 +98,7 @@ class IdentityMapRelationalTests: XCTestCase {
             .sink(receiveValue: { _ in receivedValueCount += 1 })
             .store(in: &cancellables)
         
-        _ = identityMap.store(updates)
+        _ = identityMap.store(updates, using: Relation.single())
         
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) {
             expectation.fulfill()
@@ -125,8 +125,7 @@ struct Graph: Identifiable, Equatable {
 
 enum Relations {
     static let graphTest = Relation(
-        primaryChildPath: \.single,
-        otherChildren: [RelationKeyPath(\.single), RelationKeyPath(\.children)],
-        reduce: { GraphTest(single: $0.single, children: $0.children) }
+        primaryChildPath: \GraphTest.single,
+        otherChildren: [RelationKeyPath(\.single), RelationKeyPath(\.children)]
     )
 }

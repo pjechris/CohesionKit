@@ -83,7 +83,7 @@ public class IdentityMap {
     /// - Parameter relation: Describe the element and how it will be inserted into the identity map.
     /// - Parameter alias: a string key which can be used to find back the element without having its id
     /// - Parameter modifiedAt: If value is higher than previous update then the element will be updated. Otherwise changes will be ignored.
-    public func store<Element, ID: Hashable>(
+    func store<Element, ID: Hashable>(
         _ element: Element,
         using relation: Relation<Element, ID>,
         alias: String? = nil,
@@ -92,7 +92,7 @@ public class IdentityMap {
         _store(element, using: relation, alias: alias, modifiedAt: modifiedAt).map(\.object).eraseToAnyPublisher()
     }
     
-    public func store<S: Sequence, ID: Hashable>(
+    func store<S: Sequence, ID: Hashable>(
         _ sequence: S,
         using relation: Relation<S.Element, ID>,
         modifiedAt: Stamp = Date().stamp
@@ -107,7 +107,7 @@ public class IdentityMap {
     /// - SeeAlso:
     /// `IdentityMap.store(_:relation:alias:modifiedAt:)`
     @discardableResult
-    public func storeIfPresent<Element, ID: Hashable>(
+    func storeIfPresent<Element, ID: Hashable>(
         _ element: Element,
         using relation: Relation<Element, ID>,
         alias: String? = nil,
@@ -126,7 +126,7 @@ public class IdentityMap {
     /// Thus this publisher *might* never send any value.
     ///
     /// Object stay in memory as long as someone is using the publisher
-    public func publisher<Element, ID: Hashable>(
+    func publisher<Element, ID: Hashable>(
         using relation: Relation<Element, ID>,
         id: ID
     ) -> AnyPublisher<Element, Never> {
@@ -137,17 +137,17 @@ public class IdentityMap {
     }
     
     /// Return a publisher emitting event when receiving update on `alias`
-    public func publisher<Element>(for element: Element.Type, aliased alias: String) -> AnyPublisher<Element, Never> {
+    func publisher<Element>(for element: Element.Type, aliased alias: String) -> AnyPublisher<Element, Never> {
         storage(aliased: alias).publisher.map(\.object).eraseToAnyPublisher()
     }
 
     /// Return element with matching `id` if an object with such `id` was previously inserted
-    public func get<Element, ID: Hashable>(using relation: Relation<Element, ID>, id: ID) -> Element? {
+    func get<Element, ID: Hashable>(using relation: Relation<Element, ID>, id: ID) -> Element? {
         self[Element.self, id: id]?.value
     }
     
     /// Return element matching `alias`
-    public func get<Element>(for element: Element.Type, aliased alias: String) -> Element? {
+    func get<Element>(for element: Element.Type, aliased alias: String) -> Element? {
         storage(aliased: alias).value
     }
     

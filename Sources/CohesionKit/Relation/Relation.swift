@@ -1,6 +1,8 @@
 import Combine
 import CombineExt
 
+typealias SingleRelation<T: Identifiable> = Relation<T, T.ID>
+
 /// A representation of `Element` structure for storing in `IdentityMap`
 public struct Relation<Element, ID: Hashable> {
   /// key path to `Element` id

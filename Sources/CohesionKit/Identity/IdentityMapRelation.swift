@@ -6,7 +6,7 @@ import CombineExt
 /// This object is generated when using `RegistryIdentityMap`
 public struct IdentityMapRelation<Element, ID: Hashable> {
     public typealias ElementPublisher = AnyPublisher<Element, Never>
-    public typealias ElementArrayPublisher = AnyPublisher<[Element], Never>
+    public typealias ArrayPublisher = AnyPublisher<[Element], Never>
     
     private let identityMap: IdentityMap
     private let relation: Relation<Element, ID>
@@ -21,7 +21,7 @@ public struct IdentityMapRelation<Element, ID: Hashable> {
     }
     
     public func store<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp)
-    -> ElementArrayPublisher where S.Element == Element {
+    -> ArrayPublisher where S.Element == Element {
         identityMap.store(sequence, using: relation, modifiedAt: modifiedAt)
     }
 
