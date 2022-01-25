@@ -50,61 +50,53 @@ This library come a very simple Example project so you can see a real case usage
 
 CohesionKit is based on [Identity Map pattern](http://martinfowler.com/eaaCatalog/identityMap.html). Idea is to:
 
-1. Load your data as usual (WebService, GraphQL, DB, ...). Instead of returning them directly you pass the data to an object (`IdentityMap`) to track them using their identity.
-1. You ask `IdentityMap` for the data which will be returned as `Combine.AnyPublisher`. Now any updates that will be made into `IdentityMap` will be sent to you.
-2. Send updates for these data to `IdentityMap`. Anyone that asked for them will then be notified of the updates thanks to `Combine.AnyPublisher`.
+1. Load your data as usual (WebService, GraphQL, DB, ...). Instead of returning them directly you pass the data to an object (`IdentityRegistry`) to track them using their identity.
+1. You ask `IdentityRegistry` for the data which will be returned as `Combine.AnyPublisher`. Now any updates that will be made into `IdentityRegistry` will be sent to you.
+2. Send updates for these data to `IdentityRegistry`. Anyone that asked for them will then be notified of the updates thanks to `Combine.AnyPublisher`.
 
-## Adding a (Identifiable) object
+## Storing an object
 
-First create an `IdentityMap`:
+First create an `IdentityRegistry`:
 
 ```swift
-let identityMap = IdentityMap()
+let registry = IdentityRegistry(store: IdentityStore())
 ```
 
-When your object is `Identifiable` you can store it directly in the identity map:
+When your object is a simple `Identifiable` you can store it directly in the registry:
 
 ```swift
 let user = User(id: 42, name: "John Doe")
 
-identityMap.store(user)
+registry.for(User.self).store(user)
 ```
 
 Your object can now be retrieved by **anyone**:
 
 ```swift
 /// somewhere else in the code
-identityMap.publisher(for: User.self, id: 42)
+registry.for(User.self).publisher(id: 42)
 ```
 
-More realistic example would be to load and save User when calling a webservice, then just load it from the identity map when looking for it:
+More realistic example would be to load and save User when calling a webservice, then just load it from the registry when looking for it:
 
 ```swift
 func loadCurrentUser() -> AnyPublisher<User, Error> {
     loadMyUserFromWS()
-        .map { identityMap.store($0) }
+        .map { registry.for(User.self).store($0) }
         .switchToLatest()
         .eraseToAnyPublisher()
 }
 
 func findCurrentUser() -> AnyPublisher<User, Never> {
-    identityMap.publisher(for: User.self, id: 42)
+    registry.for(User.self).publisher(id: 42)
 }
 ```
 
 > CohesionKit only keep in memory in-use data. When no one is using some data (through subscription with sink/assign) CohesionKit will discard it from its memory. This allow to automatically clean memory.
 
-```swift
-let identityMap = IdentityMap()
+## Storing a relational object
 
-identityMap.store(xxx) // use default stamp: current date
-identityMap.store(xxx, modifiedAt: Date().stamp) // explicitly use Date time stamp
-identityMap.store(xxx, modifiedAt: 9000) // any Double value is valid
-```
-
-## Relationships / Non Identifiable objects
-
-When dealing with complex objects containing other identity objects you'll have to use an additional object: `Relation`. `Relation` describe how to store (and update) each object children in order to keep it up-to-date.
+When dealing with complex objects containing other identity objects you'll have to use an additional object: `Relation`. `Relation` describe which children to store in order to keep them up-to-date.
 
 > While complex objects DO exist in projects, we recommend to avoid deep nested relationships and we **strongly** advise to use [Aggregate objects](https://swiftunwrap.com/article/modeling-done-right/).
 
@@ -124,34 +116,40 @@ enum Relations {
     )
 }
 
-// 3. Then you can get/store it from/into IdentityMap
-identityMap.store(ProductComment(...), using: Relations.productComments)
-identityMap.publisher(using: Relations.productComments, id: xx)
+// 3. Then you can get/store it from/into the registry using your Relation entity
+registry.for(Relations.productComments).store(ProductComment(...))
+registry.for(Relations.productComments).publisher(id: xx)
 ```
 
 ## Aliases
 
-Sometimes you need to retrieve data without knowing having the id. Common case is current user: while above we request it using its id most most of the time you just want to ask for the current user.
+Sometimes you need to retrieve data without knowing the id. Common case is current user: while above we request it using its id most of the time you just want to ask for the current user.
 
-You can do this with identity map using "alias" property. First register a data under an alias:
+You can do this with registry using "alias" property. First register a data under an alias:
 
 ```swift
-identityMap.store(myUser, aliased: "current_user")
+registry.for(User.self).store(myUser, aliased: "current_user")
 ```
 
 Then request somewhere else:
 
 ```swift
-identityMap.publisher(for: User.self, aliased: "current_user")
+registry.for(User.self).publisher(aliased: "current_user")
 ```
 
-Some very important notes about aliases: while values are automatically released by identity map those referenced by an alias will be kept **strongly**.
+Some very important notes about aliases: while values are automatically released by the library those referenced by an alias will be kept **strongly**.
 
 ## Stale data
 
-When updating data into the identity map CohesionKit actually require you to set a modification stamp on it. Stamp is used to make sure you're actually pass more recent data rather than old one.
+When updating data into the registry CohesionKit actually require you to set a modification stamp on it. Stamp is used to as a maker to compare which data is the most recent: the highest is considered as the most recent.
 
-You can use whatever you want as stamp as long as the type is `Double`
+By default CohesionKit will use the current date as stamp.
+
+```swift
+registry.for(..).store(xxx) // use default stamp: current date
+registry.for(..).store(xxx, modifiedAt: Date().stamp) // explicitly use Date time stamp
+registry.for(..).store(xxx, modifiedAt: 9000) // any Double value is valid
+```
 
 # License
 

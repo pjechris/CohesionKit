@@ -1,9 +1,12 @@
 import Foundation
 import Combine
 
+/// keep old name available
+public typealias IdentityMap = IdentityStore
+
 /// Store and access publishers referencing objects to have realtime updates on them.
 /// Memory is automatically released when objects have no observers
-public class IdentityMap {
+public class IdentityStore {
     
     /// in-memory storages. Storages are deallocated automatically (unless aliased)
     var values: [String:Any] = [:]
@@ -83,22 +86,37 @@ public class IdentityMap {
     /// - Parameter relation: Describe the element and how it will be inserted into the identity map.
     /// - Parameter alias: a string key which can be used to find back the element without having its id
     /// - Parameter modifiedAt: If value is higher than previous update then the element will be updated. Otherwise changes will be ignored.
-    public func store<Element, ID: Hashable>(
+    func store<Element, ID: Hashable>(
         _ element: Element,
         using relation: Relation<Element, ID>,
         alias: String? = nil,
         modifiedAt: Stamp = Date().stamp
-    ) -> AnyPublisher<Element, Never> {
-        _store(element, using: relation, alias: alias, modifiedAt: modifiedAt).map(\.object).eraseToAnyPublisher()
-    }
+    ) -> AnyPublisher<StampedObject<Element>, Never> {
+      let id = element[keyPath: relation.idKeyPath]
+      let storage = self[Element.self, id: id, init: Storage<Element>(id: id, identityMap: self)]
+
+      storage.merge(recursiveStore(element, using: relation, modifiedAt: modifiedAt))
+
+      register(alias: alias, storage: storage)
+
+      return storage.publisher
+  }
     
-    public func store<S: Sequence, ID: Hashable>(
+    func store<S: Sequence, ID: Hashable>(
         _ sequence: S,
         using relation: Relation<S.Element, ID>,
         modifiedAt: Stamp = Date().stamp
-    ) -> AnyPublisher<[S.Element], Never> {
-        _store(sequence, using: relation, modifiedAt: modifiedAt).map(\.object).eraseToAnyPublisher()
-    }
+    ) -> AnyPublisher<StampedObject<[S.Element]>, Never> {
+      sequence
+          .map { object in store(object, using: relation, modifiedAt: modifiedAt) }
+          .combineLatest()
+          .map { collection in
+              collection.reduce((object: [], modifiedAt: 0)) { result, element in
+                  (object: result.object + [element.object], modifiedAt: max(result.modifiedAt, element.modifiedAt))
+              }
+          }
+          .eraseToAnyPublisher()
+  }
     
     /// Update element in the storage only if it's already in it. Otherwise discard the changes.
     ///
@@ -107,12 +125,12 @@ public class IdentityMap {
     /// - SeeAlso:
     /// `IdentityMap.store(_:relation:alias:modifiedAt:)`
     @discardableResult
-    public func storeIfPresent<Element, ID: Hashable>(
+    func storeIfPresent<Element, ID: Hashable>(
         _ element: Element,
         using relation: Relation<Element, ID>,
         alias: String? = nil,
         modifiedAt: Stamp = Date().stamp
-    ) -> AnyPublisher<Element, Never>? {
+    ) -> AnyPublisher<StampedObject<Element>, Never>? {
         
         guard self[Element.self, id: element[keyPath: relation.idKeyPath]] != nil else {
             return nil
@@ -126,64 +144,27 @@ public class IdentityMap {
     /// Thus this publisher *might* never send any value.
     ///
     /// Object stay in memory as long as someone is using the publisher
-    public func publisher<Element, ID: Hashable>(
-        using relation: Relation<Element, ID>,
-        id: ID
-    ) -> AnyPublisher<Element, Never> {
+    func publisher<Element, ID: Hashable>(using relation: Relation<Element, ID>, id: ID)
+    -> AnyPublisher<StampedObject<Element>, Never> {
         let storage = self[Element.self, id: id, init: Storage<Element>(id: id, identityMap: self)]
         
         return storage.publisher
-            .map(\.object).eraseToAnyPublisher()
     }
     
     /// Return a publisher emitting event when receiving update on `alias`
-    public func publisher<Element>(for element: Element.Type, aliased alias: String) -> AnyPublisher<Element, Never> {
-        storage(aliased: alias).publisher.map(\.object).eraseToAnyPublisher()
+    func publisher<Element>(for element: Element.Type, aliased alias: String)
+    -> AnyPublisher<StampedObject<Element>, Never> {
+        storage(aliased: alias).publisher
     }
 
     /// Return element with matching `id` if an object with such `id` was previously inserted
-    public func get<Element, ID: Hashable>(using relation: Relation<Element, ID>, id: ID) -> Element? {
+    func get<Element, ID: Hashable>(using relation: Relation<Element, ID>, id: ID) -> Element? {
         self[Element.self, id: id]?.value
     }
     
     /// Return element matching `alias`
-    public func get<Element>(for element: Element.Type, aliased alias: String) -> Element? {
+    func get<Element>(for element: Element.Type, aliased alias: String) -> Element? {
         storage(aliased: alias).value
-    }
-    
-    func _store<Element, ID: Hashable>(
-        _ element: Element,
-        using relation: Relation<Element, ID>,
-        alias: String? = nil,
-        modifiedAt: Stamp = Date().stamp
-    ) -> AnyPublisher<StampedObject<Element>, Never> {
-        let id = element[keyPath: relation.idKeyPath]
-        let storage = self[Element.self, id: id, init: Storage<Element>(id: id, identityMap: self)]
-        
-        storage.merge(recursiveStore(element, using: relation, modifiedAt: modifiedAt))
-        
-        
-        register(alias: alias, storage: storage)
-
-        return storage.publisher
-    }
-    
-    /// Add or update multiple elements at once into the storage
-    /// - Returns: a Publisher emitting a new value when any element from `sequence` is updated in the identity map
-    func _store<S: Sequence, ID: Hashable>(
-        _ sequence: S,
-        using relation: Relation<S.Element, ID>,
-        modifiedAt: Stamp = Date().stamp
-    ) -> AnyPublisher<StampedObject<[S.Element]>, Never> {
-        sequence
-            .map { object in _store(object, using: relation, modifiedAt: modifiedAt) }
-            .combineLatest()
-            .map { collection in
-                collection.reduce((object: [], modifiedAt: 0)) { result, element in
-                    (object: result.object + [element.object], modifiedAt: max(result.modifiedAt, element.modifiedAt))
-                }
-            }
-            .eraseToAnyPublisher()
     }
     
     private func recursiveStore<Element, ID: Hashable>(
