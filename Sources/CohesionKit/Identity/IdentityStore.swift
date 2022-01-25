@@ -1,9 +1,12 @@
 import Foundation
 import Combine
 
+/// keep old name available
+public typealias IdentityMap = IdentityStore
+
 /// Store and access publishers referencing objects to have realtime updates on them.
 /// Memory is automatically released when objects have no observers
-public class IdentityMap {
+public class IdentityStore {
     
     /// in-memory storages. Storages are deallocated automatically (unless aliased)
     var values: [String:Any] = [:]
@@ -93,7 +96,6 @@ public class IdentityMap {
       let storage = self[Element.self, id: id, init: Storage<Element>(id: id, identityMap: self)]
 
       storage.merge(recursiveStore(element, using: relation, modifiedAt: modifiedAt))
-
 
       register(alias: alias, storage: storage)
 

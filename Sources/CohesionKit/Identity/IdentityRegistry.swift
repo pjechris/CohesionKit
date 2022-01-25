@@ -2,20 +2,20 @@ import Foundation
 
 /// An `IdentityMap` wrapper generating simpler and more typed API
 public struct IdentityRegistry {
-    private let identityMap: IdentityMap
+    private let identityStore: IdentityStore
     
-    /// - Parameter identityMap: the storage used by the registry to handle the data
-    public init(identityMap: IdentityMap) {
-        self.identityMap = identityMap
+    /// - Parameter identityStore: the storage used by the registry to handle the data
+    public init(identityStore: IdentityStore) {
+        self.identityStore = identityStore
     }
     
     /// Give access to the data for the underlying relation type
     ///
-    public func `for`<Element, ID: Hashable>(_ relation: Relation<Element, ID>) -> IdentityMapRelation<Element, ID> {
-        IdentityMapRelation(identityMap: identityMap, referring: relation)
+    public func `for`<Element, ID: Hashable>(_ relation: Relation<Element, ID>) -> IdentityStoreRelation<Element, ID> {
+        IdentityStoreRelation(identityStore: identityStore, referring: relation)
     }
     
-    public func `for`<Element: Identifiable>(_ element: Element.Type) -> IdentityMapRelation<Element, Element.ID> {
-        IdentityMapRelation(identityMap: identityMap, referring: .single())
+    public func `for`<Element: Identifiable>(_ element: Element.Type) -> IdentityStoreRelation<Element, Element.ID> {
+        IdentityStoreRelation(identityStore: identityStore, referring: .single())
     }
 }
