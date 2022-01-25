@@ -11,8 +11,8 @@ public struct IdentityStoreRelation<Element, ID: Hashable> {
     private let identityStore: IdentityStore
     private let relation: Relation<Element, ID>
     
-    init(identityStore: IdentityStore, referring relation: Relation<Element, ID>) {
-        self.identityStore = identityStore
+    init(store: IdentityStore, referring relation: Relation<Element, ID>) {
+        self.identityStore = store
         self.relation = relation
     }
     
@@ -39,7 +39,7 @@ public struct IdentityStoreRelation<Element, ID: Hashable> {
           .map { $0.map(\.object).eraseToAnyPublisher() }
     }
 
-    public func publisher(for id: ID) -> ElementPublisher {
+    public func publisher(id: ID) -> ElementPublisher {
       identityStore
           .publisher(using: relation, id: id)
           .map(\.object)
@@ -53,7 +53,7 @@ public struct IdentityStoreRelation<Element, ID: Hashable> {
         .eraseToAnyPublisher()
     }
  
-    public func get(for id: ID) -> Element? {
+    public func get(id: ID) -> Element? {
       identityStore.get(using: relation, id: id)
     }
     
