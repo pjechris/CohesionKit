@@ -2,7 +2,7 @@ import XCTest
 @testable import CohesionKit
 import Combine
 
-class IdentityMapRelationalTests: XCTestCase {
+class IdentityStoreRelationalTests: XCTestCase {
     var cancellables: Set<AnyCancellable> = []
     
     override func tearDown() {

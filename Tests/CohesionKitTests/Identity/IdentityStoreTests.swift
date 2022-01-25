@@ -3,7 +3,7 @@ import XCTest
 @testable import CohesionKit
 import Combine
 
-class IdentityMapTests: XCTestCase {
+class IdentityStoreTests: XCTestCase {
 
   func test_getForId_entityWasAdded_itReturnEntity() {
     let map = IdentityMap()
