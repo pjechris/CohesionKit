@@ -17,26 +17,40 @@ public struct IdentityMapRelation<Element, ID: Hashable> {
     }
     
     public func store(_ element: Element, alias: String? = nil, modifiedAt: Stamp = Date().stamp) -> ElementPublisher {
-        identityMap.store(element, using: relation, alias: alias, modifiedAt: modifiedAt)
+      identityMap
+        .store(element, using: relation, alias: alias, modifiedAt: modifiedAt)
+        .map(\.object)
+        .eraseToAnyPublisher()
     }
     
     public func store<S: Sequence>(_ sequence: S, modifiedAt: Stamp = Date().stamp)
     -> ArrayPublisher where S.Element == Element {
-        identityMap.store(sequence, using: relation, modifiedAt: modifiedAt)
+        identityMap
+        .store(sequence, using: relation, modifiedAt: modifiedAt)
+        .map(\.object)
+        .eraseToAnyPublisher()
     }
 
     @discardableResult
     public func storeIfPresent(_ element: Element, alias: String? = nil, modifiedAt: Stamp = Date().stamp)
     -> ElementPublisher? {
-        identityMap.storeIfPresent(element, using: relation, alias: alias, modifiedAt: modifiedAt)
+        identityMap
+          .storeIfPresent(element, using: relation, alias: alias, modifiedAt: modifiedAt)
+          .map { $0.map(\.object).eraseToAnyPublisher() }
     }
 
     public func publisher(for id: ID) -> ElementPublisher {
-        identityMap.publisher(using: relation, id: id)
+        identityMap
+          .publisher(using: relation, id: id)
+          .map(\.object)
+          .eraseToAnyPublisher()
     }
     
     public func publisher(aliased alias: String) -> AnyPublisher<Element, Never> {
-        identityMap.publisher(for: Element.self, aliased: alias)
+        identityMap
+        .publisher(for: Element.self, aliased: alias)
+        .map(\.object)
+        .eraseToAnyPublisher()
     }
  
     public func get(for id: ID) -> Element? {

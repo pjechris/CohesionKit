@@ -1,6 +1,5 @@
 import Foundation
 
-/// Experimental API
 /// An `IdentityMap` wrapper generating simpler and more typed API
 public struct IdentityRegistry {
     private let identityMap: IdentityMap

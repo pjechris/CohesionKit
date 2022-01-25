@@ -35,7 +35,7 @@ class IdentityMapTests: XCTestCase {
   func test_publisherForId_entityIsAddedAfterRequesting_entityIsEmitted() {
     let map = IdentityMap()
     let publisher = map.publisher(using: SingleRelation<Entity>(), id: Entity.hello.id)
-    var receivedValue: Entity?
+    var receivedValue: StampedObject<Entity>?
     var cancellables: Set<AnyCancellable> = []
 
     _ = map.store(Entity.hello, using: Relation.single(), modifiedAt: Date().stamp)
@@ -44,7 +44,7 @@ class IdentityMapTests: XCTestCase {
       .sink(receiveValue: { receivedValue = $0 })
       .store(in: &cancellables)
 
-    XCTAssertEqual(receivedValue, Entity.hello)
+    XCTAssertEqual(receivedValue?.object, Entity.hello)
   }
     
   func test_getAliased_valueWasStoreWithAlias_itRetunValue() {
