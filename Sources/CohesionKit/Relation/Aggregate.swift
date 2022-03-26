@@ -1,5 +1,5 @@
 import Foundation
 
-protocol Aggregate: Identifiable {
+public protocol Aggregate: Identifiable {
     var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] { get }
 }

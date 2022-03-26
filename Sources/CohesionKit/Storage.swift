@@ -16,7 +16,7 @@ class Storage<T> {
     var modifiedAt: Stamp { subject.value?.modifiedAt ?? 0 }
 
     /// init an empty storage
-    convenience init(id: Any, identityMap: IdentityMap) {
+    convenience init(id: Any, identityMap: IdentityStore) {
         self.init() { [weak identityMap] in
             identityMap?[T.self, id: id] = nil
         }
@@ -65,16 +65,20 @@ class EntityNode<T> {
         self.ref = ref
     }
     
-    func addChild<C>(_ node: EntityNode<C>, for keyPath: KeyPath<T, C>) {
-        if let subscribedChild = children[keyPath]?.node as? EntityNode<C>, subscribedChild == node {
+    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C>) {
+        if let subscribedChild = children[keyPath]?.node as? EntityNode<C>, subscribedChild == childNode {
             return
         }
         
-        let observer = node.ref.addObserver { newValue in
-            // ref.value[keyPath: keyPath] = newValue
+        let observer = childNode.ref.addObserver { [ref] newValue in
+            withUnsafeMutablePointer(to: &ref.value) {
+                let pointer = UnsafeMutableRawPointer($0)
+                
+                pointer.assign(newValue, to: keyPath)
+            }
         }
         
-        children[keyPath] = (subscription: observer, node: node)
+        children[keyPath] = (subscription: observer, node: childNode)
     }
 }
 

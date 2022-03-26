@@ -20,7 +20,7 @@ public struct RelationKeyPath<Root> {
     let keyPath: PartialKeyPath<Root>
     /// method called when storing the element into IdentityMap
     /// we define it here in order to access the keypath exact type in `init`
-    let store: (Root, IdentityMap, Stamp) -> AnyPublisher<(Any, Stamp), Never>
+    let store: (Root, IdentityStore, Stamp) -> AnyPublisher<(Any, Stamp), Never>
     
     /// Build a relation from root with an `Identifiable` child
     public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {

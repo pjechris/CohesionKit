@@ -1,8 +1,42 @@
 import Foundation
 import Combine
 
+public class IdentityMap {
+    var storage: WeakStorage = WeakStorage()
+    private lazy var contextVisitor = EntityContextVisitor(identityMap: self)
+    
+    func store<T: Identifiable>(entity: T) -> EntityNode<T> {
+        guard let node = storage[entity] else {
+            let node = EntityNode(ref: Ref(value: entity))
+            
+            storage[entity] = node
+            
+            return node
+        }
+        
+        node.ref.value = entity
+        
+        return node
+    }
+    
+    func store<T: Aggregate>(entity: T) -> EntityNode<T> {
+        let node = storage[entity] ?? EntityNode(ref: Ref(value: entity))
+        
+        for keyPathContainer in entity.nestedEntitiesKeyPaths {
+            keyPathContainer.accept(node, entity, contextVisitor)
+        }
+        
+        // need the stamp
+        // need to be sure about how sync is value with the stored children
+        node.ref.value = entity // need stamp
+        storage[entity] = node
+        
+        return node
+    }
+}
+
 /// keep old name available
-public typealias IdentityMap = IdentityStore
+//public typealias IdentityMap = IdentityStore
 
 /// Store and access publishers referencing objects to have realtime updates on them.
 /// Memory is automatically released when objects have no observers
