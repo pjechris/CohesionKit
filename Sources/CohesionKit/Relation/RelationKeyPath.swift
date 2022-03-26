@@ -1,5 +1,20 @@
 import Combine
 
+public struct PartialIdentifiableKeyPath<Root> {
+    let keyPath: PartialKeyPath<Root>
+    let accept: (EntityNode<Root>, Root, IdentityVisitor) -> Void
+    
+    public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {
+        self.keyPath = keyPath
+        self.accept = { parent, root, visitor in
+            visitor.visit(
+                context: EntityContext(parent: parent, keyPath: keyPath),
+                entity: root[keyPath: keyPath]
+            )
+        }
+    }
+}
+
 /// A `KeyPath` link between the keyPath and its `Relation`
 public struct RelationKeyPath<Root> {
     let keyPath: PartialKeyPath<Root>
