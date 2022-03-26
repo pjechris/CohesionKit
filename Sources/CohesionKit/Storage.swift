@@ -54,3 +54,36 @@ class Storage<T> {
             .sink(receiveValue: { [weak self] in self?.send($0) })
     }
 }
+
+class EntityNode<T> {
+    typealias SubscribedChild = (subscription: Subscription, node: Any)
+    
+    let ref: Ref<T>
+    private var children: [AnyKeyPath: SubscribedChild] = [:]
+    
+    init(ref: Ref<T>) {
+        self.ref = ref
+    }
+    
+    func addChild<C>(_ node: EntityNode<C>, for keyPath: KeyPath<T, C>) {
+        if let subscribedChild = children[keyPath]?.node as? EntityNode<C>, subscribedChild == node {
+            return
+        }
+        
+        let observer = node.ref.addObserver { newValue in
+            // ref.value[keyPath: keyPath] = newValue
+        }
+        
+        children[keyPath] = (subscription: observer, node: node)
+    }
+}
+
+extension EntityNode: Hashable {
+    static func==(lhs: EntityNode<T>, rhs: EntityNode<T>) -> Bool {
+        ObjectIdentifier(lhs) == ObjectIdentifier(rhs)
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ObjectIdentifier(self).hashValue)
+    }
+}
