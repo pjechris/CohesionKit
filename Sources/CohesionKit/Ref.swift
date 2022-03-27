@@ -1,6 +1,6 @@
 import Foundation
 
-typealias Subscription = () -> Void
+typealias Unsubscription = () -> Void
 
 /// A class holding a value
 class Ref<T> {
@@ -16,7 +16,7 @@ class Ref<T> {
         self.value = value
     }
     
-    func addObserver(_ onChange: @escaping (T) -> Void) -> Subscription {
+    func addObserver(_ onChange: @escaping (T) -> Void) -> Unsubscription {
         let uuid = UUID()
         
         observers[uuid] = onChange

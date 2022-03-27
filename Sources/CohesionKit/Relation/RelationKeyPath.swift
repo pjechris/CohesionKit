@@ -2,13 +2,23 @@ import Combine
 
 public struct PartialIdentifiableKeyPath<Root> {
     let keyPath: PartialKeyPath<Root>
-    let accept: (EntityNode<Root>, Root, IdentityVisitor) -> Void
+    let accept: (EntityNode<Root>, Root, Stamp, IdentityVisitor) -> Void
     
     public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {
         self.keyPath = keyPath
-        self.accept = { parent, root, visitor in
+        self.accept = { parent, root, stamp, visitor in
             visitor.visit(
-                context: EntityContext(parent: parent, keyPath: keyPath),
+                context: EntityContext(parent: parent, keyPath: keyPath, stamp: stamp),
+                entity: root[keyPath: keyPath]
+            )
+        }
+    }
+    
+    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S: Identifiable {
+        self.keyPath = keyPath
+        self.accept = { parent, root, stamp, visitor in
+            visitor.visit(
+                context: EntityContext(parent: parent, keyPath: keyPath, stamp: stamp),
                 entity: root[keyPath: keyPath]
             )
         }

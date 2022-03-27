@@ -3,36 +3,57 @@ import Combine
 
 public class IdentityMap {
     var storage: WeakStorage = WeakStorage()
-    private lazy var contextVisitor = EntityContextVisitor(identityMap: self)
+    private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
     
-    func store<T: Identifiable>(entity: T) -> EntityNode<T> {
+    func store<T: Identifiable>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityNode<T> {
         guard let node = storage[entity] else {
-            let node = EntityNode(ref: Ref(value: entity))
+            let node = EntityNode(entity, modifiedAt: modifiedAt)
             
             storage[entity] = node
             
             return node
         }
         
-        node.ref.value = entity
+        node.updateEntity(entity, modifiedAt: modifiedAt)
         
         return node
     }
     
-    func store<T: Aggregate>(entity: T) -> EntityNode<T> {
-        let node = storage[entity] ?? EntityNode(ref: Ref(value: entity))
+    
+    func store<T: Aggregate>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityNode<T> {
+        let node = storage[entity] ?? EntityNode(entity, modifiedAt: modifiedAt)
+        var entity = entity
+        
+        storage[entity] = node
+
+        // TODO: if this entity is already observed, each child change will trigger an update
+        // we need to merge or (disable them?) while doing the entity update
+        node.applyChildrenChanges = false
+        
+        // TODO: What about if some observers should stop? We never remove previous observers
+        node.removeAllChildren()
         
         for keyPathContainer in entity.nestedEntitiesKeyPaths {
-            keyPathContainer.accept(node, entity, contextVisitor)
+            keyPathContainer.accept(node, entity, modifiedAt, storeVisitor)
         }
         
-        // need the stamp
-        // need to be sure about how sync is value with the stored children
-        node.ref.value = entity // need stamp
-        storage[entity] = node
+        withUnsafeMutablePointer(to: &entity) {
+            let pointer = UnsafeMutableRawPointer($0)
+            
+            for (keyPath, childValue) in node.childrenValues() {
+                pointer.assign(childValue, to: keyPath)
+            }
+        }
         
+        // TODO: need to sync entity beforing applying it
+        node.updateEntity(entity, modifiedAt: modifiedAt)
+        
+        node.applyChildrenChanges = true
+
         return node
     }
+    
+
 }
 
 /// keep old name available
