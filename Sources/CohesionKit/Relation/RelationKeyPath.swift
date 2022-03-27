@@ -14,12 +14,12 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
     }
     
-    public init<S: Sequence>(_ keyPath: KeyPath<Root, S>) where S: Identifiable {
+    public init<C: Collection>(_ keyPath: KeyPath<Root, C>) where C.Element: Identifiable, C.Index: Hashable {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(
                 context: EntityContext(parent: parent, keyPath: keyPath, stamp: stamp),
-                entity: root[keyPath: keyPath]
+                entities: root[keyPath: keyPath]
             )
         }
     }

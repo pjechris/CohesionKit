@@ -19,7 +19,6 @@ public class IdentityMap {
         return node
     }
     
-    
     func store<T: Aggregate>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityNode<T> {
         let node = storage[entity] ?? EntityNode(entity, modifiedAt: modifiedAt)
         var entity = entity
@@ -53,6 +52,17 @@ public class IdentityMap {
         return node
     }
     
+    // TODO: try to reduce the number of updates this might trigger
+    func store<C: Collection>(entities: C, modifiedAt: Stamp = Date().stamp)
+    -> [EntityNode<C.Element>] where C.Element: Identifiable {
+        entities.map { store(entity: $0, modifiedAt: modifiedAt) }
+    }
+    
+    // TODO: try to reduce the number of updates this might trigger
+    func store<C: Collection>(entities: C, modifiedAt: Stamp = Date().stamp)
+    -> [EntityNode<C.Element>] where C.Element: Aggregate {
+        entities.map { store(entity: $0, modifiedAt: modifiedAt) }
+    }
 
 }
 
