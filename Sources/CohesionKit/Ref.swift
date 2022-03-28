@@ -1,6 +1,17 @@
 import Foundation
 
-typealias Unsubscription = () -> Void
+
+public class Subscription {
+    public let unsubscribe: () -> Void
+    
+    init(unsubscribe: @escaping () -> Void) {
+        self.unsubscribe = unsubscribe
+    }
+    
+    deinit {
+        unsubscribe()
+    }
+}
 
 /// A class holding a value
 class Ref<T> {
@@ -16,12 +27,12 @@ class Ref<T> {
         self.value = value
     }
     
-    func addObserver(_ onChange: @escaping (T) -> Void) -> Unsubscription {
+    func addObserver(_ onChange: @escaping (T) -> Void) -> Subscription {
         let uuid = UUID()
         
         observers[uuid] = onChange
         
-        return {
+        return Subscription {
             self.observers.removeValue(forKey: uuid)
         }
     }

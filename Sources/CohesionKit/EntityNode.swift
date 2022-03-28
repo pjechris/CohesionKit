@@ -6,7 +6,7 @@ private protocol AnyEntityNode: AnyObject {
 }
 
 class EntityNode<T>: AnyEntityNode {
-    private typealias SubscribedChild = (unsubscribe: Unsubscription, node: AnyEntityNode)
+    private typealias SubscribedChild = (subscription: Subscription, node: AnyEntityNode)
     
     var applyChildrenChanges = true
 
@@ -37,7 +37,7 @@ class EntityNode<T>: AnyEntityNode {
     }
     
     func removeAllChildren() {
-        children.values.forEach { $0.unsubscribe() }
+        children = [:]
     }
     
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C>) {
@@ -45,7 +45,7 @@ class EntityNode<T>: AnyEntityNode {
             return
         }
         
-        let unsubscription = childNode.ref.addObserver { [unowned self] newValue in
+        let subscription = childNode.ref.addObserver { [unowned self] newValue in
             guard self.applyChildrenChanges else {
                 return
             }
@@ -57,8 +57,8 @@ class EntityNode<T>: AnyEntityNode {
             }
         }
         
-        children[keyPath]?.unsubscribe()
-        children[keyPath] = (unsubscribe: unsubscription, node: childNode)
+//        children[keyPath]?.unsubscribe()
+        children[keyPath] = (subscription: subscription, node: childNode)
     }
     
     /// return each children node value mapped to its given keypath
