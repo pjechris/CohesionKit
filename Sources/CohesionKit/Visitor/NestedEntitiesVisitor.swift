@@ -1,6 +1,7 @@
 import Foundation
 
-protocol IdentityVisitor {
+/// A protocol allowing visiting entity nested keypath entities
+protocol NestedEntitiesVisitor {
     func visit<Root, T: Identifiable>(context: EntityContext<Root, T>, entity: T)
     func visit<Root, T: Aggregate>(context: EntityContext<Root, T>, entity: T)
     

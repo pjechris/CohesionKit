@@ -1,6 +1,7 @@
 import Foundation
 
-struct IdentityMapStoreVisitor: IdentityVisitor {
+/// Visitor storing entity nested keypaths into IdentityMap
+struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
     let identityMap: IdentityMap
     
     func visit<Root, T: Identifiable>(context: EntityContext<Root, T>, entity: T) {
