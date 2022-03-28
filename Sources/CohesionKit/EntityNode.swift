@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-private protocol AnyEntityNode: AnyObject {
+protocol AnyEntityNode: AnyObject {
     var value: Any { get }
 }
 
@@ -9,26 +9,26 @@ class EntityNode<T>: AnyEntityNode {
     private typealias SubscribedChild = (subscription: Subscription, node: AnyEntityNode)
     
     var applyChildrenChanges = true
-
+    var value: Any { ref.value }
+    
     /// An observable entity reference
     private let ref: Ref<T>
     /// last time the ref.value was changed. Any subsequent change must have a bigger `modifiedAt` value to be applied
     private var modifiedAt: Stamp
     /// entity children
     private var children: [PartialKeyPath<T>: SubscribedChild] = [:]
-    fileprivate var value: Any { ref.value }
     
-    init(_ entity: T, modifiedAt: Stamp) {
-        self.ref = Ref(value: entity)
+    init(ref: Ref<T>, modifiedAt: Stamp) {
+        self.ref = ref
         self.modifiedAt = modifiedAt
     }
     
-    deinit {
-        removeAllChildren()
+    convenience init(_ entity: T, modifiedAt: Stamp) {
+        self.init(ref: Ref(value: entity), modifiedAt: modifiedAt)
     }
     
     func updateEntity(_ entity: T, modifiedAt newModifiedAt: Stamp) {
-        guard newModifiedAt > modifiedAt else {
+        guard newModifiedAt >= modifiedAt else {
             return
         }
         
@@ -57,7 +57,6 @@ class EntityNode<T>: AnyEntityNode {
             }
         }
         
-//        children[keyPath]?.unsubscribe()
         children[keyPath] = (subscription: subscription, node: childNode)
     }
     
