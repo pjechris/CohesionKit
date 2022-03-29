@@ -19,7 +19,7 @@ struct RootFixture: Aggregate, Equatable {
 
 struct SingleNodeFixture: Identifiable, Equatable {
     let id: Int
-    var primitive: String?
+    var primitive: String? = nil
 }
 
 struct OptionalNodeFixture: Identifiable, Equatable {

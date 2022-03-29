@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 public class IdentityMap {
-    var storage: WeakStorage = WeakStorage()
+    private(set) var storage: WeakStorage = WeakStorage()
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
     
     func store<T: Identifiable>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityNode<T> {
