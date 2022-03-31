@@ -24,8 +24,10 @@ struct SingleNodeFixture: Identifiable, Equatable {
 
 struct OptionalNodeFixture: Identifiable, Equatable {
     let id: Int
+    var properties: [String: String] = [:]
 }
 
 struct ListNodeFixture: Identifiable, Equatable {
     let id: Int
+    var key = ""
 }

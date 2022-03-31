@@ -14,20 +14,31 @@ class PartialIdentifiableKeyPathTests: XCTestCase {
 }
 
 private class VisitMock: NestedEntitiesVisitor {
-  func visit<Root, C>(context: EntityContext<Root, C>, entities: C) where C : Collection, C.Element : Aggregate, C.Index : Hashable {
-
-  }
-
-  func visit<Root, C>(context: EntityContext<Root, C>, entities: C) where C : Collection, C.Element : Identifiable, C.Index : Hashable {
-
-  }
-
-  var visitAggregateCalled = false
-  func visit<Root, T>(context: EntityContext<Root, T>, entity: T) where T : Aggregate {
-    visitAggregateCalled = true
-  }
-
-  func visit<Root, T>(context: EntityContext<Root, T>, entity: T) where T : Identifiable {
-
-  }
+    var visitAggregateCalled = false
+    func visit<Root, T>(context: EntityContext<Root, T>, entity: T) where T : Aggregate {
+        visitAggregateCalled = true
+    }
+    
+    func visit<Root, T>(context: EntityContext<Root, T>, entity: T) where T : Identifiable {
+        
+    }
+    
+    func visit<Root, T>(context: EntityContext<Root, T>, entity: T?) where T : Identifiable {
+        
+    }
+    
+    func visit<Root, T>(context: EntityContext<Root, T>, entity: T?) where T : Aggregate {
+        
+    }
+    
+    func visit<Root, C>(context: EntityContext<Root, C>, entities: C)
+    where C : Collection, C.Element : Aggregate, C.Index : Hashable {
+        
+    }
+    
+    func visit<Root, C>(context: EntityContext<Root, C>, entities: C)
+    where C : Collection, C.Element : Identifiable, C.Index : Hashable {
+        
+    }
+    
 }

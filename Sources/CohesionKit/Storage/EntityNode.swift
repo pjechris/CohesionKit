@@ -5,9 +5,9 @@ protocol AnyEntityNode: AnyObject {
     var value: Any { get }
 }
 
-class EntityNode<T>: AnyEntityNode {
-    private typealias SubscribedChild = (subscription: Subscription, node: AnyEntityNode)
-    
+/// A graph node representing a entity of type `T` and its children. Anytime one of its children is updated the node
+/// will reflect the change on its own value.
+class EntityNode<T>: AnyEntityNode {    
     var applyChildrenChanges = true
     var value: Any { ref.value }
     
@@ -16,7 +16,7 @@ class EntityNode<T>: AnyEntityNode {
     /// last time the ref.value was changed. Any subsequent change must have a bigger `modifiedAt` value to be applied
     private var modifiedAt: Stamp
     /// entity children
-    private var children: [PartialKeyPath<T>: SubscribedChild] = [:]
+    private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
     
     init(ref: Ref<T>, modifiedAt: Stamp) {
         self.ref = ref
@@ -27,6 +27,7 @@ class EntityNode<T>: AnyEntityNode {
         self.init(ref: Ref(value: entity), modifiedAt: modifiedAt)
     }
     
+    /// change the entity to a new value only if `modifiedAt` is equal or higher than any registered previous modification
     func updateEntity(_ entity: T, modifiedAt newModifiedAt: Stamp) {
         guard newModifiedAt >= modifiedAt else {
             return
@@ -40,27 +41,24 @@ class EntityNode<T>: AnyEntityNode {
         children = [:]
     }
     
+    /// observe one of the node child
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C>) {
-        observeChild(childNode, for: keyPath) { pointer, newValue in
+        observeChild(childNode, identity: keyPath) { pointer, newValue in
             pointer.assign(newValue, to: keyPath)
         }
     }
     
+    /// observe one of the node child whose type is a collection
     func observeChild<C: BufferedCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
     where C.Index == Int {
-        observeChild(childNode, for: keyPath) { pointer, newValue in
+        observeChild(childNode, identity: keyPath.appending(path: \C[index])) { pointer, newValue in
             pointer.assign(newValue, to: keyPath, index: index)
         }
     }
     
-    /// return each children node value mapped to its given keypath
-    func childrenValues() -> [PartialKeyPath<T>: Any] {
-        children.mapValues(\.node.value)
-    }
-    
     private func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,
-        for keyPath: KeyPath<T, C>,
+        identity keyPath: KeyPath<T, C>,
         assign: @escaping (UnsafeMutableRawPointer, Element) -> Void
     ) {
         if let subscribedChild = children[keyPath]?.node as? EntityNode<Element>, subscribedChild == childNode {
@@ -79,7 +77,11 @@ class EntityNode<T>: AnyEntityNode {
             }
         }
         
-        children[keyPath] = (subscription: subscription, node: childNode)
+        children[keyPath] = SubscribedChild(
+            subscription: subscription,
+            node: childNode,
+            selfAssignTo: { assign($0, childNode.ref.value) }
+        )
     }
  
 }

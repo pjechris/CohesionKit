@@ -25,26 +25,26 @@ public class IdentityMap {
         
         storage[entity] = node
 
-        // TODO: if this entity is already observed, each child change will trigger an update
-        // we need to merge or (disable them?) while doing the entity update
+        // disable changes while doing the entity update
         node.applyChildrenChanges = false
         
-        // TODO: What about if some observers should stop? We never remove previous observers
+        // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()
         
         for keyPathContainer in entity.nestedEntitiesKeyPaths {
             keyPathContainer.accept(node, entity, modifiedAt, storeVisitor)
         }
         
+        // modify the entity with (potentially) new/different child stored value than what we have
         withUnsafeMutablePointer(to: &entity) {
             let pointer = UnsafeMutableRawPointer($0)
             
-            for (keyPath, childValue) in node.childrenValues() {
-                pointer.assign(childValue, to: keyPath)
+            for (_, child) in node.children {
+                child.selfAssignTo(pointer)
             }
         }
         
-        // TODO: need to sync entity beforing applying it
+        // TODO: what about if modifiedAt is < but some of the children actually changed?
         node.updateEntity(entity, modifiedAt: modifiedAt)
         
         node.applyChildrenChanges = true
