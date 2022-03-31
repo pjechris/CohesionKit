@@ -1,4 +1,4 @@
-name: test and build sample
+name: build sample
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
     branches:
-      - *
+      - main
 
 jobs:
   test:
@@ -16,5 +16,5 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
 
-    - name: Run tests
-      run: fastlane test
+    - name: Build sample app
+      run: fastlane build
