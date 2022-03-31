@@ -15,7 +15,7 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
     }
     
-    public init<C: Collection>(_ keyPath: KeyPath<Root, C>) where C.Element: Identifiable, C.Index: Hashable {
+    public init<C: BufferedCollection>(_ keyPath: KeyPath<Root, C>) where C.Element: Identifiable, C.Index == Int {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(

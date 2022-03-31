@@ -41,7 +41,29 @@ class EntityNode<T>: AnyEntityNode {
     }
     
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C>) {
-        if let subscribedChild = children[keyPath]?.node as? EntityNode<C>, subscribedChild == childNode {
+        observeChild(childNode, for: keyPath) { pointer, newValue in
+            pointer.assign(newValue, to: keyPath)
+        }
+    }
+    
+    func observeChild<C: BufferedCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
+    where C.Index == Int {
+        observeChild(childNode, for: keyPath) { pointer, newValue in
+            pointer.assign(newValue, to: keyPath, index: index)
+        }
+    }
+    
+    /// return each children node value mapped to its given keypath
+    func childrenValues() -> [PartialKeyPath<T>: Any] {
+        children.mapValues(\.node.value)
+    }
+    
+    private func observeChild<C, Element>(
+        _ childNode: EntityNode<Element>,
+        for keyPath: KeyPath<T, C>,
+        assign: @escaping (UnsafeMutableRawPointer, Element) -> Void
+    ) {
+        if let subscribedChild = children[keyPath]?.node as? EntityNode<Element>, subscribedChild == childNode {
             return
         }
         
@@ -53,17 +75,13 @@ class EntityNode<T>: AnyEntityNode {
             withUnsafeMutablePointer(to: &self.ref.value) {
                 let pointer = UnsafeMutableRawPointer($0)
                 
-                pointer.assign(newValue, to: keyPath)
+                assign(pointer, newValue)
             }
         }
         
         children[keyPath] = (subscription: subscription, node: childNode)
     }
-    
-    /// return each children node value mapped to its given keypath
-    func childrenValues() -> [PartialKeyPath<T>: Any] {
-        children.mapValues(\.node.value)
-    }
+ 
 }
 
 extension EntityNode: Hashable {
