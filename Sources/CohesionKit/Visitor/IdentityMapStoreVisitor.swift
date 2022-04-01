@@ -12,15 +12,15 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
         context.parent.observeChild(identityMap.store(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
     }
     
-    func visit<Root, T: Identifiable>(context: EntityContext<Root, T>, entity: T?) {
+    func visit<Root, T: Identifiable>(context: EntityContext<Root, T?>, entity: T?) {
         if let entity = entity {
-            visit(context: context, entity: entity)
+            context.parent.observeChild(identityMap.store(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
         }
     }
     
-    func visit<Root, T: Aggregate>(context: EntityContext<Root, T>, entity: T?) {
+    func visit<Root, T: Aggregate>(context: EntityContext<Root, T?>, entity: T?) {
         if let entity = entity {
-            visit(context: context, entity: entity)
+            context.parent.observeChild(identityMap.store(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
         }
     }
     

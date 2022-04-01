@@ -11,7 +11,7 @@ struct RootFixture: Aggregate, Equatable {
     var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<RootFixture>] {
         [
             .init(\.singleNode),
-            //        .init(\.optional),
+            .init(\.optional),
             .init(\.listNodes)
         ]
     }

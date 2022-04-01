@@ -48,6 +48,13 @@ class EntityNode<T>: AnyEntityNode {
         }
     }
     
+    /// observe a non nil child but whose keypath is represented by an Optional
+    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C?>) {
+        observeChild(childNode, identity: keyPath) { pointer, newValue in
+            pointer.assign(.some(newValue), to: keyPath)
+        }
+    }
+    
     /// observe one of the node child whose type is a collection
     func observeChild<C: BufferedCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
     where C.Index == Int {
@@ -56,6 +63,10 @@ class EntityNode<T>: AnyEntityNode {
         }
     }
     
+    /// Observe a node child
+    /// - Parameter childNode: the child to observe
+    /// - Parameter keyPath: keypath associated to the child. Should have similar type but maybe a little different (optional, Array.Element, ...)
+    /// - Parameter assign: to assign childNode value to current node ref value
     private func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,
         identity keyPath: KeyPath<T, C>,

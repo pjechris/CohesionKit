@@ -23,11 +23,11 @@ private class VisitMock: NestedEntitiesVisitor {
         
     }
     
-    func visit<Root, T>(context: EntityContext<Root, T>, entity: T?) where T : Identifiable {
+    func visit<Root, T>(context: EntityContext<Root, T?>, entity: T?) where T : Identifiable {
         
     }
     
-    func visit<Root, T>(context: EntityContext<Root, T>, entity: T?) where T : Aggregate {
+    func visit<Root, T>(context: EntityContext<Root, T?>, entity: T?) where T : Aggregate {
         
     }
     
