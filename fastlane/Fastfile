@@ -18,7 +18,7 @@ default_platform(:ios)
 platform :ios do
   desc "Test library"
   lane :test do
-    sh "cd .. && swift test --enable-test-discovery"
+    sh "cd .. && swift test --enable-test-discovery --enable-code-coverage"
   end
 
   desc "Build sample"
