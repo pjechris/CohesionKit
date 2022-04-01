@@ -11,7 +11,7 @@ struct RootFixture: Aggregate, Equatable {
     var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<RootFixture>] {
         [
             .init(\.singleNode),
-            //        .init(\.optional),
+            .init(\.optional),
             .init(\.listNodes)
         ]
     }
@@ -24,8 +24,10 @@ struct SingleNodeFixture: Identifiable, Equatable {
 
 struct OptionalNodeFixture: Identifiable, Equatable {
     let id: Int
+    var properties: [String: String] = [:]
 }
 
 struct ListNodeFixture: Identifiable, Equatable {
     let id: Int
+    var key = ""
 }
