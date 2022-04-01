@@ -65,7 +65,7 @@ class EntityNode<T>: AnyEntityNode {
     
     /// Observe a node child
     /// - Parameter childNode: the child to observe
-    /// - Parameter keyPath: keypath associated to the child. Should have similar type but maybe a little different (optional, Array.Element, ...)
+    /// - Parameter keyPath: a **unique** keypath associated to the child. Should have similar type but maybe a little different (optional, Array.Element, ...)
     /// - Parameter assign: to assign childNode value to current node ref value
     private func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,

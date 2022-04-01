@@ -73,4 +73,17 @@ class EntityNodeTests: XCTestCase {
         
         XCTAssertTrue(observerCalled)
     }
+    
+    func test_observeChildIndex_eachChildIsAdded() {
+        let child1 = EntityNode(ListNodeFixture(id: 1), modifiedAt: startTimestamp)
+        let child2 = EntityNode(ListNodeFixture(id: 2), modifiedAt: startTimestamp)
+        let node = EntityNode(startEntity, modifiedAt: startTimestamp)
+        
+        XCTAssertEqual(node.children.count, 0)
+        
+        node.observeChild(child1, for: \.listNodes, index: 0)
+        node.observeChild(child2, for: \.listNodes, index: 1)
+        
+        XCTAssertEqual(node.children.count, 2)
+    }
 }
