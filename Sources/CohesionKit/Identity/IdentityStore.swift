@@ -23,6 +23,14 @@ public class IdentityMap {
         entities.map { EntityObserver(node: store(entity: $0, modifiedAt: modifiedAt)) }
     }
     
+    public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
+        if let node = storage[EntityNode<T>.self, id: id] {
+            return EntityObserver(node: node)
+        }
+        
+        return nil
+    }
+    
     func store<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         guard let node = storage[entity] else {
             let node = EntityNode(entity, modifiedAt: modifiedAt)

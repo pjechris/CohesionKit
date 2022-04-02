@@ -49,4 +49,33 @@ class IdentityMapTests: XCTestCase {
         XCTAssertEqual((node.value as! RootFixture).listNodes, nestedArray)
     }
 
+    func test_find_entityStored_noObserverAdded_returnNil() {
+        let identityMap = IdentityMap()
+        let entity = SingleNodeFixture(id: 1)
+        
+        _ = identityMap.store(entity: entity)
+        
+        XCTAssertNil(identityMap.find(SingleNodeFixture.self, id: 1))
+    }
+    
+    func test_find_entityStored_observedAdded_subscriptionDeinit_returnNil() {
+        let identityMap = IdentityMap()
+        let entity = SingleNodeFixture(id: 1)
+        
+        // don't keep a direct ref to EntityObserver to check memory release management
+        _ = identityMap.store(entity: entity).observe { _ in }
+            
+        XCTAssertNil(identityMap.find(SingleNodeFixture.self, id: 1))
+    }
+    
+    func test_find_entityStored_observerAdded_returnEntity() {
+        let identityMap = IdentityMap()
+        let entity = SingleNodeFixture(id: 1)
+        
+        // don't keep a direct ref to EntityObserver to check memory release management
+        withExtendedLifetime(identityMap.store(entity: entity).observe { _ in }) {
+            XCTAssertEqual(identityMap.find(SingleNodeFixture.self, id: 1)?.value, entity)
+        }
+    }
+    
 }
