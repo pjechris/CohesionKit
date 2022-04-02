@@ -1,6 +1,5 @@
 import Foundation
 
-
 public class Subscription {
     public let unsubscribe: () -> Void
     
