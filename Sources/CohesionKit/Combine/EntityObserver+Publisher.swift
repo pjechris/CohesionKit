@@ -1,16 +1,5 @@
+#if canImport(Combine)
 import Combine
-
-/// A protocol abstracting EntityObserver. It exist only for making extension over `Array<EntityObserver<T>>`.
-/// Don't use it!
-public protocol _EntityObserver {
-    associatedtype T
-    
-    var value: T { get }
-    
-    func observe(onChange: @escaping (T) -> Void) -> Subscription
-}
-
-extension EntityObserver: _EntityObserver { }
 
 extension _EntityObserver {
     /// A `Publisher` emitting the observer current value and subscribing to any subsequents new values
@@ -40,3 +29,17 @@ extension Array where Element: _EntityObserver {
             .eraseToAnyPublisher()
     }
 }
+
+#endif
+
+/// A protocol abstracting EntityObserver. It exist only for making extension over `Array<EntityObserver<T>>`.
+/// Don't use it!
+public protocol _EntityObserver {
+    associatedtype T
+    
+    var value: T { get }
+    
+    func observe(onChange: @escaping (T) -> Void) -> Subscription
+}
+
+extension EntityObserver: _EntityObserver { }
