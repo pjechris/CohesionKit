@@ -1,11 +1,18 @@
 import Foundation
 
-
 public class Subscription {
     public let unsubscribe: () -> Void
     
     init(unsubscribe: @escaping () -> Void) {
-        self.unsubscribe = unsubscribe
+        var unsubscribed = false
+        
+        self.unsubscribe = {
+            if !unsubscribed {
+                unsubscribe()
+            }
+            
+            unsubscribed = true
+        }
     }
     
     deinit {
@@ -27,7 +34,7 @@ class Ref<T> {
         self.value = value
     }
     
-    func addObserver(_ onChange: @escaping (T) -> Void) -> Subscription {
+    func addObserver(onChange: @escaping (T) -> Void) -> Subscription {
         let uuid = UUID()
         
         observers[uuid] = onChange

@@ -5,7 +5,33 @@ public class IdentityMap {
     private(set) var storage: WeakStorage = WeakStorage()
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
     
-    func store<T: Identifiable>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityNode<T> {
+    public func store<T: Identifiable>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityObserver<T> {
+        EntityObserver(node: store(entity: entity, modifiedAt: modifiedAt))
+    }
+    
+    public func store<T: Aggregate>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityObserver<T> {
+        EntityObserver(node: store(entity: entity, modifiedAt: modifiedAt))
+    }
+    
+    public func store<C: Collection>(entities: C, modifiedAt: Stamp = Date().stamp) -> [EntityObserver<C.Element>]
+    where C.Element: Identifiable {
+        entities.map { EntityObserver(node: store(entity: $0, modifiedAt: modifiedAt)) }
+    }
+    
+    public func store<C: Collection>(entities: C, modifiedAt: Stamp = Date().stamp) -> [EntityObserver<C.Element>]
+    where C.Element: Aggregate {
+        entities.map { EntityObserver(node: store(entity: $0, modifiedAt: modifiedAt)) }
+    }
+    
+    public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
+        if let node = storage[EntityNode<T>.self, id: id] {
+            return EntityObserver(node: node)
+        }
+        
+        return nil
+    }
+    
+    func store<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         guard let node = storage[entity] else {
             let node = EntityNode(entity, modifiedAt: modifiedAt)
             
@@ -19,7 +45,7 @@ public class IdentityMap {
         return node
     }
     
-    func store<T: Aggregate>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityNode<T> {
+    func store<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         let node = storage[entity] ?? EntityNode(entity, modifiedAt: modifiedAt)
         var entity = entity
         
@@ -50,18 +76,6 @@ public class IdentityMap {
         node.applyChildrenChanges = true
 
         return node
-    }
-    
-    // TODO: try to reduce the number of updates this might trigger
-    func store<C: Collection>(entities: C, modifiedAt: Stamp = Date().stamp)
-    -> [EntityNode<C.Element>] where C.Element: Identifiable {
-        entities.map { store(entity: $0, modifiedAt: modifiedAt) }
-    }
-    
-    // TODO: try to reduce the number of updates this might trigger
-    func store<C: Collection>(entities: C, modifiedAt: Stamp = Date().stamp)
-    -> [EntityNode<C.Element>] where C.Element: Aggregate {
-        entities.map { store(entity: $0, modifiedAt: modifiedAt) }
     }
 
 }

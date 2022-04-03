@@ -1,8 +1,35 @@
 import Foundation
 import Combine
 
+/// Typed erased protocol
 protocol AnyEntityNode: AnyObject {
     var value: Any { get }
+}
+
+/// A type registering observers on a given entity
+public struct EntityObserver<T> {
+    let node: EntityNode<T>
+    /// the value at the time the observer was created. If you want **realtime** value use `observe to get notified of changes
+    public let value: T
+    
+    init(node: EntityNode<T>) {
+        self.node = node
+        self.value = node.value as! T
+    }
+    
+    /// Add an observer being notified when entity change
+    /// - Parameter onChange: a closure called when value changed
+    /// - Returns: a subscription to cancel observation. Observation is automatically cancelled if subscription is deinit.
+    /// As long as the subscription is alived the entity is kept in the IdentityMap.
+    public func observe(onChange: @escaping (T) -> Void) -> Subscription {
+        let subscription = node.ref.addObserver(onChange: onChange)
+        let retain = Unmanaged.passRetained(node)
+        
+        return Subscription {
+            subscription.unsubscribe()
+            retain.release()
+        }
+    }
 }
 
 /// A graph node representing a entity of type `T` and its children. Anytime one of its children is updated the node
@@ -12,7 +39,7 @@ class EntityNode<T>: AnyEntityNode {
     var value: Any { ref.value }
     
     /// An observable entity reference
-    private let ref: Ref<T>
+    fileprivate let ref: Ref<T>
     /// last time the ref.value was changed. Any subsequent change must have a bigger `modifiedAt` value to be applied
     private var modifiedAt: Stamp
     /// entity children
