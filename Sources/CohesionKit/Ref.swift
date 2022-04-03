@@ -26,7 +26,7 @@ class Ref<T> {
         self.value = value
     }
     
-    func addObserver(_ onChange: @escaping (T) -> Void) -> Subscription {
+    func addObserver(onChange: @escaping (T) -> Void) -> Subscription {
         let uuid = UUID()
         
         observers[uuid] = onChange

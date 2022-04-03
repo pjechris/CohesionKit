@@ -21,8 +21,8 @@ public struct EntityObserver<T> {
     /// - Parameter onChange: a closure called when value changed
     /// - Returns: a subscription to cancel observation. Observation is automatically cancelled if subscription is deinit.
     /// As long as the subscription is alived the entity is kept in the IdentityMap.
-    func observe(_ onChange: @escaping (T) -> Void) -> Subscription {
-        let subscription = node.ref.addObserver(onChange)
+    public func observe(onChange: @escaping (T) -> Void) -> Subscription {
+        let subscription = node.ref.addObserver(onChange: onChange)
         let retain = Unmanaged.passRetained(node)
         
         return Subscription {
