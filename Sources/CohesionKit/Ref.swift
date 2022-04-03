@@ -4,7 +4,15 @@ public class Subscription {
     public let unsubscribe: () -> Void
     
     init(unsubscribe: @escaping () -> Void) {
-        self.unsubscribe = unsubscribe
+        var unsubscribed = false
+        
+        self.unsubscribe = {
+            if !unsubscribed {
+                unsubscribe()
+            }
+            
+            unsubscribed = true
+        }
     }
     
     deinit {
