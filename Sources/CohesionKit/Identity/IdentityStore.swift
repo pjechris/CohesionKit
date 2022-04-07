@@ -3,24 +3,43 @@ import Combine
 
 public class IdentityMap {
     private(set) var storage: WeakStorage = WeakStorage()
+    private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
     
-    public func store<T: Identifiable>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityObserver<T> {
-        EntityObserver(node: store(entity: entity, modifiedAt: modifiedAt))
+    public func store<T: Identifiable>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
+    -> EntityObserver<T> {
+        let node = store(entity: entity, modifiedAt: modifiedAt)
+        
+        refAliases.insert(node, key: named)
+        
+        return EntityObserver(node: node)
     }
     
-    public func store<T: Aggregate>(entity: T, modifiedAt: Stamp = Date().stamp) -> EntityObserver<T> {
-        EntityObserver(node: store(entity: entity, modifiedAt: modifiedAt))
+    public func store<T: Aggregate>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
+    -> EntityObserver<T> {
+        let node = store(entity: entity, modifiedAt: modifiedAt)
+        
+        refAliases.insert(node, key: named)
+        
+        return EntityObserver(node: node)
     }
     
-    public func store<C: Collection>(entities: C, modifiedAt: Stamp = Date().stamp) -> [EntityObserver<C.Element>]
-    where C.Element: Identifiable {
-        entities.map { EntityObserver(node: store(entity: $0, modifiedAt: modifiedAt)) }
+    public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
+    -> [EntityObserver<C.Element>] where C.Element: Identifiable {
+        let nodes = entities.map { store(entity: $0, modifiedAt: modifiedAt) }
+        
+        refAliases.insert(nodes, key: named)
+        
+        return nodes.map { EntityObserver(node: $0) }
     }
     
-    public func store<C: Collection>(entities: C, modifiedAt: Stamp = Date().stamp) -> [EntityObserver<C.Element>]
-    where C.Element: Aggregate {
-        entities.map { EntityObserver(node: store(entity: $0, modifiedAt: modifiedAt)) }
+    public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
+    -> [EntityObserver<C.Element>] where C.Element: Aggregate {
+        let nodes = entities.map { store(entity: $0, modifiedAt: modifiedAt) }
+        
+        refAliases.insert(nodes, key: named)
+        
+        return nodes.map { EntityObserver(node: $0) }
     }
     
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
@@ -29,6 +48,22 @@ public class IdentityMap {
         }
         
         return nil
+    }
+    
+    public func find<T: Identifiable>(named: AliasKey<T>) -> AliasObserver<T> {
+        AliasObserver(alias: refAliases[named])
+    }
+    
+    public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<C> {
+        AliasObserver(alias: refAliases[named])
+    }
+    
+    public func remove<T>(name: AliasKey<T>) {
+        refAliases.remove(for: name)
+    }
+    
+    public func remove<C: Collection>(name: AliasKey<C>) {
+        refAliases.remove(for: name)
     }
     
     func store<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {

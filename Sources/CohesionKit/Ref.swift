@@ -20,8 +20,10 @@ public class Subscription {
     }
 }
 
+protocol AnyRef { }
+
 /// A class holding a value
-class Ref<T> {
+class Ref<T>: AnyRef {
     
     var value: T {
         didSet {
