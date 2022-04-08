@@ -13,21 +13,4 @@ extension Observer {
     }
 }
 
-extension Array where Element: Observer {
-    /// A `Publisher` emitting each observer current value and subscribing to any subsequents new values
-    public var publisher: AnyPublisher<[Element.T], Never> {
-        let subject = CurrentValueSubject<[Element.T], Never>(map(\.value))
-        
-        let subscriptions = indices.map { index in
-            self[index].observe {
-                subject.value[index] = $0
-            }
-        }
-        
-        return subject
-            .handleEvents(receiveCancel: { subscriptions.forEach { $0.unsubscribe() } })
-            .eraseToAnyPublisher()
-    }
-}
-
 #endif

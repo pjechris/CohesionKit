@@ -50,29 +50,5 @@ class EntityObserverPublisherTests: XCTestCase {
         
         wait(for: [expectation], timeout: 1)
     }
-    
-    func test_publisherArray_oneValueChange_receiveArrayUpdate() {
-        let value1 = SingleNodeFixture(id: 1)
-        let value2Modified = SingleNodeFixture(id: 2, primitive: "hello")
-        let node2 = EntityNode(SingleNodeFixture(id: 2), modifiedAt: 0)
-        let observers = [
-            EntityObserver(node: EntityNode(value1, modifiedAt: 0)),
-            EntityObserver(node: node2)
-        ]
-        let expectation = XCTestExpectation()
-        
-        observers.publisher
-            .dropFirst()
-            .sink(receiveValue: {
-                expectation.fulfill()
-                XCTAssertEqual($0, [value1, value2Modified])
-            })
-            .store(in: &cancellables)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
-            node2.updateEntity(value2Modified, modifiedAt: 1)
-        }
-        
-        wait(for: [expectation], timeout: 1)
-    }
+
 }
