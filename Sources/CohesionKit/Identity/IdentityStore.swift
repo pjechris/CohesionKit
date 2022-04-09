@@ -58,12 +58,12 @@ public class IdentityMap {
         AliasObserver(alias: refAliases[named])
     }
     
-    public func remove<T>(name: AliasKey<T>) {
-        refAliases.remove(for: name)
+    public func removeAlias<T>(named: AliasKey<T>) {
+        refAliases.remove(for: named)
     }
     
-    public func remove<C: Collection>(name: AliasKey<C>) {
-        refAliases.remove(for: name)
+    public func removeAlias<C: Collection>(named: AliasKey<C>) {
+        refAliases.remove(for: named)
     }
     
     func store<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
