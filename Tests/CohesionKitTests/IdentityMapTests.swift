@@ -78,4 +78,26 @@ class IdentityMapTests: XCTestCase {
         }
     }
     
+    func test_find_entityStoreWithAlias_subscriptionCancelled_returnValue() {
+        let identityMap = IdentityMap()
+        let entity = SingleNodeFixture(id: 1)
+        
+        _ = identityMap.store(entity: entity, named: .test)
+        
+        XCTAssertEqual(identityMap.find(named: .test).value, entity)
+    }
+    
+    func test_find_entityStoreWithAlias_thenRemoved_returnNil() {
+        let identityMap = IdentityMap()
+        let entity = SingleNodeFixture(id: 1)
+        
+        _ = identityMap.store(entity: entity, named: .test)
+        identityMap.removeAlias(named: .test)
+        
+        XCTAssertNil(identityMap.find(named: .test).value)
+    }
+}
+
+private extension AliasKey where T == SingleNodeFixture {
+    static let test = AliasKey(named: "test")
 }
