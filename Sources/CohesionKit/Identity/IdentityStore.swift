@@ -6,6 +6,8 @@ public class IdentityMap {
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
     
+    public init() { }
+    
     public func store<T: Identifiable>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
     -> EntityObserver<T> {
         let node = store(entity: entity, modifiedAt: modifiedAt)

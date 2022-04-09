@@ -1,38 +1,40 @@
 import Foundation
 import Combine
 import CohesionKit
-import CombineExt
 
 class MatchRepository {
-    private static let registry = IdentityRegistry(store: IdentityStore())
-    private lazy var registry = Self.registry
+    private static let identityMap = IdentityMap()
+    private lazy var identityMap = Self.identityMap
     private var cancellables: Set<AnyCancellable> = []
-
+    
     /// load matches with their markets and outcomes from Data.swift
     func loadMatches() -> AnyPublisher<[MatchMarkets], Never> {
         let matches = MatchMarkets.simulatedMatches
-
-        return registry
-          .for(Relations.matchMarkets)
-          .store(matches, modifiedAt: MatchMarkets.simulatedFetchedDate.stamp)
+        
+        return identityMap.store(entities: matches, modifiedAt: MatchMarkets.simulatedFetchedDate.stamp).asPublisher
     }
-
+    
     /// observe primary (first) match market changes (for this sample changes are generated randomely
     /// - Returns: the match with all its markets including updates for primary market
     func observePrimaryMarket(for match: Match) -> AnyPublisher<MatchMarkets, Never> {
-        let data = MatchMarkets.simulatedMatches.first { $0.match.id == match.id }!
-      let outcomes = data.primaryMarket.outcomes.map { registry.for(Outcome.self).get(id: $0.id) ?? $0 }
-
-        return outcomes
-            .map { outcome in self.randomChanges(for: outcome) }
-            .combineLatest()
-            .map { [registry] in registry.for(Outcome.self).store($0) }
-            .map { [registry] _ in registry.for(Relations.matchMarkets).publisher(id: match.id) }
-            .switchToLatest()
+        let matchMarket = MatchMarkets.simulatedMatches.first { $0.match.id == match.id }!
+        var cancellables: Set<AnyCancellable> = []
+        
+        for outcome in matchMarket.primaryMarket.outcomes {
+            generateRandomChanges(for: outcome)
+                .sink(receiveValue: { [identityMap] in
+                    _ = identityMap.store(entity: $0)
+                })
+                .store(in: &cancellables)
+        }
+        
+        return identityMap.find(MatchMarkets.self, id: match.id)!
+            .asPublisher
+            .handleEvents(receiveCancel: { cancellables.removeAll() })
             .eraseToAnyPublisher()
     }
-
-    private func randomChanges(for outcome: Outcome) -> AnyPublisher<Outcome, Never> {
+    
+    private func generateRandomChanges(for outcome: Outcome) -> AnyPublisher<Outcome, Never> {
         Timer
             .publish(every: 3, on: .main, in: .common)
             .autoconnect()

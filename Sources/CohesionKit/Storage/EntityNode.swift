@@ -30,7 +30,7 @@ class EntityNode<T>: AnyEntityNode {
     
     /// change the entity to a new value only if `modifiedAt` is equal or higher than any registered previous modification
     func updateEntity(_ entity: T, modifiedAt newModifiedAt: Stamp) {
-        guard newModifiedAt >= modifiedAt else {
+        guard newModifiedAt > modifiedAt else {
             return
         }
         
