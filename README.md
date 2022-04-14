@@ -92,7 +92,7 @@ func findBooks() {
   URLSession(...)
   // 2. store data in `IdentityMap`
   // 3. return a `publisher` creating an observer
-    .map { books in identityMap.store(books).publisher }
+    .map { books in identityMap.store(books).asPublisher }
     .sink { ... }
     .store(in: &cancellables)
 }
@@ -100,7 +100,7 @@ func findBooks() {
 
 ```swift
 identityMap.find(Book.self, id: 1)?
-  .publisher
+  .asPublisher
   .sink { ... }
   .store(in: &cancellables)
 ```
@@ -186,7 +186,7 @@ identityMap.find(Book.self, id: "ACK") // return nil
 
 ```swift
 let book = let book = Book(id: "ACK", title: "A Clash of Kings")
-var cancellable = identityMap.store(book).publisher.sink { ... }
+var cancellable = identityMap.store(book).asPublisher.sink { ... }
 let cancellable2 = identityMap.find(Book.self, id: "ACK") // return a publisher
 
 cancellable = nil
