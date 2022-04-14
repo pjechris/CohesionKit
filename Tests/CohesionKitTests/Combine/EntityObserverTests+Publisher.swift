@@ -15,7 +15,7 @@ class EntityObserverPublisherTests: XCTestCase {
         let observer = EntityObserver(node: node)
         let expectation = XCTestExpectation()
         
-        observer.publisher
+        observer.asPublisher
             .dropFirst()
             .sink(receiveValue: {
                 expectation.fulfill()
@@ -37,7 +37,7 @@ class EntityObserverPublisherTests: XCTestCase {
         
         expectation.isInverted = true
         
-        observer.publisher
+        observer.asPublisher
             .dropFirst()
             .sink(receiveValue: { _ in expectation.fulfill() })
             .store(in: &cancellables)
