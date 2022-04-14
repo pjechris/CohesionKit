@@ -25,10 +25,10 @@ class EntityNodeTests: XCTestCase {
         node = EntityNode(startEntity, modifiedAt: startTimestamp)
     }
     
-    func test_updateEntity_stampIsEqual_entityIsUpdated() {
+    func test_updateEntity_stampIsEqual_entityIsNotUpdated() {
         node.updateEntity(newEntity, modifiedAt: startTimestamp)
         
-        XCTAssertEqual(node.value as? RootFixture, newEntity)
+        XCTAssertEqual(node.value as? RootFixture, startEntity)
     }
     
     func test_updateEntity_stampIsSup_entityIsUpdated() {

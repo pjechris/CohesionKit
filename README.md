@@ -5,151 +5,236 @@
 ![tests](https://github.com/pjechris/CohesionKit/actions/workflows/test.yml/badge.svg)
 [![twitter](https://img.shields.io/badge/twitter-pjechris-1DA1F2?logo=twitter&logoColor=white)](https://twitter.com/pjechris)
 
-Stop having your data not always up-to-date and not synchronized between screens!
+Simple data synchronisation in plain Swift.
 
-Implemented with latest Swift technologies:
+## Overview
+
+CohesionKit is a small library intended to remedy issues developers face when they try to display realtime data on multiple screens.
+
+It is designed with latest Swift technologies:
 
 - 📇 `Identifiable` protocol
 - 🧰 `Combine` framework
-- 👀 `@dynamicMemberLookup`
+- 👀 `KeyPath`
 
-# Why using it?
+## When using it?
 
-- 🦕 You don't use and/or don't want to use heavy frameworks like CoreData, Realm,... to keep in-memory data sync
+- 🔁 You need to show realtime data (websockets for instance)
+- 🦕 You don't want to use a heavy frameworks like CoreData or Realm
 - 🪶 You look for a lightweight tool
 - 🗃️ You want to use structs
-- 🔁 You have realtime data in your app (through websockets for instance)
-- 🐛 You have data sync issues and want to get rid of it
-- 📱 You display same data in multiple screens
 
-It's very unlikely your app will read and write data from only one class. You end up having to come up with all kind of clever mechanisms to communicate between your classes. They have to tell each other when there are changes, and if they should refresh the data they’ve fetched previously. CohesionKit intend to remedy these issues.
+## Features
 
-# Requirements
+- [x] Work with Swift `struct`
+- [x] Store and retrieve `Identifiable` objects
+- [x] Store and retrieve relational objects
+- [x] Store and retrieve objects using aliases
+- [x] Combine asynchronous API
+- [x] In-memory storage
+- [x] Only keep objects you're using (weak memory)
+- [x] Simple API
 
-- iOS 13+ / macOS 10.15
-- Swift 5.1+
-
-# Installation
+## Installation
 
 - Swift Package Manager
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/pjechris/CohesionKit.git", .upToNextMajor(from: "0.1.0"))
+    .package(url: "https://github.com/pjechris/CohesionKit.git", .upToNextMajor(from: "0.7.0"))
 ]
 ```
 
-# Examples
+## Examples
 
 This library come a very simple Example project so you can see a real case usage. It mostly show:
 
 - How to store data in the library
 - How to retrieve and update that data for realtime
 
-# Basic Usage
+## Getting started
 
-CohesionKit is based on [Identity Map pattern](http://martinfowler.com/eaaCatalog/identityMap.html). Idea is to:
+### Store an object
 
-1. Load your data as usual (WebService, GraphQL, DB, ...). Instead of returning them directly you pass the data to an object (`IdentityRegistry`) to track them using their identity.
-1. You ask `IdentityRegistry` for the data which will be returned as `Combine.AnyPublisher`. Now any updates that will be made into `IdentityRegistry` will be sent to you.
-2. Send updates for these data to `IdentityRegistry`. Anyone that asked for them will then be notified of the updates thanks to `Combine.AnyPublisher`.
-
-## Storing an object
-
-First create an `IdentityRegistry`:
+First create an instance of `IdentityMap`:
 
 ```swift
-let registry = IdentityRegistry(store: IdentityStore())
+let identityMap = IdentityMap()
 ```
 
-When your object is a simple `Identifiable` you can store it directly in the registry:
+`IdentityMap` let you store `Identifiable` objects:
 
 ```swift
-let user = User(id: 42, name: "John Doe")
-
-registry.for(User.self).store(user)
-```
-
-Your object can now be retrieved by **anyone**:
-
-```swift
-/// somewhere else in the code
-registry.for(User.self).publisher(id: 42)
-```
-
-More realistic example would be to load and save User when calling a webservice, then just load it from the registry when looking for it:
-
-```swift
-func loadCurrentUser() -> AnyPublisher<User, Error> {
-    loadMyUserFromWS()
-        .map { registry.for(User.self).store($0) }
-        .switchToLatest()
-        .eraseToAnyPublisher()
+struct Book: Identifiable {
+  let id: String
+  let title: String
 }
 
-func findCurrentUser() -> AnyPublisher<User, Never> {
-    registry.for(User.self).publisher(id: 42)
+let book = Book(id: "ABCD", name: "My Book")
+
+identityMap.store(book)
+```
+
+Your can then retrieve the object anywhere in your code:
+
+```swift
+// somewhere else in the code
+identityMap.find(Book.self, id: "ABCD") // return Book(id: "ABCD", name: "My Book")
+```
+
+### Listening to updates
+
+Every time data is updated in `IdentityMap` will trigger a notification to any registered observer. To register yourself as an observer just use result from `store` or `find` methods:
+
+```swift
+func findBooks() {
+  // 1. load data using URLSession
+  URLSession(...)
+  // 2. store data in `IdentityMap`
+  // 3. return a `publisher` creating an observer
+    .map { books in identityMap.store(books).asPublisher }
+    .sink { ... }
+    .store(in: &cancellables)
 }
 ```
 
-> CohesionKit only keep in memory in-use data. When no one is using some data (through subscription with sink/assign) CohesionKit will discard it from its memory. This allow to automatically clean memory.
+```swift
+identityMap.find(Book.self, id: 1)?
+  .asPublisher
+  .sink { ... }
+  .store(in: &cancellables)
+```
 
-## Storing a relational object
+> CohesionKit has a [weak memory policy](#weak-memory-management) you should understand.
 
-When dealing with complex objects containing other identity objects you'll have to use an additional object: `Relation`. `Relation` describe which children to store in order to keep them up-to-date.
+### Relational objects
 
-> While complex objects DO exist in projects, we recommend to avoid deep nested relationships and we **strongly** advise to use [Aggregate objects](https://swiftunwrap.com/article/modeling-done-right/).
+To store objects containing other objects you need to make them conform to one protocol: `Aggregate`.
 
 ```swift
-// 1. Create your model
-struct ProductComments
-  let product: Product
-  let comments: [Comment]
+struct AuthorBooks: Aggregate
+  var id: Author.ID { author.id }
+
+  let author: Author
+  let books: [Book]
+
+  // `nestedEntitiesKeyPaths` must list all Identifiable/Aggregate this object contain
+  var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] {
+    [.init(\.author), .init(\.books)]
+  }
+}
+```
+
+CohesionKit will then handle synchronisation for the three entities:
+
+- AuthorBook
+- Author
+- Book
+
+This allow you to retrieve them independently from each other:
+
+```swift
+let authorBooks = AuthorBooks(
+    author: Author(id: 1, name: "George R.R Martin"),
+    books: [
+      Book(id: "ACK", title: "A Clash of Kings"),
+      Book(id: "ADD", title: "A Dance with Dragons")
+    ]
+)
+
+identityMap.store(authorBooks)
+
+identityMap.find(Author.self, id: 1) // George R.R Martin
+identityMap.find(Book.self, id: "ACK") // A Clash of Kings
+identityMap.find(Book.self, id: "ADD") // A Dance with Dragons
+```
+
+You can also modify any of them however you want:
+
+```swift
+let newAuthor = Author(id: 1, name: "George R.R MartinI")
+
+identityMap.store(newAuthor)
+
+identityMap.find(Author.self, id: 1) // George R.R MartinI
+identityMap.find(AuthorBooks.self, id: 1 // George R.R MartinI + [A Clash of Kings, A Dance with Dragons]
+```
+
+## Advanced topics
+
+### Weak memory management
+
+CohesionKit has a weak memory policy: objects are kept in `IdentityMap` as long as someone use them.
+
+To that end you need to retain observers as long as you're interested in the data:
+
+```swift
+let book = Book(id: "ACK", title: "A Clash of Kings")
+let cancellable = identityMap.store(book) // observer is not retained and no one else observe this book: data is released
+
+identityMap.find(Book.self, id: "ACK") // return  "A Clash of Kings"
+```
+
+If you don't create/retain observers then once entities have no more observers they will be automatically discarded from the storage.
+
+```swift
+let book = Book(id: "ACK", title: "A Clash of Kings")
+_ = identityMap.store(book) // observer is not retained and no one else observe this book: data is released
+
+identityMap.find(Book.self, id: "ACK") // return nil
+```
+
+```swift
+let book = let book = Book(id: "ACK", title: "A Clash of Kings")
+var cancellable = identityMap.store(book).asPublisher.sink { ... }
+let cancellable2 = identityMap.find(Book.self, id: "ACK") // return a publisher
+
+cancellable = nil
+
+identityMap.find(Book.self, id: "ADD") // return "A Clash of Kings" because cancellable2 still observe this book
+```
+
+### Aliases
+
+Sometimes you need to retrieve data without knowing the id. Common scenario is current user.
+
+CohesionKit provide a suitable mechanism: aliases. Aliases allow you to register and find entities using a key.
+
+```swift
+extension AliasKey where T == User {
+  static let currentUser = AliasKey("user")
 }
 
-// 2. Create a Relation object describing it
-enum Relations {
-  static let productComments =
-    Relation(
-        primaryChildPath: \ProductComments.product,
-        otherChildren: [.init(\.product), .init(\.comments)]
-    )
-}
-
-// 3. Then you can get/store it from/into the registry using your Relation entity
-registry.for(Relations.productComments).store(ProductComment(...))
-registry.for(Relations.productComments).publisher(id: xx)
+identityMap.store(currentUser, named: \.currentUser)
 ```
 
-## Aliases
-
-Sometimes you need to retrieve data without knowing the id. Common case is current user: while above we request it using its id most of the time you just want to ask for the current user.
-
-You can do this with registry using "alias" property. First register a data under an alias:
+Then request it somewhere else:
 
 ```swift
-registry.for(User.self).store(myUser, aliased: "current_user")
+identityMap.find(named: \.currentUser) // return the current user
 ```
 
-Then request somewhere else:
+Compared to regular entities aliased objects are long-live objects: they will be kept in the storage even if no one observe them. This allow registered observers to be notified when alias value change:
 
 ```swift
-registry.for(User.self).publisher(aliased: "current_user")
+identityMap.removeAlias(named: \.currentUser) // observers will be notified currentUser is nil.
+
+identityMap.store(newCurrentUser, named: \.currentUser) // observers will be notified that currentUser changed even if currentUser was nil before
 ```
 
-Some very important notes about aliases: while values are automatically released by the library those referenced by an alias will be kept **strongly**.
+### Stale data
 
-## Stale data
-
-When updating data into the registry CohesionKit actually require you to set a modification stamp on it. Stamp is used to as a maker to compare which data is the most recent: the highest is considered as the most recent.
+When storing data CohesionKit actually require you to set a modification stamp on it. `Stamp` is used as a marker to compare data freshness: the higher stamp is the more recent data is.
 
 By default CohesionKit will use the current date as stamp.
 
 ```swift
-registry.for(..).store(xxx) // use default stamp: current date
-registry.for(..).store(xxx, modifiedAt: Date().stamp) // explicitly use Date time stamp
-registry.for(..).store(xxx, modifiedAt: 9000) // any Double value is valid
+identityMap.store(book) // use default stamp: current date
+identityMap.store(book, modifiedAt: Date().stamp) // explicitly use Date time stamp
+identityMap.store(book, modifiedAt: 9000) // any Double value is valid
 ```
+
+If for some reason you try to store data with a stamp lower than the already stamped stored data then the update will be discarded.
 
 # License
 
