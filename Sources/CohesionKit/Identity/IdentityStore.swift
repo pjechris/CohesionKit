@@ -52,11 +52,14 @@ public class IdentityMap {
         return nil
     }
     
+    /// Observe the entity registered under `named` alias
     public func find<T: Identifiable>(named: AliasKey<T>) -> AliasObserver<T> {
         AliasObserver(alias: refAliases[named])
     }
     
-    public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<C> {
+    /// Observe collection registered under `named` alias
+    /// - Returns: an observer returning the alias value. Note that the value will be an Array
+    public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<[C.Element]> {
         AliasObserver(alias: refAliases[named])
     }
     

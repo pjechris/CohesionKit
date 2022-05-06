@@ -1,3 +1,4 @@
+/// Keep a strong reference on each aliased node
 typealias AliasStorage = [AnyHashable: AnyRef]
 
 extension AliasStorage {
