@@ -78,7 +78,7 @@ class IdentityMapTests: XCTestCase {
         }
     }
     
-    func test_find_entityStoreWithAlias_subscriptionCancelled_returnValue() {
+    func test_findNamed_entityStored_subscriptionCancelled_returnValue() {
         let identityMap = IdentityMap()
         let entity = SingleNodeFixture(id: 1)
         
@@ -87,7 +87,7 @@ class IdentityMapTests: XCTestCase {
         XCTAssertEqual(identityMap.find(named: .test).value, entity)
     }
     
-    func test_find_entityStoreWithAlias_thenRemoved_returnNil() {
+    func test_findNamed_entityStored_thenRemoved_returnNil() {
         let identityMap = IdentityMap()
         let entity = SingleNodeFixture(id: 1)
         
@@ -96,8 +96,20 @@ class IdentityMapTests: XCTestCase {
         
         XCTAssertNil(identityMap.find(named: .test).value)
     }
+    
+    func test_findNamed_aliasIsACollection_returnEntities() {
+        let identityMap = IdentityMap()
+        
+        _ = identityMap.store(entities: [SingleNodeFixture(id: 1)], named: .listOfNodes)
+        
+        XCTAssertNotNil(identityMap.find(named: .listOfNodes).value)
+    }
 }
 
 private extension AliasKey where T == SingleNodeFixture {
     static let test = AliasKey(named: "test")
+}
+
+private extension AliasKey where T == [SingleNodeFixture] {
+    static let listOfNodes = AliasKey(named: "listOfNodes")
 }
