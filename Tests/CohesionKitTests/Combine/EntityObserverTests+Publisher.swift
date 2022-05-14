@@ -24,7 +24,7 @@ class EntityObserverPublisherTests: XCTestCase {
             .store(in: &cancellables)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
-            node.updateEntity(expected, modifiedAt: 1)
+            try! node.updateEntity(expected, modifiedAt: 1)
         }
         
         wait(for: [expectation], timeout: 1)
@@ -45,7 +45,7 @@ class EntityObserverPublisherTests: XCTestCase {
         cancellables.removeAll()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
-            node.updateEntity(SingleNodeFixture(id: 1, primitive: "hello"), modifiedAt: 1)
+            try! node.updateEntity(SingleNodeFixture(id: 1, primitive: "hello"), modifiedAt: 1)
         }
         
         wait(for: [expectation], timeout: 1)

@@ -25,36 +25,40 @@ class EntityNodeTests: XCTestCase {
         node = EntityNode(startEntity, modifiedAt: startTimestamp)
     }
     
-    func test_updateEntity_stampIsEqual_entityIsNotUpdated() {
-        node.updateEntity(newEntity, modifiedAt: startTimestamp)
+    func test_updateEntity_stampIsEqual_entityIsNotUpdated() throws {
+        XCTAssertThrowsError(
+            try node.updateEntity(newEntity, modifiedAt: startTimestamp)
+        )
         
         XCTAssertEqual(node.value as? RootFixture, startEntity)
     }
     
-    func test_updateEntity_stampIsSup_entityIsUpdated() {
-        node.updateEntity(newEntity, modifiedAt: startTimestamp + 1)
+    func test_updateEntity_stampIsSup_entityIsUpdated() throws {
+        try node.updateEntity(newEntity, modifiedAt: startTimestamp + 1)
         
         XCTAssertEqual(node.value as? RootFixture, newEntity)
     }
     
-    func test_updateEntity_stampIsInf_entityIsNotUpdated() {
-        node.updateEntity(newEntity, modifiedAt: startTimestamp - 1)
+    func test_updateEntity_stampIsInf_entityIsNotUpdated() throws {
+        XCTAssertThrowsError(
+            try node.updateEntity(newEntity, modifiedAt: startTimestamp - 1)
+        )
         
         XCTAssertEqual(node.value as? RootFixture, startEntity)
     }
     
-    func test_observeChild_childChange_entityIsUpdated() {
+    func test_observeChild_childChange_entityIsUpdated() throws {
         let childNode = EntityNode(startEntity.singleNode, modifiedAt: 0)
         let newChild = SingleNodeFixture(id: 1, primitive: "updated")
         
         node.observeChild(childNode, for: \.singleNode)
         
-        childNode.updateEntity(newChild, modifiedAt: 1)
+        try childNode.updateEntity(newChild, modifiedAt: 1)
         
         XCTAssertEqual((node.value as? RootFixture)?.singleNode, newChild)
     }
     
-    func test_observeChild_childChange_entityObserversAreCalled() {
+    func test_observeChild_childChange_entityObserversAreCalled() throws {
         let childNode = EntityNode(startEntity.singleNode, modifiedAt: startTimestamp)
         let newChild = SingleNodeFixture(id: 1, primitive: "updated")
         let entityRef = Ref(value: startEntity)
@@ -67,7 +71,7 @@ class EntityNodeTests: XCTestCase {
         node = EntityNode(ref: entityRef, modifiedAt: startTimestamp)
         node.observeChild(childNode, for: \.singleNode)
         
-        childNode.updateEntity(newChild, modifiedAt: startTimestamp + 1)
+        try childNode.updateEntity(newChild, modifiedAt: startTimestamp + 1)
         
         subscription.unsubscribe()
         
