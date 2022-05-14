@@ -5,22 +5,30 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
     let identityMap: IdentityMap
     
     func visit<Root, T: Identifiable>(context: EntityContext<Root, T>, entity: T) {
-        context.parent.observeChild(identityMap.store(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
+        context
+            .parent
+            .observeChild(identityMap.nodeStore(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
     }
     
     func visit<Root, T: Aggregate>(context: EntityContext<Root, T>, entity: T) {
-        context.parent.observeChild(identityMap.store(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
+        context
+            .parent
+            .observeChild(identityMap.nodeStore(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
     }
     
     func visit<Root, T: Identifiable>(context: EntityContext<Root, T?>, entity: T?) {
         if let entity = entity {
-            context.parent.observeChild(identityMap.store(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
+            context
+                .parent
+                .observeChild(identityMap.nodeStore(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
         }
     }
     
     func visit<Root, T: Aggregate>(context: EntityContext<Root, T?>, entity: T?) {
         if let entity = entity {
-            context.parent.observeChild(identityMap.store(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
+            context
+                .parent
+                .observeChild(identityMap.nodeStore(entity: entity, modifiedAt: context.stamp), for: context.keyPath)
         }
     }
     
@@ -29,7 +37,7 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
         
         for index in entities.indices {
             context.parent.observeChild(
-                identityMap.store(entity: entities[index], modifiedAt: context.stamp),
+                identityMap.nodeStore(entity: entities[index], modifiedAt: context.stamp),
                 for: context.keyPath,
                 index: index
             )
@@ -41,7 +49,7 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
         
         for index in entities.indices {
             context.parent.observeChild(
-                identityMap.store(entity: entities[index], modifiedAt: context.stamp),
+                identityMap.nodeStore(entity: entities[index], modifiedAt: context.stamp),
                 for: context.keyPath,
                 index: index
             )

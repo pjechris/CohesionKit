@@ -30,16 +30,12 @@ extension AliasStorage {
         }
     }
     
-    mutating func insert<T>(_ node: EntityNode<T>, key: AliasKey<T>?) {
-        if let key = key {
-            self[key].value = node
-        }
+    mutating func insert<T>(_ node: EntityNode<T>, key: AliasKey<T>) {
+        self[key].value = node
     }
     
-    mutating func insert<C: Collection>(_ nodes: [EntityNode<C.Element>], key: AliasKey<C>?) {
-        if let key = key {
-            self[key].value = nodes
-        }
+    mutating func insert<C: Collection>(_ nodes: [EntityNode<C.Element>], key: AliasKey<C>) {
+        self[key].value = nodes
     }
     
     mutating func remove<T>(for key: AliasKey<T>) {

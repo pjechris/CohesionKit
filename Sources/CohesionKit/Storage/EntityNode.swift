@@ -29,9 +29,9 @@ class EntityNode<T>: AnyEntityNode {
     }
     
     /// change the entity to a new value only if `modifiedAt` is equal or higher than any registered previous modification
-    func updateEntity(_ entity: T, modifiedAt newModifiedAt: Stamp) {
+    func updateEntity(_ entity: T, modifiedAt newModifiedAt: Stamp) throws {
         guard newModifiedAt > modifiedAt else {
-            return
+            throw StampError.tooOld(current: modifiedAt, received: newModifiedAt)
         }
         
         modifiedAt = newModifiedAt
