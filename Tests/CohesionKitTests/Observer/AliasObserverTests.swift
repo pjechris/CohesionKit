@@ -19,7 +19,7 @@ class AliasObserverTests: XCTestCase {
         XCTAssertEqual(lastReceivedValue, newValue)
     }
     
-    func test_observe_refChanged_subscribeToRefUpdates() {
+    func test_observe_refChanged_subscribeToRefUpdates() throws {
         let ref = Ref(value: Optional.some(EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)))
         let observer = AliasObserver(alias: ref)
         let newNode = EntityNode(SingleNodeFixture(id: 2), modifiedAt: 0)
@@ -30,15 +30,15 @@ class AliasObserverTests: XCTestCase {
             lastReceivedValue = $0
         }
         
-        withExtendedLifetime(subscription) {
+        try withExtendedLifetime(subscription) {
             ref.value = newNode
-            newNode.updateEntity(newValue, modifiedAt: 1)
+            try newNode.updateEntity(newValue, modifiedAt: 1)
         }
         
         XCTAssertEqual(lastReceivedValue, newValue)
     }
     
-    func test_observe_subscriptionIsCancelled_unsubscribeToUpdates() {
+    func test_observe_subscriptionIsCancelled_unsubscribeToUpdates() throws {
         let initialValue = SingleNodeFixture(id: 1)
         let node = EntityNode(initialValue, modifiedAt: 0)
         let ref = Ref(value: Optional.some(node))
@@ -50,7 +50,7 @@ class AliasObserverTests: XCTestCase {
             lastReceivedValue = $0
         }
         
-        node.updateEntity(newValue, modifiedAt: 1)
+        try node.updateEntity(newValue, modifiedAt: 1)
         
         XCTAssertNil(lastReceivedValue)
     }

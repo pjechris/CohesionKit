@@ -5,41 +5,56 @@ public class IdentityMap {
     private(set) var storage: WeakStorage = WeakStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
+    private let logger: Logger?
     
-    public init() { }
+    public init(logger: Logger? = nil) {
+        self.logger = logger
+    }
     
     public func store<T: Identifiable>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
     -> EntityObserver<T> {
-        let node = store(entity: entity, modifiedAt: modifiedAt)
+        let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
         
-        refAliases.insert(node, key: named)
+        if let alias = named {
+            refAliases.insert(node, key: alias)
+            logger?.didRegisterAlias(alias)
+        }
         
         return EntityObserver(node: node)
     }
     
     public func store<T: Aggregate>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
     -> EntityObserver<T> {
-        let node = store(entity: entity, modifiedAt: modifiedAt)
+        let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
         
-        refAliases.insert(node, key: named)
+        if let alias = named {
+            refAliases.insert(node, key: alias)
+            logger?.didRegisterAlias(alias)
+        }
         
         return EntityObserver(node: node)
     }
     
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
     -> [EntityObserver<C.Element>] where C.Element: Identifiable {
-        let nodes = entities.map { store(entity: $0, modifiedAt: modifiedAt) }
+        let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
         
-        refAliases.insert(nodes, key: named)
+        if let alias = named {
+            refAliases.insert(nodes, key: alias)
+            logger?.didRegisterAlias(alias)
+        }
         
         return nodes.map { EntityObserver(node: $0) }
     }
     
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
     -> [EntityObserver<C.Element>] where C.Element: Aggregate {
-        let nodes = entities.map { store(entity: $0, modifiedAt: modifiedAt) }
+        let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
         
-        refAliases.insert(nodes, key: named)
+        if let alias = named {
+            refAliases.insert(nodes, key: alias)
+            logger?.didRegisterAlias(alias)
+        }
         
         return nodes.map { EntityObserver(node: $0) }
     }
@@ -65,13 +80,15 @@ public class IdentityMap {
     
     public func removeAlias<T>(named: AliasKey<T>) {
         refAliases.remove(for: named)
+        logger?.didUnregisterAlias(named)
     }
     
     public func removeAlias<C: Collection>(named: AliasKey<C>) {
         refAliases.remove(for: named)
+        logger?.didUnregisterAlias(named)
     }
     
-    func store<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
+    func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         guard let node = storage[entity] else {
             let node = EntityNode(entity, modifiedAt: modifiedAt)
             
@@ -80,12 +97,18 @@ public class IdentityMap {
             return node
         }
         
-        node.updateEntity(entity, modifiedAt: modifiedAt)
+        do {
+            try node.updateEntity(entity, modifiedAt: modifiedAt)
+            logger?.didStore(T.self, id: entity.id)
+        }
+        catch {
+            logger?.didFailedToStore(T.self, id: entity.id, error: error)
+        }
         
         return node
     }
     
-    func store<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
+    func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         let node = storage[entity] ?? EntityNode(entity, modifiedAt: modifiedAt)
         var entity = entity
         
@@ -111,7 +134,13 @@ public class IdentityMap {
         }
         
         // TODO: what about if modifiedAt is < but some of the children actually changed?
-        node.updateEntity(entity, modifiedAt: modifiedAt)
+        do {
+            try node.updateEntity(entity, modifiedAt: modifiedAt)
+            logger?.didStore(T.self, id: entity.id)
+        }
+        catch {
+            logger?.didFailedToStore(T.self, id: entity.id, error: error)
+        }
         
         node.applyChildrenChanges = true
 
