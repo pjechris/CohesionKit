@@ -2,11 +2,10 @@ import Foundation
 import Combine
 
 public class IdentityMap {
-    let logger: Logger?
-
     private(set) var storage: WeakStorage = WeakStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
+    private let logger: Logger?
     
     public init(logger: Logger? = nil) {
         self.logger = logger
@@ -18,7 +17,7 @@ public class IdentityMap {
         
         if let alias = named {
             refAliases.insert(node, key: alias)
-            logger?.registeredAlias(alias)
+            logger?.didRegisterAlias(alias)
         }
         
         return EntityObserver(node: node)
@@ -30,7 +29,7 @@ public class IdentityMap {
         
         if let alias = named {
             refAliases.insert(node, key: alias)
-            logger?.registeredAlias(alias)
+            logger?.didRegisterAlias(alias)
         }
         
         return EntityObserver(node: node)
@@ -42,7 +41,7 @@ public class IdentityMap {
         
         if let alias = named {
             refAliases.insert(nodes, key: alias)
-            logger?.registeredAlias(alias)
+            logger?.didRegisterAlias(alias)
         }
         
         return nodes.map { EntityObserver(node: $0) }
@@ -54,7 +53,7 @@ public class IdentityMap {
         
         if let alias = named {
             refAliases.insert(nodes, key: alias)
-            logger?.registeredAlias(alias)
+            logger?.didRegisterAlias(alias)
         }
         
         return nodes.map { EntityObserver(node: $0) }
@@ -81,12 +80,12 @@ public class IdentityMap {
     
     public func removeAlias<T>(named: AliasKey<T>) {
         refAliases.remove(for: named)
-        logger?.unregisteredAlias(named)
+        logger?.didUnregisterAlias(named)
     }
     
     public func removeAlias<C: Collection>(named: AliasKey<C>) {
         refAliases.remove(for: named)
-        logger?.unregisteredAlias(named)
+        logger?.didUnregisterAlias(named)
     }
     
     func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
@@ -100,10 +99,10 @@ public class IdentityMap {
         
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
-            logger?.stored(T.self, id: entity.id)
+            logger?.didStore(T.self, id: entity.id)
         }
         catch {
-            logger?.storeFailed(T.self, id: entity.id, error: error)
+            logger?.didFailedToStore(T.self, id: entity.id, error: error)
         }
         
         return node
@@ -137,10 +136,10 @@ public class IdentityMap {
         // TODO: what about if modifiedAt is < but some of the children actually changed?
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
-            logger?.stored(T.self, id: entity.id)
+            logger?.didStore(T.self, id: entity.id)
         }
         catch {
-            logger?.storeFailed(T.self, id: entity.id, error: error)
+            logger?.didFailedToStore(T.self, id: entity.id, error: error)
         }
         
         node.applyChildrenChanges = true
