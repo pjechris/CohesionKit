@@ -12,7 +12,7 @@ class EntityObserverPublisherTests: XCTestCase {
     func test_publisher_valueChange_receiveUpdate() {
         let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
         let expected = SingleNodeFixture(id: 1, primitive: "hello")
-        let observer = EntityObserver(node: node)
+        let observer = EntityObserver(node: node, queue: .main)
         let expectation = XCTestExpectation()
         
         observer.asPublisher
@@ -32,7 +32,7 @@ class EntityObserverPublisherTests: XCTestCase {
     
     func test_publisher_streamIsCancelled_valueChange_receiveNothing() {
         let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
-        let observer = EntityObserver(node: node)
+        let observer = EntityObserver(node: node, queue: .main)
         let expectation = XCTestExpectation()
         
         expectation.isInverted = true

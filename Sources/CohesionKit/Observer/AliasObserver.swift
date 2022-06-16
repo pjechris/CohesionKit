@@ -1,24 +1,26 @@
+import Foundation
+
 // A type registering observers over an aliased entity
 public struct AliasObserver<T>: Observer {
     typealias OnChangeClosure = (T?) -> Void
     
     public var value: T?
-    // a closure redirecting to the right observe method depending on T type
+    /// a closure redirecting to the right observe method depending on T type
     let createObserve: (@escaping OnChangeClosure) -> Subscription
     
     /// create an observer for a single entity node ref
-    init(alias: Ref<EntityNode<T>?>) {
+    init(alias: Ref<EntityNode<T>?>, queue: DispatchQueue) {
         self.value = alias.value?.ref.value
         self.createObserve = {
-            Self.createObserve(for: alias, onChange: $0)
+            Self.createObserve(for: alias, queue: queue, onChange: $0)
         }
     }
     
     /// create an observer for a list of node ref
-    init<E>(alias: Ref<[EntityNode<E>]?>) where T == Array<E> {
+    init<E>(alias: Ref<[EntityNode<E>]?>, queue: DispatchQueue) where T == Array<E> {
         self.value = alias.value?.map(\.ref.value)
         self.createObserve = {
-            Self.createObserve(for: alias, onChange: $0)
+            Self.createObserve(for: alias, queue: queue, onChange: $0)
         }
     }
     
@@ -28,13 +30,20 @@ public struct AliasObserver<T>: Observer {
 }
 
 extension AliasObserver {
-    static func createObserve(for alias: Ref<EntityNode<T>?>, onChange: @escaping OnChangeClosure) -> Subscription {
+    /// Create an observer sending updates every time:
+    /// - the ref node change
+    /// - the ref node value change
+    static func createObserve(
+        for alias: Ref<EntityNode<T>?>,
+        queue: DispatchQueue,
+        onChange: @escaping OnChangeClosure
+    ) -> Subscription {
         var nestedSubscription: Subscription? = nil
 
         let subscription = alias.addObserver { node in
-            let nodeObserver = node.map(EntityObserver.init(node:))
+            let nodeObserver = node.map { EntityObserver(node: $0, queue: queue) }
             
-            onChange(nodeObserver?.value)
+            queue.async { onChange(nodeObserver?.value) }
             nestedSubscription = nodeObserver?.observe(onChange: onChange)
         }
         
@@ -44,14 +53,20 @@ extension AliasObserver {
         }
     }
     
-    static func createObserve<E>(for alias: Ref<[EntityNode<E>]?>, onChange: @escaping OnChangeClosure)
-    -> Subscription where T == Array<E> {
+    /// Create an observer sending updates every time:
+    /// - the ref node change
+    /// - any of the ref node element change
+    static func createObserve<E>(
+        for alias: Ref<[EntityNode<E>]?>,
+        queue: DispatchQueue,
+        onChange: @escaping OnChangeClosure
+    ) -> Subscription where T == Array<E> {
         var nestedSubscription: Subscription? = nil
 
         let subscription = alias.addObserver { nodes in
-            let nodeObservers = nodes.map { $0.map(EntityObserver.init(node:)) }
+            let nodeObservers = nodes.map { $0.map { EntityObserver(node: $0, queue: queue) } }
             
-            onChange(nodeObservers?.value)
+            queue.async { onChange(nodeObservers?.value) }
             
             nestedSubscription = nodeObservers?.observe(onChange: onChange)
         }

@@ -5,77 +5,97 @@ public class IdentityMap {
     private(set) var storage: WeakStorage = WeakStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
+    /// the queue on which identity map do its heavy work
+    private let identityQueue = DispatchQueue(label: "com.cohesionkit.identitymap", attributes: .concurrent)
+    /// dispatch queue to return the results
+    private let observeQueue: DispatchQueue
+    private let lock = NSLock()
     private let logger: Logger?
     
-    public init(logger: Logger? = nil) {
+    public init(queue: DispatchQueue = .main, logger: Logger? = nil) {
         self.logger = logger
+        self.observeQueue = queue
     }
     
     public func store<T: Identifiable>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
     -> EntityObserver<T> {
-        let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
-        
-        if let alias = named {
-            refAliases.insert(node, key: alias)
-            logger?.didRegisterAlias(alias)
+        identityQueue.sync(flags: .barrier) {
+            let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
+            
+            if let alias = named {
+                refAliases.insert(node, key: alias)
+                logger?.didRegisterAlias(alias)
+            }
+
+            return EntityObserver(node: node, queue: observeQueue)
         }
-        
-        return EntityObserver(node: node)
     }
     
     public func store<T: Aggregate>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
     -> EntityObserver<T> {
-        let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
-        
-        if let alias = named {
-            refAliases.insert(node, key: alias)
-            logger?.didRegisterAlias(alias)
+        identityQueue.sync(flags: .barrier) {
+            let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
+            
+            if let alias = named {
+                refAliases.insert(node, key: alias)
+                logger?.didRegisterAlias(alias)
+            }
+            
+            return EntityObserver(node: node, queue: observeQueue)
         }
-        
-        return EntityObserver(node: node)
     }
     
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
     -> [EntityObserver<C.Element>] where C.Element: Identifiable {
-        let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
-        
-        if let alias = named {
-            refAliases.insert(nodes, key: alias)
-            logger?.didRegisterAlias(alias)
+        identityQueue.sync(flags: .barrier) {
+            let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
+            
+            if let alias = named {
+                refAliases.insert(nodes, key: alias)
+                logger?.didRegisterAlias(alias)
+            }
+            
+            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
         }
-        
-        return nodes.map { EntityObserver(node: $0) }
     }
     
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
     -> [EntityObserver<C.Element>] where C.Element: Aggregate {
-        let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
-        
-        if let alias = named {
-            refAliases.insert(nodes, key: alias)
-            logger?.didRegisterAlias(alias)
+        identityQueue.sync(flags: .barrier) {
+            let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
+            
+            if let alias = named {
+                refAliases.insert(nodes, key: alias)
+                logger?.didRegisterAlias(alias)
+            }
+            
+            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
         }
-        
-        return nodes.map { EntityObserver(node: $0) }
     }
     
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
-        if let node = storage[EntityNode<T>.self, id: id] {
-            return EntityObserver(node: node)
+        identityQueue.sync {
+            if let node = storage[EntityNode<T>.self, id: id] {
+                return EntityObserver(node: node, queue: observeQueue)
+            }
+            
+            return nil
         }
-        
-        return nil
     }
     
     /// Observe the entity registered under `named` alias
     public func find<T: Identifiable>(named: AliasKey<T>) -> AliasObserver<T> {
-        AliasObserver(alias: refAliases[named])
+        identityQueue.sync {
+            AliasObserver(alias: refAliases[named], queue: observeQueue)
+        }
     }
     
     /// Observe collection registered under `named` alias
     /// - Returns: an observer returning the alias value. Note that the value will be an Array
     public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<[C.Element]> {
-        AliasObserver(alias: refAliases[named])
+        identityQueue.sync {
+            AliasObserver(alias: refAliases[named], queue: observeQueue)
+        }
     }
     
     public func removeAlias<T>(named: AliasKey<T>) {

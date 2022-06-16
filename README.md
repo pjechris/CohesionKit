@@ -26,14 +26,17 @@ It is designed with latest Swift technologies:
 
 ## Features
 
-- [x] Work with Swift `struct`
-- [x] Store and retrieve `Identifiable` objects
-- [x] Store and retrieve relational objects
-- [x] Store and retrieve objects using aliases
-- [x] Combine asynchronous API
-- [x] In-memory storage
-- [x] Only keep objects you're using (weak memory)
+- [x] Thread safe
+- [x] Lighweight (< 600 lines of code)
 - [x] Simple API
+- [x] Work with plain Swift `struct`
+- [x] Work with `Identifiable` objects
+- [x] Support for Combine
+- [x] Use [aliases](#aliases) to reference named objects
+- [x] Use [(time)stamps](#stale-data) to mark you data
+- [x] In-memory storage
+- [x] Release objects you're not actively using (weak memory)
+
 
 ## Installation
 
