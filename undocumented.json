@@ -1,0 +1,117 @@
+{
+  "warnings": [
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/Identity/AliasKey.swift",
+      "line": 5,
+      "symbol": "AliasKey.init(named:)",
+      "symbol_kind": "source.lang.swift.decl.function.method.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/Identity/IdentityStore.swift",
+      "line": 4,
+      "symbol": "IdentityMap",
+      "symbol_kind": "source.lang.swift.decl.class",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/Identity/Logger.swift",
+      "line": 10,
+      "symbol": "Logger.didFailedToStore(_:id:error:)",
+      "symbol_kind": "source.lang.swift.decl.function.method.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/KeyPath/Aggregate.swift",
+      "line": 3,
+      "symbol": "Aggregate",
+      "symbol_kind": "source.lang.swift.decl.protocol",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/KeyPath/Aggregate.swift",
+      "line": 4,
+      "symbol": "Aggregate.nestedEntitiesKeyPaths",
+      "symbol_kind": "source.lang.swift.decl.var.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/KeyPath/PartialIdentifiableKeyPath.swift",
+      "line": 8,
+      "symbol": "PartialIdentifiableKeyPath.init(_:)",
+      "symbol_kind": "source.lang.swift.decl.function.method.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/KeyPath/PartialIdentifiableKeyPath.swift",
+      "line": 18,
+      "symbol": "PartialIdentifiableKeyPath.init(_:)",
+      "symbol_kind": "source.lang.swift.decl.function.method.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/KeyPath/PartialIdentifiableKeyPath.swift",
+      "line": 28,
+      "symbol": "PartialIdentifiableKeyPath.init(_:)",
+      "symbol_kind": "source.lang.swift.decl.function.method.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/KeyPath/PartialIdentifiableKeyPath.swift",
+      "line": 38,
+      "symbol": "PartialIdentifiableKeyPath.init(_:)",
+      "symbol_kind": "source.lang.swift.decl.function.method.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/KeyPath/PartialIdentifiableKeyPath.swift",
+      "line": 48,
+      "symbol": "PartialIdentifiableKeyPath.init(_:)",
+      "symbol_kind": "source.lang.swift.decl.function.method.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/KeyPath/PartialIdentifiableKeyPath.swift",
+      "line": 58,
+      "symbol": "PartialIdentifiableKeyPath.init(_:)",
+      "symbol_kind": "source.lang.swift.decl.function.method.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/Observer/AliasObserver.swift",
+      "line": 4,
+      "symbol": "AliasObserver",
+      "symbol_kind": "source.lang.swift.decl.struct",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/Observer/Observer.swift",
+      "line": 3,
+      "symbol": "Observer.T",
+      "symbol_kind": "source.lang.swift.decl.associatedtype",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/Ref.swift",
+      "line": 3,
+      "symbol": "Subscription",
+      "symbol_kind": "source.lang.swift.decl.class",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/Ref.swift",
+      "line": 4,
+      "symbol": "Subscription.unsubscribe",
+      "symbol_kind": "source.lang.swift.decl.var.instance",
+      "warning": "undocumented"
+    },
+    {
+      "file": "/Users/runner/work/CohesionKit/CohesionKit/Sources/CohesionKit/Stamp/StampError.swift",
+      "line": 3,
+      "symbol": "StampError",
+      "symbol_kind": "source.lang.swift.decl.enum",
+      "warning": "undocumented"
+    }
+  ],
+  "source_directory": "/Users/runner/work/CohesionKit/CohesionKit"
+}
