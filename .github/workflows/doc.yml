@@ -1,0 +1,19 @@
+name: PublishDocumentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Publish Jazzy Docs
+      uses: steven0351/publish-jazzy-docs@v1
+      with:
+        personal_access_token: ${{ secrets.DOC_ACCESS_TOKEN }}
