@@ -12,11 +12,20 @@ public class IdentityMap {
     private let lock = NSLock()
     private let logger: Logger?
     
+    /// Create a new IdentityMap instance optionally with a queue and a logger
+    /// - Parameter queue: the queue on which to receive updates. If not defined it default to main
+    /// - Parameter logger: a logger to follow/debug identity internal state
     public init(queue: DispatchQueue = .main, logger: Logger? = nil) {
         self.logger = logger
         self.observeQueue = queue
     }
     
+    /// Store an entity in the storage. Entity will be stored only if stamp (`modifiedAt`) is higher than in previous
+    /// insertion.
+    /// - Parameter entity: the element to store in the identity map
+    /// - Parameter named: an alias to reference the entity and retrieve it using it
+    /// - Parameter modifiedAt: if entity was already stored it will be used to determine if the  update should be  applied or discarded
+    /// - Returns: an object to observe changes on the entity
     public func store<T: Identifiable>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
     -> EntityObserver<T> {
         identityQueue.sync(flags: .barrier) {
@@ -31,6 +40,12 @@ public class IdentityMap {
         }
     }
     
+    /// Store an aggregate in the storage. Each aggregate entities will be stored only if stamp (`modifiedAt`) is higher than in previous
+    /// insertion. Finally aggregate will be stored accordingly to each of its entities.
+    /// - Parameter entity: the aggregate to store in the identity map
+    /// - Parameter named: an alias to reference the aggregate and retrieve it using it
+    /// - Parameter modifiedAt: if aggregate was already stored it will be used to determine if the  update should be  applied or discarded
+    /// - Returns: an object to observe changes on the entity
     public func store<T: Aggregate>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
     -> EntityObserver<T> {
         identityQueue.sync(flags: .barrier) {
@@ -45,6 +60,7 @@ public class IdentityMap {
         }
     }
     
+    /// Store multiple entities at once
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
     -> [EntityObserver<C.Element>] where C.Element: Identifiable {
         identityQueue.sync(flags: .barrier) {
@@ -59,6 +75,7 @@ public class IdentityMap {
         }
     }
     
+    /// store multiple aggregates at once
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
     -> [EntityObserver<C.Element>] where C.Element: Aggregate {
         identityQueue.sync(flags: .barrier) {
@@ -73,6 +90,10 @@ public class IdentityMap {
         }
     }
     
+    /// Try to find an entity/aggregate in the storage.
+    /// - Returns: nil if not found, an `EntityObserver`` otherwise
+    /// - Parameter type: the entity type 
+    /// - Parameter id: the entity id
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
         identityQueue.sync {
             if let node = storage[EntityNode<T>.self, id: id] {
@@ -83,14 +104,15 @@ public class IdentityMap {
         }
     }
     
-    /// Observe the entity registered under `named` alias
+    /// Try to find an entity/aggregate registered under `named` alias
+    /// - Parameter named: the alias to look for
     public func find<T: Identifiable>(named: AliasKey<T>) -> AliasObserver<T> {
         identityQueue.sync {
             AliasObserver(alias: refAliases[named], queue: observeQueue)
         }
     }
     
-    /// Observe collection registered under `named` alias
+    /// Try to find a collected registered under `named` alias
     /// - Returns: an observer returning the alias value. Note that the value will be an Array
     public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<[C.Element]> {
         identityQueue.sync {
@@ -98,11 +120,13 @@ public class IdentityMap {
         }
     }
     
+    /// Remove an alias from the storage
     public func removeAlias<T>(named: AliasKey<T>) {
         refAliases.remove(for: named)
         logger?.didUnregisterAlias(named)
     }
     
+    /// Remove an alias from the storage
     public func removeAlias<C: Collection>(named: AliasKey<C>) {
         refAliases.remove(for: named)
         logger?.didUnregisterAlias(named)
