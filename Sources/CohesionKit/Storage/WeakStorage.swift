@@ -21,4 +21,19 @@ extension WeakStorage {
         get { self[EntityNode<T>.self, id: object.id] }
         set { self[EntityNode<T>.self, id: object.id] = newValue }
     }
+
+    /// - Parameter new: The value to create, store, and return if none is found
+    subscript<T: Identifiable>(_ object: T, new create: @autoclosure () -> EntityNode<T>) -> EntityNode<T> {
+        mutating get {
+            if let value = self[EntityNode<T>.self, id: object.id] {
+                return value
+            }
+
+            let value = create()
+                
+            self[object] = value
+                
+            return value
+        }
+    }
 }

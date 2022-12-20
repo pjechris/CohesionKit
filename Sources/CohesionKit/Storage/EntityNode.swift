@@ -14,23 +14,26 @@ class EntityNode<T>: AnyEntityNode {
     
     /// An observable entity reference
     let ref: Ref<T>
-    /// last time the ref.value was changed. Any subsequent change must have a bigger `modifiedAt` value to be applied
-    private var modifiedAt: Stamp
+    /// last time the ref.value was changed. Any subsequent change must have a higher value to be applied
+    /// if nil ref has no stamp and any change will be accepted
+    private var modifiedAt: Stamp?
     /// entity children
     private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
     
-    init(ref: Ref<T>, modifiedAt: Stamp) {
+    init(ref: Ref<T>, modifiedAt: Stamp?) {
         self.ref = ref
         self.modifiedAt = modifiedAt
     }
     
-    convenience init(_ entity: T, modifiedAt: Stamp) {
+    convenience init(_ entity: T, modifiedAt: Stamp?) {
         self.init(ref: Ref(value: entity), modifiedAt: modifiedAt)
     }
     
     /// change the entity to a new value only if `modifiedAt` is equal or higher than any registered previous modification
+    /// - Parameter entity the new entity value
+    /// - Parameter modifiedAt the new entity stamp
     func updateEntity(_ entity: T, modifiedAt newModifiedAt: Stamp) throws {
-        guard newModifiedAt > modifiedAt else {
+        if let modifiedAt, newModifiedAt <= modifiedAt  {
             throw StampError.tooOld(current: modifiedAt, received: newModifiedAt)
         }
         
