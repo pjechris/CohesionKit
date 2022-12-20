@@ -49,6 +49,21 @@ class IdentityMapTests: XCTestCase {
         XCTAssertEqual((node.value as! RootFixture).listNodes, nestedArray)
     }
 
+    func test_storeIdentifiable_entityIsInsertedForThe1stTime_loggerIsCalled() {
+        let logger = LoggerMock()
+        let identityMap = IdentityMap(logger: logger)
+        let root = SingleNodeFixture(id: 1)
+        let expectation = XCTestExpectation()
+        
+        logger.didStoreCalled = { _ in
+            expectation.fulfill()
+        }
+
+        _ = identityMap.store(entity: root)
+
+        wait(for: [expectation], timeout: 0)
+    }
+
     func test_find_entityStored_noObserverAdded_returnNil() {
         let identityMap = IdentityMap()
         let entity = SingleNodeFixture(id: 1)
