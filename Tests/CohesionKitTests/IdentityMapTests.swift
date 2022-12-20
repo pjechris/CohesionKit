@@ -59,9 +59,13 @@ class IdentityMapTests: XCTestCase {
             expectation.fulfill()
         }
 
+        logger.didFailedCalled = { _ in
+            XCTFail()
+        }
+
         _ = identityMap.store(entity: root)
 
-        wait(for: [expectation], timeout: 0)
+        wait(for: [expectation], timeout: 0.5)
     }
 
     func test_find_entityStored_noObserverAdded_returnNil() {

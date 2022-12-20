@@ -137,6 +137,7 @@ public class IdentityMap {
             let node = EntityNode(entity, modifiedAt: modifiedAt)
             
             storage[entity] = node
+            logger?.didStore(T.self, id: entity.id)
             
             return node
         }
