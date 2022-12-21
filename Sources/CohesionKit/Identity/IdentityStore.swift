@@ -133,13 +133,7 @@ public class IdentityMap {
     }
     
     func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
-        guard let node = storage[entity] else {
-            let node = EntityNode(entity, modifiedAt: modifiedAt)
-            
-            storage[entity] = node
-            
-            return node
-        }
+        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
         
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
@@ -153,11 +147,9 @@ public class IdentityMap {
     }
     
     func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
-        let node = storage[entity] ?? EntityNode(entity, modifiedAt: modifiedAt)
+        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
         var entity = entity
         
-        storage[entity] = node
-
         // disable changes while doing the entity update
         node.applyChildrenChanges = false
         
@@ -170,10 +162,10 @@ public class IdentityMap {
         
         // modify the entity with (potentially) new/different child stored value than what we have
         withUnsafeMutablePointer(to: &entity) {
-            let pointer = UnsafeMutableRawPointer($0)
+            let parent = UnsafeMutableRawPointer($0)
             
             for (_, child) in node.children {
-                child.selfAssignTo(pointer)
+                child.selfAssignTo(parent)
             }
         }
         
