@@ -92,6 +92,10 @@ public class IdentityMap {
         }
     }
 
+    /// Updates an **already stored** entity using a closure. This is useful if you don't have a full entity for update
+    /// but just a few attributes/modifications.
+    ///
+    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
     public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>)
     -> EntityObserver<T>? {
         identityQueue.sync(flags: .barrier) {
@@ -105,6 +109,10 @@ public class IdentityMap {
         }
     }
 
+    /// Updates an **already stored** entity using a closure. This is useful if you don't have a full entity for update
+    /// but just a few attributes/modifications.
+    ///
+    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
     public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>)
     -> EntityObserver<T>? {
         identityQueue.sync(flags: .barrier) {
