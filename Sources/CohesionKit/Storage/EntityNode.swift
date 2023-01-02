@@ -29,16 +29,16 @@ class EntityNode<T>: AnyEntityNode {
         self.init(ref: Ref(value: entity), modifiedAt: modifiedAt)
     }
     
-    /// change the entity to a new value only if `modifiedAt` is equal or higher than any registered previous modification
+    /// change the entity to a new value only if `modifiedAt` is equal than any previous registered modification
     /// - Parameter entity the new entity value
     /// - Parameter modifiedAt the new entity stamp
-    func updateEntity(_ entity: T, modifiedAt newModifiedAt: Stamp) throws {
+    func updateEntity(_ newEntity: T, modifiedAt newModifiedAt: Stamp) throws {
         if let modifiedAt, newModifiedAt <= modifiedAt  {
             throw StampError.tooOld(current: modifiedAt, received: newModifiedAt)
         }
-        
+
         modifiedAt = newModifiedAt
-        ref.value = entity
+        ref.value = newEntity
     }
     
     func removeAllChildren() {

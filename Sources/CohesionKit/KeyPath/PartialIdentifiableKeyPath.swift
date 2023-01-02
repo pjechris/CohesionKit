@@ -65,3 +65,13 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
     }
 }
+
+extension PartialIdentifiableKeyPath: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        keyPath.hash(into: &hasher)
+    }
+
+    public static func ==(lhs: Self, rhs: Self) -> Bool {
+        lhs.keyPath == rhs.keyPath
+    }
+}
