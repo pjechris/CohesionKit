@@ -93,9 +93,8 @@ Every time data is updated in `IdentityMap` will trigger a notification to any r
 func findBooks() {
   // 1. load data using URLSession
   URLSession(...)
-  // 2. store data in `IdentityMap`
-  // 3. return a `publisher` creating an observer
-    .map { books in identityMap.store(books).asPublisher }
+  // 2. store data inside our identityMap
+    .store(in: identityMap)
     .sink { ... }
     .store(in: &cancellables)
 }
@@ -173,7 +172,7 @@ To that end you need to retain observers as long as you're interested in the dat
 
 ```swift
 let book = Book(id: "ACK", title: "A Clash of Kings")
-let cancellable = identityMap.store(book) // observer is not retained and no one else observe this book: data is released
+let cancellable = identityMap.store(book) // observer is retained: data is retained
 
 identityMap.find(Book.self, id: "ACK") // return  "A Clash of Kings"
 ```
