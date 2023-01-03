@@ -123,6 +123,19 @@ class IdentityMapTests: XCTestCase {
         
         XCTAssertNotNil(identityMap.find(named: .listOfNodes).value)
     }
+
+    func test_update_entityIsAlreadyInserted_itUpdates() {
+        let identityMap = IdentityMap()
+        let entity = SingleNodeFixture(id: 1)
+
+        withExtendedLifetime(identityMap.store(entity: entity)) { _ in
+            _ = identityMap.update(SingleNodeFixture.self, id: 1) {
+                $0.primitive = "hello"
+            }
+
+            XCTAssertEqual(identityMap.find(SingleNodeFixture.self, id: 1)?.value.primitive, "hello")
+        }
+    }
 }
 
 private extension AliasKey where T == SingleNodeFixture {

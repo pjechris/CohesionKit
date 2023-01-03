@@ -2,6 +2,8 @@ import Foundation
 import Combine
 
 public class IdentityMap {
+    public typealias Update<T> = (inout T) -> Void
+
     private(set) var storage: WeakStorage = WeakStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
@@ -87,6 +89,40 @@ public class IdentityMap {
             }
             
             return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+        }
+    }
+
+    /// Updates an **already stored** entity using a closure. This is useful if you don't have a full entity for update
+    /// but just a few attributes/modifications.
+    ///
+    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
+    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>)
+    -> EntityObserver<T>? {
+        identityQueue.sync(flags: .barrier) {
+            guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
+                return nil
+            }
+
+            update(&entity)
+
+            return EntityObserver(node: nodeStore(entity: entity, modifiedAt: modifiedAt), queue: observeQueue)
+        }
+    }
+
+    /// Updates an **already stored** entity using a closure. This is useful if you don't have a full entity for update
+    /// but just a few attributes/modifications.
+    ///
+    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
+    public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>)
+    -> EntityObserver<T>? {
+        identityQueue.sync(flags: .barrier) {
+            guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
+                return nil
+            }
+
+            update(&entity)
+
+            return EntityObserver(node: nodeStore(entity: entity, modifiedAt: modifiedAt), queue: observeQueue)
         }
     }
     
