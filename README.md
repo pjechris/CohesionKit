@@ -1,8 +1,8 @@
 
 # CohesionKit - Single Source of Truth
 
-<p align="center">
-  <img alt="swift" src="https://img.shields.io/badge/Swift-5.1%2B-orange?logo=swift&logoColor=white"/>
+<p>
+  <img alt="swift" src="https://img.shields.io/badge/Swift-5.6%2B-orange?logo=swift&logoColor=white"/>
   <img alt="platforms" src="https://img.shields.io/badge/Platforms-iOS%20%7C%20macOS-lightgrey" />
   <img alt="test" src="https://github.com/pjechris/CohesionKit/actions/workflows/test.yml/badge.svg" />
   <a href="https://twitter.com/pjechris">
@@ -26,7 +26,7 @@ Keep your models synchronized in your app and never have any inconsistency anymo
 - [x] 🪪 Working with plain Swift `struct` and `Identifiable` objects
 - [x] 🔀 Support for Combine
 - [x] 🧠 In-memory storage
-- [x] 💚 Low memory footprint
+- [x] 🐾 Low memory footprint
 - [x] 🐪 Strongly typed
 
 ### Where to put CohesionKit in my stack?
