@@ -1,0 +1,66 @@
+name: "🐛 Bug Report"
+description: Create a ticket for a bug
+title: "🐛 <title>"
+labels: [
+  "bug"
+]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: Please enter an explicit description of your issue
+      placeholder: Short and explicit description of your incident...
+    validations:
+      required: true
+  - type: textarea
+    id: reprod
+    attributes:
+      label: "Reproduction steps"
+      description: Please enter an explicit description of your issue
+      value: |
+        1. Call method '...'
+        2. Run the app '....'
+        3. See error
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: "Screenshots/GIF"
+      description: If applicable, add screenshots or GIF to help explain your problem.
+      value: |
+        ![DESCRIPTION](LINK.png)
+      render: bash
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Logs"
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: bash
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: "Framework version"
+      description: Which version of the framework were you using?
+    validations:
+      required: true
+  - type: input
+    id: swift_version
+    attributes:
+      label: "Swift"
+      description: Which version of Swift were you using?
+    validations:
+      required: false
+  - type: input
+    id: xcode_version
+    attributes:
+      label: "Xcode"
+      description: Which version of Xcode were you using?
+    validations:
+      required: false
