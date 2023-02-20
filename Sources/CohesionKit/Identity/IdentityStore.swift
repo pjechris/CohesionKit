@@ -193,7 +193,7 @@ extension IdentityMap {
     /// but just a few attributes/modifications.
     ///
     /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>)
+    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, update: Update<T>)
     -> EntityObserver<T>? {
         identityQueue.sync(flags: .barrier) {
             guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
@@ -260,7 +260,7 @@ extension IdentityMap {
     }
 
     /// Updates an **already existing** collection alias content
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, _ update: Update<[C.Element]>)
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>)
     -> [EntityObserver<C.Element>]? where C.Element: Identifiable {
         identityQueue.sync(flags: .barrier) {
             guard let entities = refAliases[named].value else {
@@ -279,7 +279,7 @@ extension IdentityMap {
     }
 
     /// Updates an **already existing** collection alias content
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, _ update: Update<[C.Element]>)
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>)
     -> [EntityObserver<C.Element>]? where C.Element: Aggregate {
         identityQueue.sync(flags: .barrier) {
             guard let entities = self.refAliases[named].value else {
