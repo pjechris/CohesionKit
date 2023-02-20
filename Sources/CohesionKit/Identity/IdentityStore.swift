@@ -206,7 +206,7 @@ extension IdentityMap {
         }
     }
 
-    /// Updates an **already stored** entity using a closure. This is useful if you don't have a full entity for update
+    /// Updates an **already stored** alias using a closure. This is useful if you don't have a full entity for update
     /// but just a few attributes/modifications.
     ///
     /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
@@ -223,11 +223,47 @@ extension IdentityMap {
         }
     }
 
+    /// Updates an **already stored** alias using a closure.
+    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
+    public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>)
+    -> EntityObserver<T>? {
+        identityQueue.sync(flags: .barrier) {
+            guard let entity = refAliases[named].value else {
+                return nil
+            }
+
+            var value = entity.ref.value
+            update(&value)
+            let node = nodeStore(entity: value, modifiedAt: modifiedAt)
+
+            refAliases.insert(node, key: named)
+
+            return EntityObserver(node: node, queue: observeQueue)
+        }
+    }
+
+    /// Updates an **already stored** alias using a closure.
+    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
+    public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>)
+    -> EntityObserver<T>? {
+        identityQueue.sync(flags: .barrier) {
+            guard let entity = refAliases[named].value else {
+                return nil
+            }
+
+            var value = entity.ref.value
+            update(&value)
+            let node = nodeStore(entity: value, modifiedAt: modifiedAt)
+
+            return EntityObserver(node: node, queue: observeQueue)
+        }
+    }
+
     /// Updates an **already existing** collection alias content
     public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, _ update: Update<[C.Element]>)
     -> [EntityObserver<C.Element>]? where C.Element: Identifiable {
         identityQueue.sync(flags: .barrier) {
-            guard let entities = self.refAliases[named].value else {
+            guard let entities = refAliases[named].value else {
                 return nil
             }
 
