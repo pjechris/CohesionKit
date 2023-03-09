@@ -33,47 +33,57 @@ extension AliasObserver {
     /// Create an observer sending updates every time:
     /// - the ref node change
     /// - the ref node value change
-    static func createObserve(
+    private static func createObserve(
         for alias: Ref<EntityNode<T>?>,
         queue: DispatchQueue,
         onChange: @escaping OnChangeClosure
     ) -> Subscription {
-        var nestedSubscription: Subscription? = nil
+        var entityChangesSubscription: Subscription? = alias
+            .value
+            .map { node in EntityObserver(node: node, queue: .main) }?
+            .observe(onChange: onChange)
 
+        // subscribe to alias changes
         let subscription = alias.addObserver { node in
             let nodeObserver = node.map { EntityObserver(node: $0, queue: queue) }
-            
+
             queue.async { onChange(nodeObserver?.value) }
-            nestedSubscription = nodeObserver?.observe(onChange: onChange)
+            // update entity changes subscription
+            entityChangesSubscription = nodeObserver?.observe(onChange: onChange)
         }
-        
+
         return Subscription {
             subscription.unsubscribe()
-            nestedSubscription?.unsubscribe()
+            entityChangesSubscription?.unsubscribe()
         }
     }
-    
+
     /// Create an observer sending updates every time:
     /// - the ref node change
     /// - any of the ref node element change
-    static func createObserve<E>(
+  private static func createObserve<E>(
         for alias: Ref<[EntityNode<E>]?>,
         queue: DispatchQueue,
         onChange: @escaping OnChangeClosure
     ) -> Subscription where T == Array<E> {
-        var nestedSubscription: Subscription? = nil
+        var entitiesChangesSubscriptions: Subscription? = alias
+            .value
+            .map { nodes in nodes.map { EntityObserver(node: $0, queue: queue) } }?
+            .observe(onChange: onChange)
 
+        // Subscribe to alias ref changes and to any changes made on the ref collection nodes.
         let subscription = alias.addObserver { nodes in
-            let nodeObservers = nodes.map { $0.map { EntityObserver(node: $0, queue: queue) } }
-            
+            let nodeObservers = nodes?.map { EntityObserver(node: $0, queue: queue) }
+
             queue.async { onChange(nodeObservers?.value) }
-            
-            nestedSubscription = nodeObservers?.observe(onChange: onChange)
+
+            // update collection changes subscription
+            entitiesChangesSubscriptions = nodeObservers?.observe(onChange: onChange)
         }
-        
+
         return Subscription {
             subscription.unsubscribe()
-            nestedSubscription?.unsubscribe()
+            entitiesChangesSubscriptions?.unsubscribe()
         }
     }
 

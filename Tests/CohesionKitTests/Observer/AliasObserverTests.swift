@@ -21,8 +21,28 @@ class AliasObserverTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
         XCTAssertEqual(lastReceivedValue, newValue)
     }
-    
-    func test_observe_refValueChanged_subscribeToValueUpdates() throws {
+
+    func test_observe_entityIsUpdated_onChangeIsCalled() throws {
+      let node = EntityNode(RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 0), listNodes: []), modifiedAt: 0)
+      let observer = AliasObserver(alias: Ref(value: node), queue: .main)
+      let newValue = RootFixture(id: 1, primitive: "new value", singleNode: SingleNodeFixture(id: 1), listNodes: [])
+      var lastObservedValue: RootFixture?
+      let expectation = XCTestExpectation()
+
+      let subscription = observer.observe {
+        lastObservedValue = $0
+        expectation.fulfill()
+      }
+
+      try withExtendedLifetime(subscription) {
+        try node.updateEntity(newValue, modifiedAt: 1)
+
+        wait(for: [expectation], timeout: 1)
+        XCTAssertEqual(lastObservedValue, newValue)
+      }
+    }
+
+    func test_observe_refValueChanged_entityIsUpdated_onChangeIsCalled() throws {
         let ref = Ref(value: Optional.some(EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)))
         let observer = AliasObserver(alias: ref, queue: .main)
         let newNode = EntityNode(SingleNodeFixture(id: 2), modifiedAt: 0)
@@ -63,11 +83,11 @@ class AliasObserverTests: XCTestCase {
 
     func test_observeArray_oneElementChanged_onChangeIsCalled() throws {
         let expectation = XCTestExpectation()
-        let entities = [
+        let nodes = [
             EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0),
             EntityNode(SingleNodeFixture(id: 2), modifiedAt: 0)
         ]
-        let ref = Ref(value: Optional.some(entities))
+        let ref = Ref(value: Optional.some(nodes))
         let observer = AliasObserver(alias: ref, queue: .main)
         let update = SingleNodeFixture(id: 1, primitive: "Update")
         var lastObservedValue: [SingleNodeFixture]?
@@ -79,7 +99,7 @@ class AliasObserverTests: XCTestCase {
 
         try withExtendedLifetime(subscription) {
             // try ref.value?[0].updateEntity(SingleNodeFixture(id: 1, primitive: "Update"), modifiedAt: 1)
-            try entities[0].updateEntity(SingleNodeFixture(id: 1, primitive: "Update"), modifiedAt: 1)
+            try nodes[0].updateEntity(SingleNodeFixture(id: 1, primitive: "Update"), modifiedAt: 1)
 
             wait(for: [expectation], timeout: 1)
             XCTAssertEqual(lastObservedValue?.first, update)
