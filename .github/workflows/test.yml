@@ -10,6 +10,7 @@ on:
 
 jobs:
   test:
+    name: Run Unit tests
     runs-on: macos-latest
     steps:
     - name: Print Swift version
@@ -20,3 +21,16 @@ jobs:
 
     - name: Run tests
       run: fastlane test
+
+  build_sample:
+    name: Build sample
+    runs-on: macos-latest
+    steps:
+    - name: Print Swift version
+      run: swift --version
+  
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Build sample app
+      run: fastlane build
