@@ -265,7 +265,7 @@ cancellable = nil
 identityMap.find(Book.self, id: "ACK") // return "A Clash of Kings" because cancellable2 still observe this book
 ```
 
-## Known issues
+## Known limitations
 
 ### Custom collections are not supported
 
