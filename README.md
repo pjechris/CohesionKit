@@ -147,7 +147,7 @@ CohesionKit will then handle synchronisation for the three entities:
 - Author
 - Book
 
-This allow you to retrieve them independently from each other:
+This allows you to retrieve them independently from each other:
 
 ```swift
 let authorBooks = AuthorBooks(
@@ -176,6 +176,10 @@ identityMap.find(Author.self, id: 1) // George R.R MartinI
 identityMap.find(AuthorBooks.self, id: 1 // George R.R MartinI + [A Clash of Kings, A Dance with Dragons]
 ```
 
+> You might think about storing books on `Author` directly (`author.books`). In this case `Author` would need to implement `Aggregate` and declare `books` are nested entity.
+>
+> However I strongly advise you to not nest `Identifiable` objects into other `Identifiable` objects. Read [Handling relationships](https://swiftunwrap.com/article/modeling-done-right/) article if you want to know more about this subject.
+
 ## Advanced topics
 
 ### Aliases
@@ -189,19 +193,19 @@ extension AliasKey where T == User {
   static let currentUser = AliasKey("user")
 }
 
-identityMap.store(currentUser, named: \.currentUser)
+identityMap.store(currentUser, named: .currentUser)
 ```
 
 Then request it somewhere else:
 
 ```swift
-identityMap.find(named: \.currentUser) // return the current user
+identityMap.find(named: .currentUser) // return the current user
 ```
 
 Compared to regular entities aliased objects are long-live objects: they will be kept in the storage even if no one observe them. This allow registered observers to be notified when alias value change:
 
 ```swift
-identityMap.removeAlias(named: \.currentUser) // observers will be notified currentUser is nil.
+identityMap.removeAlias(named: .currentUser) // observers will be notified currentUser is nil.
 
 identityMap.store(newCurrentUser, named: \.currentUser) // observers will be notified that currentUser changed even if currentUser was nil before
 ```
