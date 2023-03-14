@@ -253,8 +253,53 @@ let cancellable2 = identityMap.find(Book.self, id: "ACK") // return a publisher
 
 cancellable = nil
 
-identityMap.find(Book.self, id: "ADD") // return "A Clash of Kings" because cancellable2 still observe this book
+identityMap.find(Book.self, id: "ACK") // return "A Clash of Kings" because cancellable2 still observe this book
 ```
+
+## Known issues
+
+### Custom collections are not supported
+
+Custom collections are actually supported but for now you need to import `Accelerate` and conform to `AccelerateMutableBuffer`. Hopefully this restriction will be lifted.
+
+### Associated value enums require double update
+
+Let's say you have an enum with `Identifiable`/`Aggregate`:
+
+```swift
+enum MediaType: Identifiable {
+  case book(Book)
+  case game(Game)
+  case tvShow(TvShow)
+}
+
+struct AuthorMedia: Aggregate {
+  let author: Author
+  let media: [MediaType]
+}
+
+let lastOfUsPart1 = Game(id: xx, title: "The Last Of Us", supportedPlatforms: [.ps3, .ps4])
+
+let lastOfUs = TvShow(title: "The Last Of Us", releasedYear: 2023)
+
+let naughtyDog = Author(
+  author: .naughtyDog,
+  media: [.game(theLastOfUsPart1), .movie(theLastOfUst)]
+)
+
+identityMap.store(naughtyDog)
+```
+
+If associated value changes you might need to do a double update inside the lib in order to propagate the modifications:
+
+```swift
+
+let lastOfUsPart1 = Game(id: xx, title: "The Last Of Us", supportedPlatforms: [.ps3, .ps4, .ps5, .pc])
+
+identityMap.store(lastOfUsPart1) // this only notifies objects direct Game reference, not objects using MovieType.game (like our previous `naughtyDog`)
+identityMap.store(MovieType.game(lastOfUsPart1)) // on the other hand this one notifies objects like naughtyDog but not those using a plain Game
+```
+
 
 # License
 
