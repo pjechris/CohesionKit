@@ -189,111 +189,87 @@ public class IdentityMap {
 // MARK: Update
 
 extension IdentityMap {
-    /// Updates an **already stored** entity using a closure. This is useful if you don't have a full entity for update
-    /// but just a few attributes/modifications.
-    ///
-    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, update: Update<T>)
-    -> EntityObserver<T>? {
+    /// Updates an **already stored** entity using a closure. Useful to update a few properties or when you assume the entity
+    /// should already be stored.
+    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, update: Update<T>) {
         identityQueue.sync(flags: .barrier) {
             guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
-                return nil
+                return
             }
 
             update(&entity)
 
-            return EntityObserver(node: nodeStore(entity: entity, modifiedAt: modifiedAt), queue: observeQueue)
+            _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
         }
     }
 
-    /// Updates an **already stored** alias using a closure. This is useful if you don't have a full entity for update
-    /// but just a few attributes/modifications.
-    ///
-    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>)
-    -> EntityObserver<T>? {
+    /// Updates an **already stored** entity using a closure. Useful to update a few properties or when you assume the entity
+    /// should already be stored.
+    public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>) {
         identityQueue.sync(flags: .barrier) {
             guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
-                return nil
+                return
             }
 
             update(&entity)
 
-            return EntityObserver(node: nodeStore(entity: entity, modifiedAt: modifiedAt), queue: observeQueue)
+            _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
         }
     }
 
     /// Updates an **already stored** alias using a closure.
-    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>)
-    -> EntityObserver<T>? {
+    public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>) {
         identityQueue.sync(flags: .barrier) {
             guard let entity = refAliases[named].value else {
-                return nil
+                return
             }
 
             var value = entity.ref.value
             update(&value)
-            let node = nodeStore(entity: value, modifiedAt: modifiedAt)
-
-            refAliases.insert(node, key: named)
-
-            return EntityObserver(node: node, queue: observeQueue)
+            _ = nodeStore(entity: value, modifiedAt: modifiedAt)
         }
     }
 
     /// Updates an **already stored** alias using a closure.
-    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>)
-    -> EntityObserver<T>? {
+    public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>) {
         identityQueue.sync(flags: .barrier) {
             guard let entity = refAliases[named].value else {
-                return nil
+                return
             }
 
             var value = entity.ref.value
             update(&value)
-            let node = nodeStore(entity: value, modifiedAt: modifiedAt)
-
-            return EntityObserver(node: node, queue: observeQueue)
+            _ = nodeStore(entity: value, modifiedAt: modifiedAt)
         }
     }
 
     /// Updates an **already existing** collection alias content
     public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>)
-    -> [EntityObserver<C.Element>]? where C.Element: Identifiable {
+    where C.Element: Identifiable {
         identityQueue.sync(flags: .barrier) {
             guard let entities = refAliases[named].value else {
-                return nil
+                return
             }
 
             var values = entities.map(\.ref.value)
             update(&values)
 
-            let nodes = values.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
-
-            refAliases.insert(nodes, key: named)
-
-            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+            values.forEach { _ = nodeStore(entity: $0, modifiedAt: modifiedAt) }
         }
     }
 
     /// Updates an **already existing** collection alias content
     public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>)
-    -> [EntityObserver<C.Element>]? where C.Element: Aggregate {
+    where C.Element: Aggregate {
         identityQueue.sync(flags: .barrier) {
             guard let entities = self.refAliases[named].value else {
-                return nil
+                return
             }
 
             var values = entities.map(\.ref.value)
             update(&values)
 
-            let nodes = values.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
-
-            refAliases.insert(nodes, key: named)
-
-            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+            values.forEach { _ = nodeStore(entity: $0, modifiedAt: modifiedAt) }
         }
     }
 }
