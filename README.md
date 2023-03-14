@@ -46,7 +46,7 @@ sequenceDiagram
 		CohesionKit -->> YourApp: Publisher<[A,B,C]>
 
 		WebSocket ->> WebSocketListener: book A updated
-		WebSocketListener ->> CohesionKit: store book A
+		WebSocketListener ->> CohesionKit: update book A
 		CohesionKit -->> YourApp: Publisher<[A,B,C]>
 ```
 
@@ -71,7 +71,7 @@ Library comes with an [example project](https://github.com/pjechris/CohesionKit/
 
 ## Getting started
 
-### Store an object
+### Storing an object
 
 First create an instance of `IdentityMap`:
 
@@ -179,6 +179,15 @@ identityMap.find(AuthorBooks.self, id: 1 // George R.R MartinI + [A Clash of Kin
 > You might think about storing books on `Author` directly (`author.books`). In this case `Author` would need to implement `Aggregate` and declare `books` are nested entity.
 >
 > However I strongly advise you to not nest `Identifiable` objects into other `Identifiable` objects. Read [Handling relationships](https://swiftunwrap.com/article/modeling-done-right/) article if you want to know more about this subject.
+
+### Storing vs Updating
+
+For now we only focused on `identityMap.store` but CohesionKit comes with another method to store data: `identityMap.update`.
+
+Sometimes both can be used but they each have a different purpose:
+
+1. `store` is suited for storing full data retrieved from webservices, like `GET /user` for instance
+2. `update` is usually used for partial data. It's also the preferred method when receiving events from websockets for instances.
 
 ## Advanced topics
 
@@ -290,7 +299,7 @@ let naughtyDog = Author(
 identityMap.store(naughtyDog)
 ```
 
-If associated value changes you might need to do a double update inside the lib in order to propagate the modifications:
+If associated value changes you might need to do a double update inside the lib in order to properly propagate the modifications:
 
 ```swift
 
@@ -299,6 +308,8 @@ let lastOfUsPart1 = Game(id: xx, title: "The Last Of Us", supportedPlatforms: [.
 identityMap.store(lastOfUsPart1) // this only notifies objects direct Game reference, not objects using MovieType.game (like our previous `naughtyDog`)
 identityMap.store(MovieType.game(lastOfUsPart1)) // on the other hand this one notifies objects like naughtyDog but not those using a plain Game
 ```
+
+Note that in this context CohesionKit stores the value twice: once as `Game` and once as `MediaType.game` hence the double update.
 
 
 # License
