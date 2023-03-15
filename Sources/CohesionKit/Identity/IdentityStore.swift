@@ -189,82 +189,101 @@ public class IdentityMap {
 // MARK: Update
 
 extension IdentityMap {
-    /// Updates an **already stored** entity using a closure. This is useful if you don't have a full entity for update
-    /// but just a few attributes/modifications.
+    /// Updates an **already stored** entity using a closure. Useful to update a few properties or when you assume the entity
+    /// should already be stored.
+    /// Note: the closure is evaluated before checking `modifiedAt`. As such the closure execution does not mean
+    /// the change was applied
     ///
-    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, update: Update<T>)
-    -> EntityObserver<T>? {
+    /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
+    @discardableResult
+    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
             guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
-                return nil
+                return false
             }
 
             update(&entity)
 
-            return EntityObserver(node: nodeStore(entity: entity, modifiedAt: modifiedAt), queue: observeQueue)
+            _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
+
+            return true
         }
     }
 
     /// Updates an **already stored** alias using a closure. This is useful if you don't have a full entity for update
     /// but just a few attributes/modifications.
+    /// Note: the closure is evaluated before checking `modifiedAt`. As such the closure execution does not mean
+    /// the change was applied
     ///
-    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>)
-    -> EntityObserver<T>? {
+    /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
+    @discardableResult
+    public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
             guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
-                return nil
+                return false
             }
 
             update(&entity)
 
-            return EntityObserver(node: nodeStore(entity: entity, modifiedAt: modifiedAt), queue: observeQueue)
+            _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
+
+            return true
         }
     }
 
     /// Updates an **already stored** alias using a closure.
-    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>)
-    -> EntityObserver<T>? {
+    /// Note: the closure is evaluated before checking `modifiedAt`. As such the closure execution does not mean
+    /// the change was applied
+    /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
+    @discardableResult
+    public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
             guard let entity = refAliases[named].value else {
-                return nil
+                return false
             }
 
             var value = entity.ref.value
             update(&value)
             let node = nodeStore(entity: value, modifiedAt: modifiedAt)
 
+            // ref might have changed
             refAliases.insert(node, key: named)
 
-            return EntityObserver(node: node, queue: observeQueue)
+            return true
         }
     }
 
     /// Updates an **already stored** alias using a closure.
-    /// - Returns: an `EntityObserver` if the entity is found, nil otherwise
-    public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>)
-    -> EntityObserver<T>? {
+    /// Note: the closure is evaluated before checking `modifiedAt`. As such the closure execution does not mean
+    /// the change was applied
+    /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
+    @discardableResult
+    public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
             guard let entity = refAliases[named].value else {
-                return nil
+                return false
             }
 
             var value = entity.ref.value
             update(&value)
             let node = nodeStore(entity: value, modifiedAt: modifiedAt)
 
-            return EntityObserver(node: node, queue: observeQueue)
+            // ref might have changed
+            refAliases.insert(node, key: named)
+
+            return true
         }
     }
 
     /// Updates an **already existing** collection alias content
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>)
-    -> [EntityObserver<C.Element>]? where C.Element: Identifiable {
+    /// Note: the closure is evaluated before checking `modifiedAt`. As such the closure execution does not mean
+    /// the change was applied
+    /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
+    @discardableResult
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>) -> Bool where C.Element: Identifiable {
         identityQueue.sync(flags: .barrier) {
             guard let entities = refAliases[named].value else {
-                return nil
+                return false
             }
 
             var values = entities.map(\.ref.value)
@@ -272,18 +291,22 @@ extension IdentityMap {
 
             let nodes = values.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
+            // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
 
-            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+            return true
         }
     }
 
     /// Updates an **already existing** collection alias content
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>)
-    -> [EntityObserver<C.Element>]? where C.Element: Aggregate {
+    ///  Note: the closure is evaluated before checking `modifiedAt`. As such the closure execution does not mean
+    /// the change was applied
+    /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
+    @discardableResult
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>) -> Bool where C.Element: Aggregate {
         identityQueue.sync(flags: .barrier) {
-            guard let entities = self.refAliases[named].value else {
-                return nil
+            guard let entities = refAliases[named].value else {
+                return false
             }
 
             var values = entities.map(\.ref.value)
@@ -291,9 +314,10 @@ extension IdentityMap {
 
             let nodes = values.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
+            // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
 
-            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+            return true
         }
     }
 }

@@ -129,7 +129,7 @@ class IdentityMapTests: XCTestCase {
         let entity = SingleNodeFixture(id: 1)
 
         withExtendedLifetime(identityMap.store(entity: entity)) { _ in
-            _ = identityMap.update(SingleNodeFixture.self, id: 1) {
+            identityMap.update(SingleNodeFixture.self, id: 1) {
                 $0.primitive = "hello"
             }
 
@@ -137,20 +137,48 @@ class IdentityMapTests: XCTestCase {
         }
     }
 
-    func test_updateNamed_aliasIsExisting_existingObserversAreNotified() {
+    func test_updateNamed_entityIsIdentifiable_aliasIsExisting_observersAreNotified() {
+        let identityMap = IdentityMap(queue: .main)
+        let newEntity = SingleNodeFixture(id: 2)
+        let expectation = XCTestExpectation()
+
+        _ = identityMap.store(entity: SingleNodeFixture(id: 1), named: .test, modifiedAt: 0)
+
+        let subscription = identityMap.find(named: .test).observe {
+            expectation.fulfill()
+            XCTAssertEqual($0, newEntity)
+        }
+
+        withExtendedLifetime(subscription) {
+            identityMap.update(named: .test, modifiedAt: 1) {
+                $0 = newEntity
+            }
+
+            wait(for: [expectation], timeout: 0.5)
+        }
+    }
+
+    func test_updateNamed_entityIsCollection_aliasIsExisting_observersAreNotified() {
         let identityMap = IdentityMap(queue: .main)
         let entities = [SingleNodeFixture(id: 1)]
         let expectation = XCTestExpectation()
 
-        _ = identityMap.find(named: .listOfNodes).observe {
+        _ = identityMap.store(entities: [], named: .listOfNodes, modifiedAt: 0)
+
+        let subscription = identityMap.find(named: .listOfNodes).observe {
             expectation.fulfill()
             XCTAssertEqual($0, entities)
         }
 
-        _ = identityMap.update(named: .listOfNodes) {
-            $0.append(contentsOf: entities)
+        withExtendedLifetime(subscription) {
+            identityMap.update(named: .listOfNodes, modifiedAt: 1) {
+                $0.append(contentsOf: entities)
+            }
+
+            wait(for: [expectation], timeout: 0.5)
         }
     }
+
 }
 
 private extension AliasKey where T == SingleNodeFixture {
