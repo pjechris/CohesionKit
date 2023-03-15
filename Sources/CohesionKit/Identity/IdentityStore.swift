@@ -245,7 +245,8 @@ extension IdentityMap {
             update(&value)
             let node = nodeStore(entity: value, modifiedAt: modifiedAt)
 
-//            refAliases.insert(node, key: named)
+            // ref might have changed
+            refAliases.insert(node, key: named)
 
             return EntityObserver(node: node, queue: observeQueue)
         }
@@ -266,6 +267,9 @@ extension IdentityMap {
             var value = entity.ref.value
             update(&value)
             let node = nodeStore(entity: value, modifiedAt: modifiedAt)
+
+            // ref might have changed
+            refAliases.insert(node, key: named)
 
             return EntityObserver(node: node, queue: observeQueue)
         }
