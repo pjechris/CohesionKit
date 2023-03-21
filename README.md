@@ -92,7 +92,7 @@ let book = Book(id: "ABCD", name: "My Book")
 identityMap.store(book)
 ```
 
-Your can then retrieve the object anywhere in your code:
+Then You can retrieve the object from anywhere in your code:
 
 ```swift
 // somewhere else in the code
@@ -101,10 +101,10 @@ identityMap.find(Book.self, id: "ABCD") // return Book(id: "ABCD", name: "My Boo
 
 ### Observing changes
 
-Every time data is updated in `IdentityMap` will trigger a notification to any registered observer. To register yourself as an observer just use result from `store` or `find` methods:
+Every time data is updated in `IdentityMap` triggers a notification to any registered observer. To register yourself as an observer just use result from `store` or `find` methods:
 
 ```swift
-func findBooks() {
+func findBooks() -> some Publisher<[Book], Error> {
   // 1. load data using URLSession
   URLSession(...)
   // 2. store data inside our identityMap
@@ -121,14 +121,16 @@ identityMap.find(Book.self, id: 1)?
   .store(in: &cancellables)
 ```
 
-> CohesionKit has a [weak memory policy](#weak-memory-management) you should understand.
+> CohesionKit has a [weak memory policy](#weak-memory-management) you should read about. As such, returned value from identityMap.store must be strongly retained to not lose value.
+
+> For brievety, next examples will omit `.sink { ... }.store(in:&cancellables)`.
 
 ### Relational objects
 
 To store objects containing other objects you need to make them conform to one protocol: `Aggregate`.
 
 ```swift
-struct AuthorBooks: Aggregate
+struct AuthorBooks: Aggregate {
   var id: Author.ID { author.id }
 
   let author: Author
@@ -141,13 +143,13 @@ struct AuthorBooks: Aggregate
 }
 ```
 
-CohesionKit will then handle synchronisation for the three entities:
+CohesionKit then handles synchronisation for the three entities:
 
 - AuthorBook
 - Author
 - Book
 
-This allows you to retrieve them independently from each other:
+This gives you the ability to retrieve them independently from each other:
 
 ```swift
 let authorBooks = AuthorBooks(
@@ -173,7 +175,7 @@ let newAuthor = Author(id: 1, name: "George R.R MartinI")
 identityMap.store(newAuthor)
 
 identityMap.find(Author.self, id: 1) // George R.R MartinI
-identityMap.find(AuthorBooks.self, id: 1 // George R.R MartinI + [A Clash of Kings, A Dance with Dragons]
+identityMap.find(AuthorBooks.self, id: 1) // George R.R MartinI + [A Clash of Kings, A Dance with Dragons]
 ```
 
 > You might think about storing books on `Author` directly (`author.books`). In this case `Author` would need to implement `Aggregate` and declare `books` are nested entity.
@@ -187,15 +189,15 @@ For now we only focused on `identityMap.store` but CohesionKit comes with anothe
 Sometimes both can be used but they each have a different purpose:
 
 1. `store` is suited for storing full data retrieved from webservices, like `GET /user` for instance
-2. `update` is usually used for partial data. It's also the preferred method when receiving events from websockets for instances.
+2. `update` is usually used for partial data. It's also the preferred method when receiving events from websockets.
 
 ## Advanced topics
 
 ### Aliases
 
-Sometimes you need to retrieve data without knowing the id. Common scenario is current user.
+Sometimes you need to retrieve data without knowing the object id. Common case is current user.
 
-CohesionKit provide a suitable mechanism: aliases. Aliases allow you to register and find entities using a key.
+CohesionKit provides a suitable mechanism: aliases. Aliases allow you to register and find entities using a key.
 
 ```swift
 extension AliasKey where T == User {
@@ -211,12 +213,12 @@ Then request it somewhere else:
 identityMap.find(named: .currentUser) // return the current user
 ```
 
-Compared to regular entities aliased objects are long-live objects: they will be kept in the storage even if no one observe them. This allow registered observers to be notified when alias value change:
+Compared to regular entities, aliased objects are long-live objects: they will be kept in the storage **even if no one observes them**. This allow registered observers to be notified when alias value change:
 
 ```swift
 identityMap.removeAlias(named: .currentUser) // observers will be notified currentUser is nil.
 
-identityMap.store(newCurrentUser, named: \.currentUser) // observers will be notified that currentUser changed even if currentUser was nil before
+identityMap.store(newCurrentUser, named: .currentUser) // observers will be notified that currentUser changed even if currentUser was nil before
 ```
 
 ### Stale data
@@ -256,7 +258,7 @@ identityMap.find(Book.self, id: "ACK") // return nil
 ```
 
 ```swift
-let book = let book = Book(id: "ACK", title: "A Clash of Kings")
+let book = Book(id: "ACK", title: "A Clash of Kings")
 var cancellable = identityMap.store(book).asPublisher.sink { ... }
 let cancellable2 = identityMap.find(Book.self, id: "ACK") // return a publisher
 
