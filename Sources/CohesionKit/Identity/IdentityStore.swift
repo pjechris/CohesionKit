@@ -121,18 +121,6 @@ public class IdentityMap {
         }
     }
 
-    /// Remove an alias from the storage
-    public func removeAlias<T>(named: AliasKey<T>) {
-        refAliases.remove(for: named)
-        logger?.didUnregisterAlias(named)
-    }
-
-    /// Remove an alias from the storage
-    public func removeAlias<C: Collection>(named: AliasKey<C>) {
-        refAliases.remove(for: named)
-        logger?.didUnregisterAlias(named)
-    }
-
     func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
@@ -319,5 +307,33 @@ extension IdentityMap {
 
             return true
         }
+    }
+}
+
+// MARK: Delete
+
+extension IdentityMap {
+    /// Removes an alias from the storage
+    public func removeAlias<T>(named: AliasKey<T>) {
+        refAliases.remove(for: named)
+        logger?.didUnregisterAlias(named)
+    }
+
+    /// Removes an alias from the storage
+    public func removeAlias<C: Collection>(named: AliasKey<C>) {
+        refAliases.remove(for: named)
+        logger?.didUnregisterAlias(named)
+    }
+
+    /// Removes all alias from identity map
+    public func removeAllAlias() {
+        refAliases.removeAll()
+    }
+
+    /// Removes all alias AND all objects stored weakly. You should not need this method and rather use `removeAlias`. But this can be useful
+    /// if you fear retain cycles
+    public func removeAll() {
+        refAliases.removeAll()
+        storage.removeAll()
     }
 }
