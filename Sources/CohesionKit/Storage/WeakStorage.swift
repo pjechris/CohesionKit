@@ -2,14 +2,18 @@ import Foundation
 
 struct WeakStorage {
     typealias Storage = [String: AnyWeak]
-    
+
     private var storage: Storage = [:]
-    
+
+    mutating func removeAll() {
+        storage.removeAll()
+    }
+
     subscript<T: AnyObject>(_ type: T.Type, id id: Any) -> T? {
         get { (storage[key(for: type, id: id)] as? Weak<T>)?.value }
         set { storage[key(for: type, id: id)] = Weak(value: newValue) }
     }
-    
+
     private func key<T>(for type: T.Type, id: Any) -> String {
         "\(type)-\(id)"
     }
@@ -30,9 +34,9 @@ extension WeakStorage {
             }
 
             let value = create()
-                
+
             self[object] = value
-                
+
             return value
         }
     }

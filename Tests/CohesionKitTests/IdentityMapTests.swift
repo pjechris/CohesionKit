@@ -106,6 +106,22 @@ class IdentityMapTests: XCTestCase {
         XCTAssertEqual(identityMap.find(named: .test).value, entity)
     }
 
+    func test_findNamed_allAliasRemoved_returnNilValue() {
+        let identityMap = IdentityMap(queue: .main)
+
+        _ = identityMap.store(entity: SingleNodeFixture(id: 1), named: .test, modifiedAt: 0)
+
+        XCTAssertNotNil(identityMap.find(named: .test).value)
+
+        identityMap.removeAllAlias()
+
+        XCTAssertNil(identityMap.find(named: .test).value)
+    }
+}
+
+// PRAGMA: Update
+
+extension IdentityMapTests {
     func test_findNamed_entityStored_thenRemoved_returnNil() {
         let identityMap = IdentityMap()
         let entity = SingleNodeFixture(id: 1)
@@ -178,7 +194,6 @@ class IdentityMapTests: XCTestCase {
             wait(for: [expectation], timeout: 0.5)
         }
     }
-
 }
 
 private extension AliasKey where T == SingleNodeFixture {
