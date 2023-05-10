@@ -5,7 +5,7 @@ struct WeakStorage {
 
     private var storage: Storage = [:]
 
-    func removeAll() {
+    mutating func removeAll() {
         storage.removeAll()
     }
 
