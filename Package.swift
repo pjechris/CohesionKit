@@ -12,12 +12,11 @@ let package = Package(
             targets: ["CohesionKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/CombineCommunity/CombineExt", from: "1.3.0"),
     ],
     targets: [
         .target(
             name: "CohesionKit",
-            dependencies: ["CombineExt"]),
+            dependencies: []),
         .testTarget(
             name: "CohesionKitTests",
             dependencies: ["CohesionKit"]),
