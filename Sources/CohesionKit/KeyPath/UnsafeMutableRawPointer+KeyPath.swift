@@ -3,25 +3,20 @@ import Foundation
 extension UnsafeMutableRawPointer {
     
     func assign<Root, Value>(_ value: Value, to keyPath: KeyPath<Root, Value>) {
-        guard let offset = MemoryLayout<Root>.offset(of: keyPath) else {
-            fatalError("offset for KeyPath<\(Root.self), \(Value.self)> is nil")
+        guard let pointer = UnsafeMutablePointer(mutating: self.assumingMemoryBound(to: Root.self).pointer(to: keyPath)) else {
+              fatalError("cannot update value for KeyPath<\(Root.self), \(Value.self)>. Computed properties are not supported.")
         }
-        
-        advanced(by: offset)
-            .assumingMemoryBound(to: Value.self)
-            .pointee = value
+
+        pointer.pointee = value
     }
     
     func assign<Root, C>(_ value: C.Element, to keyPath: KeyPath<Root, C>, index: C.Index)
       where C: MutableCollection, C.Index == Int {
 
-        guard let offset = MemoryLayout<Root>.offset(of: keyPath) else {
-            fatalError("offset for KeyPath<\(Root.self), \(C.self)> is nil")
+        guard let pointer = UnsafeMutablePointer(mutating: self.assumingMemoryBound(to: Root.self).pointer(to: keyPath)) else {
+              fatalError("cannot update value for KeyPath<\(Root.self), \(C.self)>. Computed properties are not supported.")
         }
 
-        advanced(by: offset)
-            .assumingMemoryBound(to: C.self)
-            .pointee
-            .withContiguousMutableStorageIfAvailable { $0[index] = value }
+        pointer.pointee.withContiguousMutableStorageIfAvailable { $0[index] = value }
       }
 }
