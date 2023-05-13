@@ -60,7 +60,7 @@ class EntityNode<T>: AnyEntityNode {
     }
     
     /// observe one of the node child whose type is a collection
-    func observeChild<C: BufferedCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
+    func observeChild<C: MutableCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
     where C.Index == Int {
         observeChild(childNode, identity: keyPath.appending(path: \C[index])) { pointer, newValue in
             pointer.assign(newValue, to: keyPath, index: index)

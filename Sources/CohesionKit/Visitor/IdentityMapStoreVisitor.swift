@@ -32,7 +32,7 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
         }
     }
     
-    func visit<Root, C: BufferedCollection>(context: EntityContext<Root, C>, entities: C)
+    func visit<Root, C: MutableCollection>(context: EntityContext<Root, C>, entities: C)
     where C.Element: Identifiable, C.Index == Int {
         
         for index in entities.indices {
@@ -44,7 +44,7 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
         }
     }
     
-    func visit<Root, C: BufferedCollection>(context: EntityContext<Root, C>, entities: C)
+    func visit<Root, C: MutableCollection>(context: EntityContext<Root, C>, entities: C)
     where C.Element: Aggregate, C.Index == Int {
         
         for index in entities.indices {
