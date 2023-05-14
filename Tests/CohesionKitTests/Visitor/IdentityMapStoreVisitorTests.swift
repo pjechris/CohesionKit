@@ -57,14 +57,14 @@ class IdentityMapStoreVisitorTests: XCTestCase {
 }
 
 private class EntityNodeStub<T>: EntityNode<T> {
-    var observeChildKeyPathIndexCalled: (AnyEntityNode, PartialKeyPath<T>, Int) -> Void = { _, _, _ in }
+    var observeChildKeyPathIndexCalled: (AnyEntityNode, PartialKeyPath<T>, Any) -> Void = { _, _, _ in }
     var observeChildKeyPathOptionalCalled: (AnyEntityNode, PartialKeyPath<T>) -> Void = { _, _ in }
     
     override func observeChild<C: MutableCollection>(
         _ childNode: EntityNode<C.Element>,
         for keyPath: KeyPath<T, C>,
         index: C.Index
-    ) where C.Index == Int {
+    ) {
         observeChildKeyPathIndexCalled(childNode, keyPath, index)
     }
     

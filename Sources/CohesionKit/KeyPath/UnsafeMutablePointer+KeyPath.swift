@@ -4,20 +4,24 @@ extension UnsafeMutablePointer {
 
     func assign<Value>(_ value: Value, to keyPath: KeyPath<Pointee, Value>) {
 
-        guard let unsafePointer = UnsafeMutablePointer<Value>(mutating: pointer(to: keyPath)) else {
-            fatalError("cannot update value for KeyPath<\(Pointee.self), \(Value.self)>. Computed properties are not supported.")
+        guard let unsafeValuePointer = UnsafeMutablePointer<Value>(mutating: pointer(to: keyPath)) else {
+            fatalError("cannot update value for KeyPath<\(Pointee.self), \(Value.self)>: failed to access memory pointer.")
         }
 
-        unsafePointer.pointee = value
+        unsafeValuePointer.pointee = value
     }
-    
-    func assign<C: MutableCollection>(_ value: C.Element, to keyPath: KeyPath<Pointee, C>, index: C.Index)
-    where C.Index == Int {
 
-        guard let unsafePointer = UnsafeMutablePointer<C>(mutating: pointer(to: keyPath)) else {
-              fatalError("cannot update value for KeyPath<\(Pointee.self), \(C.self)>. Computed properties are not supported.")
+    func assign<C: MutableCollection>(_ value: C.Element, to keyPath: KeyPath<Pointee, C>, index: C.Index) {
+
+        guard let unsafeCollectionPointer = UnsafeMutablePointer<C>(mutating: pointer(to: keyPath)) else {
+            fatalError("cannot update value for KeyPath<\(Pointee.self), \(C.self)>: failed to access memory pointer.")
         }
 
-        unsafePointer.pointee.withContiguousMutableStorageIfAvailable { $0[index] = value }
+        /// calculate the distance in memory where the object is located to update it
+        let distance = unsafeCollectionPointer
+            .pointee
+            .distance(from: unsafeCollectionPointer.pointee.startIndex, to: index)
+
+        unsafeCollectionPointer.pointee.withContiguousMutableStorageIfAvailable { $0[distance] = value }
     }
 }
