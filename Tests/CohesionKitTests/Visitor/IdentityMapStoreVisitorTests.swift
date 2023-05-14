@@ -60,7 +60,7 @@ private class EntityNodeStub<T>: EntityNode<T> {
     var observeChildKeyPathIndexCalled: (AnyEntityNode, PartialKeyPath<T>, Int) -> Void = { _, _, _ in }
     var observeChildKeyPathOptionalCalled: (AnyEntityNode, PartialKeyPath<T>) -> Void = { _, _ in }
     
-    override func observeChild<C: BufferedCollection>(
+    override func observeChild<C: MutableCollection>(
         _ childNode: EntityNode<C.Element>,
         for keyPath: KeyPath<T, C>,
         index: C.Index

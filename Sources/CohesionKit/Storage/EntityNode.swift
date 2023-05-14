@@ -60,7 +60,7 @@ class EntityNode<T>: AnyEntityNode {
     }
     
     /// observe one of the node child whose type is a collection
-    func observeChild<C: BufferedCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
+    func observeChild<C: MutableCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
     where C.Index == Int {
         observeChild(childNode, identity: keyPath.appending(path: \C[index])) { pointer, newValue in
             pointer.assign(newValue, to: keyPath, index: index)
@@ -74,7 +74,7 @@ class EntityNode<T>: AnyEntityNode {
     private func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,
         identity keyPath: KeyPath<T, C>,
-        assign: @escaping (UnsafeMutableRawPointer, Element) -> Void
+        update: @escaping (UnsafeMutablePointer<T>, Element) -> Void
     ) {
         if let subscribedChild = children[keyPath]?.node as? EntityNode<Element>, subscribedChild == childNode {
             return
@@ -85,17 +85,18 @@ class EntityNode<T>: AnyEntityNode {
                 return
             }
 
-            withUnsafeMutablePointer(to: &self.ref.value) {
-                let pointer = UnsafeMutableRawPointer($0)
-                
-                assign(pointer, newValue)
+            withUnsafeMutablePointer(to: &self.ref.value) {                
+                update($0, newValue)
             }
         }
         
         children[keyPath] = SubscribedChild(
             subscription: subscription,
             node: childNode,
-            selfAssignTo: { assign($0, childNode.ref.value) }
+            selfAssignTo: {
+                let selfPointer = $0.assumingMemoryBound(to: T.self)
+                update(selfPointer, childNode.ref.value)
+            }
         )
     }
  
