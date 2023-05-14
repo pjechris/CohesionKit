@@ -45,7 +45,7 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
     }
     
-    public init<C: MutableCollection>(_ keyPath: KeyPath<Root, C>) where C.Element: Identifiable, C.Index == Int {
+    public init<C: MutableCollection>(_ keyPath: KeyPath<Root, C>) where C.Element: Identifiable, C.Index: Hashable {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(
@@ -55,7 +55,7 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
     }
     
-    public init<C: MutableCollection>(_ keyPath: KeyPath<Root, C>) where C.Element: Aggregate, C.Index == Int {
+    public init<C: MutableCollection>(_ keyPath: KeyPath<Root, C>) where C.Element: Aggregate, C.Index: Hashable {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(
