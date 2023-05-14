@@ -1,20 +1,24 @@
 import Foundation
 import CohesionKit
 
+/// A match is a sport game between two teams
 struct Match: Identifiable {
     let id: String
     let team1: String
     let team2: String
 }
 
+/// A market is a type of bet. For instance: who's going to win
 struct Market: Identifiable {
     let id: String
     let name: String
 }
 
+/// An outcome is a possible market outcome
 struct Outcome: Identifiable {
     let id: String
     let name: String
+    /// "probability" this outcome would happen
     let odds: Double
 
     func newOdds(_ odds: Double) -> Outcome {
