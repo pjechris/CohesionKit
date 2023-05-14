@@ -32,8 +32,8 @@ struct MatchDetailsView: View {
     var body: some View {
         VStack {
             VStack(alignment: .leading, spacing: 0) {
-                Text("This view observe changes for primary market (1N2).")
-                Text("They are triggered every 3 secondes.")
+                Text("This view observe changes for the first market (1N2).")
+                Text("New values are triggered every 3 secondes.")
                 Text("If you go back you will see updated values on list view.")
             }
             .font(Font.footnote.italic())

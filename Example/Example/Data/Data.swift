@@ -9,8 +9,9 @@ extension Market: ExpressibleByStringLiteral {
 }
 
 extension Outcome: ExpressibleByStringLiteral {
+    /// for the demo, init an outcome with odds at 0
     init(stringLiteral value: StringLiteralType) {
-        self.init(id: UUID().uuidString, name: value, odds: Double.random(in: 0...5))
+        self.init(id: UUID().uuidString, name: value, odds: 0)
     }
 }
 
