@@ -127,7 +127,7 @@ identityMap.find(Book.self, id: 1)?
 
 ### Relational objects
 
-To store objects containing other objects you need to make them conform to one protocol: `Aggregate`.
+To store objects containing nested identity objects you need to make them conform to one protocol: `Aggregate`.
 
 ```swift
 struct AuthorBooks: Aggregate {
@@ -167,7 +167,7 @@ identityMap.find(Book.self, id: "ACK") // A Clash of Kings
 identityMap.find(Book.self, id: "ADD") // A Dance with Dragons
 ```
 
-You can also modify any of them however you want:
+You can also modify any of them however you want. Notice the change is visible from the object itself AND from aggregate objects:
 
 ```swift
 let newAuthor = Author(id: 1, name: "George R.R MartinI")
@@ -178,7 +178,7 @@ identityMap.find(Author.self, id: 1) // George R.R MartinI
 identityMap.find(AuthorBooks.self, id: 1) // George R.R MartinI + [A Clash of Kings, A Dance with Dragons]
 ```
 
-> You might think about storing books on `Author` directly (`author.books`). In this case `Author` would need to implement `Aggregate` and declare `books` are nested entity.
+> You might think about storing books on `Author` directly (`author.books`). In this case `Author` needs to implement `Aggregate` and declare `books` as nested entity.
 >
 > However I strongly advise you to not nest `Identifiable` objects into other `Identifiable` objects. Read [Handling relationships](https://swiftunwrap.com/article/modeling-done-right/) article if you want to know more about this subject.
 
@@ -268,10 +268,6 @@ identityMap.find(Book.self, id: "ACK") // return "A Clash of Kings" because canc
 ```
 
 ## Known limitations
-
-### Custom collections are not supported
-
-Custom collections are actually supported but for now you need to import `Accelerate` and conform to `AccelerateMutableBuffer`. Hopefully this restriction will be lifted.
 
 ### Associated value enums require double update
 
