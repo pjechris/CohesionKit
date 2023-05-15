@@ -54,7 +54,7 @@ private struct Hello {
     var myCollection: MyCollection = []
 }
 
-struct MyCollection: MutableCollection, Equatable, ExpressibleByArrayLiteral {
+struct MyCollection: BufferedCollection, Equatable, ExpressibleByArrayLiteral {
     typealias Element = Array<String>.Element
     typealias Index = Array<String>.Index
 
@@ -79,5 +79,9 @@ struct MyCollection: MutableCollection, Equatable, ExpressibleByArrayLiteral {
 
     func index(after i: Index) -> Index {
         elements.index(after: i)
+    }
+
+    func withUnsafeMutableBufferPointer(_ body: (inout UnsafeMutableBufferPointer<Array<String>.Element>) throws -> Void) rethrows {
+        try elements.withUnsafeBufferPointer(body)
     }
 }
