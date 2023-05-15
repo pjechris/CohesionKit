@@ -12,7 +12,7 @@ class UnsafeMutablePointerTests: XCTestCase {
         XCTAssertEqual(hello.singleValue, "world")
     }
 
-    func test_assign_keyPathIsCollection_propertyIsImmutable_collectionIsChangedAtIndex() {
+    func test_assign_keyPathIsArray_propertyIsImmutable_arrayIsChanged() {
         var hello = Hello(collection: [1, 2, 3, 4], singleValue: "")
 
         withUnsafeMutablePointer(to: &hello) {            
@@ -22,7 +22,7 @@ class UnsafeMutablePointerTests: XCTestCase {
         XCTAssertEqual(hello.collection, [1, 2, 3, 5])
     }
 
-    func test_assign_keyPathIsCollection_mutipleAssignments_colllectionIsChanged() {
+    func test_assign_keyPathIsArray_mutipleAssignments_arrayIsChanged() {
         var hello = Hello(collection: [1, 2, 3, 4], singleValue: "")
 
         withUnsafeMutablePointer(to: &hello) {
@@ -33,9 +33,51 @@ class UnsafeMutablePointerTests: XCTestCase {
 
         XCTAssertEqual(hello.collection, [2, 2, 3, 4])
     }
+
+    func test_assign_keyPathIsCustomCollection_colectionIsChanged() {
+        var hello = Hello(collection: [], singleValue: "")
+
+        hello.myCollection = ["1", "2"]
+
+        withUnsafeMutablePointer(to: &hello) {
+            $0.assign("3", to: \.myCollection, index: 0)
+            $0.assign("4", to: \.myCollection, index: 0)
+        }
+
+        XCTAssertEqual(hello.myCollection, ["3", "4"])
+    }
 }
 
 private struct Hello {
     let collection: [Int]
     let singleValue: String
+    var myCollection: MyCollection = []
+}
+
+struct MyCollection: MutableCollection, Equatable, ExpressibleByArrayLiteral {
+    typealias Element = Array<String>.Element
+    typealias Index = Array<String>.Index
+
+    var elements: [String] = []
+
+    var startIndex: Index { elements.startIndex }
+
+    var endIndex: Index { elements.endIndex }
+
+    init(arrayLiteral elements: String...) {
+        self.elements = elements
+    }
+
+    subscript(position: Index) -> Element {
+        get { 
+            elements[position]
+        }
+        set(newValue) {
+            elements[position] = newValue
+        }
+    }
+
+    func index(after i: Index) -> Index {
+        elements.index(after: i)
+    }
 }
