@@ -15,10 +15,10 @@ class UnsafeMutablePointerTests: XCTestCase {
     func test_assign_keyPathIsArray_propertyIsImmutable_arrayIsChanged() {
         var hello = Hello(collection: [1, 2, 3, 4], singleValue: "")
 
-        withUnsafeMutablePointer(to: &hello) {            
+        withUnsafeMutablePointer(to: &hello) {
             $0.assign(5, to: \Hello.collection, index: 3)
         }
-        
+
         XCTAssertEqual(hello.collection, [1, 2, 3, 5])
     }
 
@@ -41,7 +41,7 @@ class UnsafeMutablePointerTests: XCTestCase {
 
         withUnsafeMutablePointer(to: &hello) {
             $0.assign("3", to: \.myCollection, index: 0)
-            $0.assign("4", to: \.myCollection, index: 0)
+            $0.assign("4", to: \.myCollection, index: 1)
         }
 
         XCTAssertEqual(hello.myCollection, ["3", "4"])
@@ -69,7 +69,7 @@ struct MyCollection: BufferedCollection, Equatable, ExpressibleByArrayLiteral {
     }
 
     subscript(position: Index) -> Element {
-        get { 
+        get {
             elements[position]
         }
         set(newValue) {
@@ -81,7 +81,7 @@ struct MyCollection: BufferedCollection, Equatable, ExpressibleByArrayLiteral {
         elements.index(after: i)
     }
 
-    func withUnsafeMutableBufferPointer(_ body: (inout UnsafeMutableBufferPointer<Array<String>.Element>) throws -> Void) rethrows {
-        try elements.withUnsafeBufferPointer(body)
+    mutating func withUnsafeMutableBufferPointer<R>(_ body: (inout UnsafeMutableBufferPointer<Element>) throws -> R) rethrows -> R {
+        try elements.withUnsafeMutableBufferPointer(body)
     }
 }
