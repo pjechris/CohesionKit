@@ -14,9 +14,9 @@ class IdentityMapTests: XCTestCase {
         let identityMap = IdentityMap()
 
         withExtendedLifetime(identityMap.store(entity: entity)) { _ in
-            XCTAssertNotNil(identityMap.indexer[SingleNodeFixture.self, id: 1])
-            XCTAssertNotNil(identityMap.indexer[OptionalNodeFixture.self, id: 1])
-            XCTAssertNotNil(identityMap.indexer[ListNodeFixture.self, id: 1])
+            XCTAssertNotNil(identityMap.storage[SingleNodeFixture.self, id: 1])
+            XCTAssertNotNil(identityMap.storage[OptionalNodeFixture.self, id: 1])
+            XCTAssertNotNil(identityMap.storage[ListNodeFixture.self, id: 1])
         }
     }
 
