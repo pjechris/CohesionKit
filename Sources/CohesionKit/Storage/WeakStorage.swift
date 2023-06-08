@@ -1,17 +1,20 @@
 import Foundation
 
+/// A storage that keeps weak references to objects.
+/// This allows to release it automatically if no one is using them anymore (freeing memory space)
 struct WeakStorage {
-    typealias Storage = [String: AnyWeak]
+    /// the storage indexer. Stored content is [String: Weak<EntityNode<Object>>]
+    private typealias Storage = [String: AnyWeak]
 
-    private var storage: Storage = [:]
+    private var indexes: Storage = [:]
 
     mutating func removeAll() {
-        storage.removeAll()
+        indexes.removeAll()
     }
 
-    subscript<T: AnyObject>(_ type: T.Type, id id: Any) -> T? {
-        get { (storage[key(for: type, id: id)] as? Weak<T>)?.value }
-        set { storage[key(for: type, id: id)] = Weak(value: newValue) }
+    subscript<T: Identifiable>(_ type: T.Type, id id: T.ID) -> EntityNode<T>? {
+        get { (indexes[key(for: T.self, id: id)] as? Weak<EntityNode<T>>)?.value }
+        set { indexes[key(for: T.self, id: id)] = Weak(value: newValue) }
     }
 
     private func key<T>(for type: T.Type, id: Any) -> String {
@@ -22,14 +25,14 @@ struct WeakStorage {
 extension WeakStorage {
     /// find or set a `EntityNode` associated with object
     subscript<T: Identifiable>(_ object: T) -> EntityNode<T>? {
-        get { self[EntityNode<T>.self, id: object.id] }
-        set { self[EntityNode<T>.self, id: object.id] = newValue }
+        get { self[T.self, id: object.id] }
+        set { self[T.self, id: object.id] = newValue }
     }
 
     /// - Parameter new: The value to create, store, and return if none is found
     subscript<T: Identifiable>(_ object: T, new create: @autoclosure () -> EntityNode<T>) -> EntityNode<T> {
         mutating get {
-            if let value = self[EntityNode<T>.self, id: object.id] {
+            if let value = self[T.self, id: object.id] {
                 return value
             }
 
