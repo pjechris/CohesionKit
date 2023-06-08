@@ -4,7 +4,7 @@ import Foundation
 public class IdentityMap {
     public typealias Update<T> = (inout T) -> Void
 
-    private(set) var indexer: WeakStorage = WeakStorage()
+    private(set) var indexer: EntitiesStorage = EntitiesStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
     /// the queue on which identity map do its heavy work

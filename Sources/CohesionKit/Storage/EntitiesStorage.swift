@@ -1,8 +1,10 @@
 import Foundation
 
-/// A storage that keeps weak references to objects.
-/// This allows to release it automatically if no one is using them anymore (freeing memory space)
-struct WeakStorage {
+/// A storage keeping entities indexed by a unique key.
+///
+/// Storage keeps weak references to objects.
+//// This allows to release entities automatically if no one is using them anymore (freeing memory space)
+struct EntitiesStorage {
     /// the storage indexer. Stored content is [String: Weak<EntityNode<Object>>]
     private typealias Storage = [String: AnyWeak]
 
@@ -22,7 +24,7 @@ struct WeakStorage {
     }
 }
 
-extension WeakStorage {
+extension EntitiesStorage {
     /// find or set a `EntityNode` associated with object
     subscript<T: Identifiable>(_ object: T) -> EntityNode<T>? {
         get { self[T.self, id: object.id] }
