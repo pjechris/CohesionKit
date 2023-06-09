@@ -4,7 +4,7 @@ import Foundation
 public class IdentityMap {
     public typealias Update<T> = (inout T) -> Void
 
-    private(set) var storage: WeakStorage = WeakStorage()
+    private(set) var storage: EntitiesStorage = EntitiesStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
     /// the queue on which identity map do its heavy work
@@ -97,7 +97,7 @@ public class IdentityMap {
     /// - Parameter id: the entity id
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
         identityQueue.sync {
-            if let node = storage[EntityNode<T>.self, id: id] {
+            if let node = storage[T.self, id: id] {
                 return EntityObserver(node: node, queue: observeQueue)
             }
 
@@ -186,7 +186,7 @@ extension IdentityMap {
     @discardableResult
     public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
-            guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
+            guard var entity = storage[T.self, id: id]?.ref.value else {
                 return false
             }
 
@@ -207,7 +207,7 @@ extension IdentityMap {
     @discardableResult
     public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
-            guard var entity = storage[EntityNode<T>.self, id: id]?.ref.value else {
+            guard var entity = storage[T.self, id: id]?.ref.value else {
                 return false
             }
 
