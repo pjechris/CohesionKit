@@ -137,7 +137,6 @@ public class IdentityMap {
 
     func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
-        var entity = entity
 
         // disable changes while doing the entity update
         node.applyChildrenChanges = false
@@ -149,16 +148,8 @@ public class IdentityMap {
             keyPathContainer.accept(node, entity, modifiedAt, storeVisitor)
         }
 
-        // modify the entity with (potentially) new/different child stored value than what we have
-        withUnsafeMutablePointer(to: &entity) {
-            let parent = UnsafeMutableRawPointer($0)
+        node.applyChildrenChanges = true
 
-            for (_, child) in node.children {
-                child.selfAssignTo(parent)
-            }
-        }
-
-        // TODO: what about if modifiedAt is < but some of the children actually changed?
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
             logger?.didStore(T.self, id: entity.id)
@@ -166,8 +157,6 @@ public class IdentityMap {
         catch {
             logger?.didFailedToStore(T.self, id: entity.id, error: error)
         }
-
-        node.applyChildrenChanges = true
 
         return node
     }
