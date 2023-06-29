@@ -1,5 +1,5 @@
 /// Keep a strong reference on each aliased node
-typealias AliasStorage = [AnyHashable: AnyRef]
+typealias AliasStorage = [AnyHashable: AnyObservable]
 
 extension AliasStorage {
     subscript<T>(key: AliasKey<T>) -> Observable<EntityNode<T>?> {

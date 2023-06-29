@@ -20,10 +20,11 @@ public class Subscription {
     }
 }
 
-protocol AnyRef { }
+/// marker protocol
+protocol AnyObservable { }
 
 /// A class holding a value that can be observed when reference changes
-class Observable<T>: AnyRef {
+class Observable<T>: AnyObservable {
     typealias ObserverID = UUID
 
     var value: T {
