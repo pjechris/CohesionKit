@@ -1,14 +1,14 @@
 /// Keep a strong reference on each aliased node
-typealias AliasStorage = [AnyHashable: AnyRef]
+typealias AliasStorage = [AnyHashable: AnyObservable]
 
 extension AliasStorage {
-    subscript<T>(key: AliasKey<T>) -> Ref<EntityNode<T>?> {
+    subscript<T>(key: AliasKey<T>) -> Observable<EntityNode<T>?> {
         mutating get {
-            if let store = self[AnyHashable(key)] as? Ref<EntityNode<T>?> {
+            if let store = self[AnyHashable(key)] as? Observable<EntityNode<T>?> {
                 return store
             }
 
-            let store: Ref<EntityNode<T>?> = Ref(value: nil)
+            let store: Observable<EntityNode<T>?> = Observable(value: nil)
             self[AnyHashable(key)] = store
 
             return store
@@ -16,13 +16,13 @@ extension AliasStorage {
         }
     }
 
-    subscript<C: Collection>(key: AliasKey<C>) -> Ref<[EntityNode<C.Element>]?> {
+    subscript<C: Collection>(key: AliasKey<C>) -> Observable<[EntityNode<C.Element>]?> {
         mutating get {
-            if let store = self[AnyHashable(key)] as? Ref<[EntityNode<C.Element>]?> {
+            if let store = self[AnyHashable(key)] as? Observable<[EntityNode<C.Element>]?> {
                 return store
             }
 
-            let store: Ref<[EntityNode<C.Element>]?> = Ref(value: nil)
+            let store: Observable<[EntityNode<C.Element>]?> = Observable(value: nil)
             self[AnyHashable(key)] = store
 
             return store
@@ -39,10 +39,10 @@ extension AliasStorage {
     }
 
     mutating func remove<T>(for key: AliasKey<T>) {
-        (self[AnyHashable(key)] as? Ref<EntityNode<T>?>)?.value = nil
+        (self[AnyHashable(key)] as? Observable<EntityNode<T>?>)?.value = nil
     }
 
     mutating func remove<C: Collection>(for key: AliasKey<C>) {
-        (self[AnyHashable(key)] as? Ref<[EntityNode<C.Element>]?>)?.value = nil
+        (self[AnyHashable(key)] as? Observable<[EntityNode<C.Element>]?>)?.value = nil
     }
 }
