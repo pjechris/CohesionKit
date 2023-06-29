@@ -21,20 +21,20 @@ class EntityNode<T>: AnyEntityNode {
     var value: Any { ref.value }
 
     /// An observable entity reference
-    let ref: Ref<T>
+    let ref: Observable<T>
     /// last time the ref.value was changed. Any subsequent change must have a higher value to be applied
     /// if nil ref has no stamp and any change will be accepted
     private var modifiedAt: Stamp?
     /// entity children
     private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
 
-    init(ref: Ref<T>, modifiedAt: Stamp?) {
+    init(ref: Observable<T>, modifiedAt: Stamp?) {
         self.ref = ref
         self.modifiedAt = modifiedAt
     }
 
     convenience init(_ entity: T, modifiedAt: Stamp?) {
-        self.init(ref: Ref(value: entity), modifiedAt: modifiedAt)
+        self.init(ref: Observable(value: entity), modifiedAt: modifiedAt)
     }
 
     /// change the entity to a new value only if `modifiedAt` is equal than any previous registered modification

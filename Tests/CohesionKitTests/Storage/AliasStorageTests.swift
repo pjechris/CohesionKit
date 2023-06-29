@@ -2,7 +2,7 @@ import XCTest
 @testable import CohesionKit
 
 class AliasStorageTests: XCTestCase {
-    func test_subscriptGet_aliasIsCollection_noValue_returnRef() {
+    func test_subscriptGet_aliasIsCollection_noValue_returnObservable() {
         var storage: AliasStorage = [:]
 
         XCTAssertNotNil(storage[.testCollection])
@@ -30,7 +30,7 @@ class AliasStorageTests: XCTestCase {
     func test_remove_aliasInsertedBefore_itRemovesValue() {
         var storage: AliasStorage = [:]
 
-        storage.insert(EntityNode(ref: Ref(value: 1), modifiedAt: nil), key: .test)
+        storage.insert(EntityNode(ref: Observable(value: 1), modifiedAt: nil), key: .test)
         storage.remove(for: .test)
 
         XCTAssertNil(storage[.test].value)

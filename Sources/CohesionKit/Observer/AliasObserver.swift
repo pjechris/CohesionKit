@@ -3,27 +3,27 @@ import Foundation
 // A type registering observers over an aliased entity
 public struct AliasObserver<T>: Observer {
     typealias OnChangeClosure = (T?) -> Void
-    
+
     public var value: T?
     /// a closure redirecting to the right observe method depending on T type
     let createObserve: (@escaping OnChangeClosure) -> Subscription
-    
+
     /// create an observer for a single entity node ref
-    init(alias: Ref<EntityNode<T>?>, queue: DispatchQueue) {
+    init(alias: Observable<EntityNode<T>?>, queue: DispatchQueue) {
         self.value = alias.value?.ref.value
         self.createObserve = {
             Self.createObserve(for: alias, queue: queue, onChange: $0)
         }
     }
-    
+
     /// create an observer for a list of node ref
-    init<E>(alias: Ref<[EntityNode<E>]?>, queue: DispatchQueue) where T == Array<E> {
+    init<E>(alias: Observable<[EntityNode<E>]?>, queue: DispatchQueue) where T == Array<E> {
         self.value = alias.value?.map(\.ref.value)
         self.createObserve = {
             Self.createObserve(for: alias, queue: queue, onChange: $0)
         }
     }
-    
+
     public func observe(onChange: @escaping (T?) -> Void) -> Subscription {
         createObserve(onChange)
     }
@@ -34,7 +34,7 @@ extension AliasObserver {
     /// - the ref node change
     /// - the ref node value change
     private static func createObserve(
-        for alias: Ref<EntityNode<T>?>,
+        for alias: Observable<EntityNode<T>?>,
         queue: DispatchQueue,
         onChange: @escaping OnChangeClosure
     ) -> Subscription {
@@ -62,7 +62,7 @@ extension AliasObserver {
     /// - the ref node change
     /// - any of the ref node element change
   private static func createObserve<E>(
-        for alias: Ref<[EntityNode<E>]?>,
+        for alias: Observable<[EntityNode<E>]?>,
         queue: DispatchQueue,
         onChange: @escaping OnChangeClosure
     ) -> Subscription where T == Array<E> {
