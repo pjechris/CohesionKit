@@ -68,6 +68,20 @@ class IdentityMapTests: XCTestCase {
 
         wait(for: [expectation], timeout: 0.5)
     }
+
+    func test_storeIdentifiable_entityIsAlreadyStore_updateIsCalled() {
+        let root = SingleNodeFixture(id: 1)
+        let identityMap = IdentityMap()
+        let expectation = XCTestExpectation()
+
+        _ = withExtendedLifetime(identityMap.store(entity: root)) {
+            _ = identityMap.store(entity: root, ifPresent: { _ in
+                expectation.fulfill()
+            })
+        }
+
+        wait(for: [expectation], timeout: 0)
+    }
 }
 
 // MARK: Find

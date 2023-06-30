@@ -26,10 +26,22 @@ public class IdentityMap {
     /// - Parameter entity: the element to store in the identity map
     /// - Parameter named: an alias to reference the entity and retrieve it using it
     /// - Parameter modifiedAt: if entity was already stored it will be used to determine if the  update should be  applied or discarded
+    /// - Parameter ifPresent: applies the closure before storing it if it's already been stored. In this case this is similar as
+    /// calling `update`
     /// - Returns: an object to observe changes on the entity
-    public func store<T: Identifiable>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
-    -> EntityObserver<T> {
+    public func store<T: Identifiable>(
+        entity: T,
+        named: AliasKey<T>? = nil,
+        modifiedAt: Stamp = Date().stamp,
+        ifPresent update: Update<T>? = nil
+    ) -> EntityObserver<T> {
         identityQueue.sync(flags: .barrier) {
+            var entity = entity
+
+            if storage[entity] != nil {
+                update?(&entity)
+            }
+
             let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
             if let alias = named {
@@ -46,10 +58,22 @@ public class IdentityMap {
     /// - Parameter entity: the aggregate to store in the identity map
     /// - Parameter named: an alias to reference the aggregate and retrieve it using it
     /// - Parameter modifiedAt: if aggregate was already stored it will be used to determine if the  update should be  applied or discarded
+    /// - Parameter ifPresent: applies the closure before storing it if it's already been stored. In this case this is similar as
+    /// calling `update`
     /// - Returns: an object to observe changes on the entity
-    public func store<T: Aggregate>(entity: T, named: AliasKey<T>? = nil, modifiedAt: Stamp = Date().stamp)
-    -> EntityObserver<T> {
+    public func store<T: Aggregate>(
+        entity: T,
+        named: AliasKey<T>? = nil,
+        modifiedAt: Stamp = Date().stamp,
+        ifPresent update: Update<T>? = nil
+    ) -> EntityObserver<T> {
         identityQueue.sync(flags: .barrier) {
+            var entity = entity
+
+            if storage[entity] != nil {
+                update?(&entity)
+            }
+
             let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
             if let alias = named {
