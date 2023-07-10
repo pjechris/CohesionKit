@@ -3,11 +3,11 @@ import CohesionKit
 
 struct RootFixture: Aggregate, Equatable {
     let id: Int
-    let primitive: String
+    var primitive: String
     var singleNode: SingleNodeFixture
     var optional: OptionalNodeFixture?
     var listNodes: [ListNodeFixture]
-    
+
     var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<RootFixture>] {
         [
             .init(\.singleNode),

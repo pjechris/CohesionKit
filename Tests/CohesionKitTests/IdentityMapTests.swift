@@ -186,19 +186,19 @@ extension IdentityMapTests {
 
     func test_updateNamed_entityIsIdentifiable_aliasIsExisting_observersAreNotified() {
         let identityMap = IdentityMap(queue: .main)
-        let newEntity = SingleNodeFixture(id: 2)
+        let expected = SingleNodeFixture(id: 1, primitive: "hello")
         let expectation = XCTestExpectation()
 
         _ = identityMap.store(entity: SingleNodeFixture(id: 1), named: .test, modifiedAt: 0)
 
         let subscription = identityMap.find(named: .test).observe {
             expectation.fulfill()
-            XCTAssertEqual($0, newEntity)
+            XCTAssertEqual($0, expected)
         }
 
         withExtendedLifetime(subscription) {
             identityMap.update(named: .test, modifiedAt: 1) {
-                $0 = newEntity
+                $0.primitive = "hello"
             }
 
             wait(for: [expectation], timeout: 0.5)

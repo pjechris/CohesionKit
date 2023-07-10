@@ -2,8 +2,6 @@ import Foundation
 
 /// Manages entities lifecycle and synchronisation
 public class IdentityMap {
-    public typealias Update<T> = (inout T) -> Void
-
     private(set) var storage: EntitiesStorage = EntitiesStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
@@ -124,19 +122,37 @@ public class IdentityMap {
     func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
-        do {
-            try node.updateEntity(entity, modifiedAt: modifiedAt)
-            logger?.didStore(T.self, id: entity.id)
-        }
-        catch {
-            logger?.didFailedToStore(T.self, id: entity.id, error: error)
-        }
+        nodeStore(node: node, update: UpdateTracker<T>.markedAsChanged(entity), modifiedAt: modifiedAt)
 
         return node
     }
 
+    func nodeStore<T: Identifiable>(node: EntityNode<T>, update: UpdateTracker<T>, modifiedAt: Stamp) {
+        guard update.hasChanges else {
+            return
+        }
+
+        do {
+            try node.updateEntity(update.entity, modifiedAt: modifiedAt)
+            logger?.didStore(T.self, id: node.ref.value.id)
+        }
+        catch {
+            logger?.didFailedToStore(T.self, id: node.ref.value.id, error: error)
+        }
+    }
+
     func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
+
+        nodeStore(node: node, update: UpdateTracker<T>.markedAsChanged(entity), modifiedAt: modifiedAt)
+
+        return node
+    }
+
+    func nodeStore<T: Aggregate>(node: EntityNode<T>, update: UpdateTracker<T>, modifiedAt: Stamp) {
+        guard update.hasChanges else {
+            return
+        }
 
         // disable changes while doing the entity update
         node.applyChildrenChanges = false
@@ -144,23 +160,21 @@ public class IdentityMap {
         // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()
 
-        for keyPathContainer in entity.nestedEntitiesKeyPaths {
-            keyPathContainer.accept(node, entity, modifiedAt, storeVisitor)
+        // TODO: only update changed nested entities. But we deleted all relations just before :s
+        for keyPathContainer in update.entity.nestedEntitiesKeyPaths {
+            keyPathContainer.accept(node, update.entity, modifiedAt, storeVisitor)
         }
 
         node.applyChildrenChanges = true
 
         do {
-            try node.updateEntity(entity, modifiedAt: modifiedAt)
-            logger?.didStore(T.self, id: entity.id)
+            try node.updateEntity(update.entity, modifiedAt: modifiedAt)
+            logger?.didStore(T.self, id: node.ref.value.id)
         }
         catch {
-            logger?.didFailedToStore(T.self, id: entity.id, error: error)
+            logger?.didFailedToStore(T.self, id: node.ref.value.id, error: error)
         }
-
-        return node
     }
-
 }
 
 // MARK: Update
@@ -175,13 +189,11 @@ extension IdentityMap {
     @discardableResult
     public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
-            guard var entity = storage[T.self, id: id]?.ref.value else {
+            guard let node = storage[T.self, id: id] else {
                 return false
             }
 
-            update(&entity)
-
-            _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
+            nodeStore(node: node, update: UpdateTracker.updating(node, update: update), modifiedAt: modifiedAt)
 
             return true
         }
@@ -196,13 +208,11 @@ extension IdentityMap {
     @discardableResult
     public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
-            guard var entity = storage[T.self, id: id]?.ref.value else {
+            guard let node = storage[T.self, id: id] else {
                 return false
             }
 
-            update(&entity)
-
-            _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
+            nodeStore(node: node, update: UpdateTracker.updating(node, update: update), modifiedAt: modifiedAt)
 
             return true
         }
@@ -215,16 +225,16 @@ extension IdentityMap {
     @discardableResult
     public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
-            guard let entity = refAliases[named].value else {
+            guard let node = refAliases[named].value else {
                 return false
             }
 
-            var value = entity.ref.value
-            update(&value)
-            let node = nodeStore(entity: value, modifiedAt: modifiedAt)
+            var tracker = UpdateTracker(entity: node.ref.value)
+            update(&tracker)
+            let newNode = nodeStore(entity: tracker.entity, modifiedAt: modifiedAt)
 
             // ref might have changed
-            refAliases.insert(node, key: named)
+            refAliases.insert(newNode, key: named)
 
             return true
         }
@@ -237,16 +247,16 @@ extension IdentityMap {
     @discardableResult
     public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
-            guard let entity = refAliases[named].value else {
+            guard let node = refAliases[named].value else {
                 return false
             }
 
-            var value = entity.ref.value
-            update(&value)
-            let node = nodeStore(entity: value, modifiedAt: modifiedAt)
+            var tracker = UpdateTracker(entity: node.ref.value)
+            update(&tracker)
+            let newNode = nodeStore(entity: tracker.entity, modifiedAt: modifiedAt)
 
             // ref might have changed
-            refAliases.insert(node, key: named)
+            refAliases.insert(newNode, key: named)
 
             return true
         }
@@ -257,7 +267,7 @@ extension IdentityMap {
     /// the change was applied
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>) -> Bool where C.Element: Identifiable {
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: (inout [C.Element]) -> Void) -> Bool where C.Element: Identifiable {
         identityQueue.sync(flags: .barrier) {
             guard let entities = refAliases[named].value else {
                 return false
@@ -280,7 +290,7 @@ extension IdentityMap {
     /// the change was applied
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>) -> Bool where C.Element: Aggregate {
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: (inout [C.Element]) -> Void) -> Bool where C.Element: Aggregate {
         identityQueue.sync(flags: .barrier) {
             guard let entities = refAliases[named].value else {
                 return false
