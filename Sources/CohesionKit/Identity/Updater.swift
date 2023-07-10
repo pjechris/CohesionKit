@@ -1,8 +1,8 @@
-public typealias Update<T> = (inout UpdateTracker<T>) -> Void
+public typealias Update<T> = (inout Updater<T>) -> Void
 
 /// a type tracking actively if an entity has changes
 @dynamicMemberLookup
-public struct UpdateTracker<T> {
+public struct Updater<T> {
     /// the entity value. Changes are applied to it
     private(set) var entity: T
     /// nested entities having an active change
@@ -71,7 +71,7 @@ public struct UpdateTracker<T> {
     }
 }
 
-extension UpdateTracker {
+extension Updater {
     static func markedAsChanged(_ entity: T) -> Self where T: Identifiable {
         self.init(entity: entity, nestedEntitiesChanged: [], hasChanges: true)
     }
@@ -85,7 +85,7 @@ extension UpdateTracker {
     }
 
     static func updating(_ node: EntityNode<T>, update: Update<T>) -> Self {
-        var tracker = UpdateTracker(entity: node.ref.value)
+        var tracker = Updater(entity: node.ref.value)
 
         update(&tracker)
 

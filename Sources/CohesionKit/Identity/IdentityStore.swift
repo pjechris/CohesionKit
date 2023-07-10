@@ -122,12 +122,12 @@ public class IdentityMap {
     func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
-        nodeStore(node: node, update: UpdateTracker<T>.markedAsChanged(entity), modifiedAt: modifiedAt)
+        nodeStore(node: node, update: Updater<T>.markedAsChanged(entity), modifiedAt: modifiedAt)
 
         return node
     }
 
-    func nodeStore<T: Identifiable>(node: EntityNode<T>, update: UpdateTracker<T>, modifiedAt: Stamp) {
+    func nodeStore<T: Identifiable>(node: EntityNode<T>, update: Updater<T>, modifiedAt: Stamp) {
         guard update.hasChanges else {
             return
         }
@@ -144,12 +144,12 @@ public class IdentityMap {
     func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
-        nodeStore(node: node, update: UpdateTracker<T>.markedAsChanged(entity), modifiedAt: modifiedAt)
+        nodeStore(node: node, update: Updater<T>.markedAsChanged(entity), modifiedAt: modifiedAt)
 
         return node
     }
 
-    func nodeStore<T: Aggregate>(node: EntityNode<T>, update: UpdateTracker<T>, modifiedAt: Stamp) {
+    func nodeStore<T: Aggregate>(node: EntityNode<T>, update: Updater<T>, modifiedAt: Stamp) {
         guard update.hasChanges else {
             return
         }
@@ -193,7 +193,7 @@ extension IdentityMap {
                 return false
             }
 
-            nodeStore(node: node, update: UpdateTracker.updating(node, update: update), modifiedAt: modifiedAt)
+            nodeStore(node: node, update: Updater.updating(node, update: update), modifiedAt: modifiedAt)
 
             return true
         }
@@ -212,7 +212,7 @@ extension IdentityMap {
                 return false
             }
 
-            nodeStore(node: node, update: UpdateTracker.updating(node, update: update), modifiedAt: modifiedAt)
+            nodeStore(node: node, update: Updater.updating(node, update: update), modifiedAt: modifiedAt)
 
             return true
         }
@@ -229,7 +229,7 @@ extension IdentityMap {
                 return false
             }
 
-            var tracker = UpdateTracker(entity: node.ref.value)
+            var tracker = Updater(entity: node.ref.value)
             update(&tracker)
             let newNode = nodeStore(entity: tracker.entity, modifiedAt: modifiedAt)
 
@@ -251,7 +251,7 @@ extension IdentityMap {
                 return false
             }
 
-            var tracker = UpdateTracker(entity: node.ref.value)
+            var tracker = Updater(entity: node.ref.value)
             update(&tracker)
             let newNode = nodeStore(entity: tracker.entity, modifiedAt: modifiedAt)
 
