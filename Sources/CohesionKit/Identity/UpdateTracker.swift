@@ -1,3 +1,5 @@
+public typealias Update<T> = (inout UpdateTracker<T>) -> Void
+
 /// a type tracking actively if an entity has changes
 public struct UpdateTracker<T> {
     /// the entity value. Changes are applied to it
@@ -65,6 +67,16 @@ public struct UpdateTracker<T> {
         hasChanges = true
 
         return true
+    }
+}
+
+extension UpdateTracker {
+    static func updating(entity: T, update: Update<T>) -> Self {
+        var tracker = UpdateTracker(entity: entity)
+
+        update(&tracker)
+
+        return tracker
     }
 }
 
