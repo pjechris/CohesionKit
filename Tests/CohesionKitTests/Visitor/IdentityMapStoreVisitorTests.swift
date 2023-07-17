@@ -9,13 +9,15 @@ class IdentityMapStoreVisitorTests: XCTestCase {
         parentNode = EntityNodeStub(parent, modifiedAt: 0)
     }
 
-    func test_visit_identifiableEntities_observeChildWithIndex() {
+    func test_visit_identifiableEntities_observeChildByIndex() {
         let collection = [ListNodeFixture(id: 1)]
         let context = EntityContext(parent: parentNode, keyPath: \RootFixture.listNodes, stamp: 0)
         let expectation = XCTestExpectation()
 
-        parentNode.observeChildKeyPathIndexCalled = { _, _, _ in
+        parentNode.observeChildKeyPathCalled = { _, keyPath in
             expectation.fulfill()
+            // can't compare keyPath directly: seems it does not produce exactly the same keypath when using direct variable 🧐
+            XCTAssertTrue(type(of: keyPath).valueType == ListNodeFixture.self)
         }
 
         IdentityMapStoreVisitor(identityMap: IdentityMap())
@@ -57,18 +59,14 @@ class IdentityMapStoreVisitorTests: XCTestCase {
 }
 
 private class EntityNodeStub<T>: EntityNode<T> {
-    var observeChildKeyPathIndexCalled: (AnyEntityNode, PartialKeyPath<T>, Any) -> Void = { _, _, _ in }
+    var observeChildKeyPathCalled: (AnyEntityNode, PartialKeyPath<T>) -> Void = { _, _ in }
     var observeChildKeyPathOptionalCalled: (AnyEntityNode, PartialKeyPath<T>) -> Void = { _, _ in }
 
-    override func observeChild<C: MutableCollection>(
-        _ childNode: EntityNode<C.Element>,
-        for keyPath: KeyPath<T, C>,
-        index: C.Index
-    ) {
-        observeChildKeyPathIndexCalled(childNode, keyPath, index)
+    override func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C>) {
+        observeChildKeyPathCalled(childNode, keyPath)
     }
 
-    override func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C?>) {
+    override func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C?>) {
         observeChildKeyPathOptionalCalled(childNode, keyPath)
     }
 }
