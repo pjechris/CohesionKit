@@ -79,7 +79,7 @@ class EntityNode<T>: AnyEntityNode {
     /// - Parameter childNode: the child to observe
     /// - Parameter keyPath: a **unique** keypath associated to the child. Should have similar type but maybe a little different (optional, Array.Element, ...)
     /// - Parameter assign: to assign childNode value to current node ref value
-    private func observeChild<C, Element>(
+    func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,
         identity keyPath: KeyPath<T, C>,
         update: @escaping (UnsafeMutablePointer<T>, Element) -> Void
@@ -100,7 +100,6 @@ class EntityNode<T>: AnyEntityNode {
 
         children[keyPath] = SubscribedChild(subscription: subscription, node: childNode)
     }
-
 }
 
 extension EntityNode: Hashable {
