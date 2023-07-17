@@ -4,8 +4,9 @@ import Combine
 public struct PartialIdentifiableKeyPath<Root> {
     let keyPath: PartialKeyPath<Root>
     let accept: (EntityNode<Root>, Root, Stamp, NestedEntitiesVisitor) -> Void
-    
-    public init<T: Identifiable>(_ keyPath: KeyPath<Root, T>) {
+
+    /// Creates an instance referencing an `Identifiable` keyPath
+    public init<T: Identifiable>(_ keyPath: WritableKeyPath<Root, T>) {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(
@@ -14,8 +15,9 @@ public struct PartialIdentifiableKeyPath<Root> {
             )
         }
     }
-    
-    public init<T: Aggregate>(_ keyPath: KeyPath<Root, T>) {
+
+    /// Creates an instance referencing an `Aggregate` keyPath
+    public init<T: Aggregate>(_ keyPath: WritableKeyPath<Root, T>) {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(
@@ -24,8 +26,9 @@ public struct PartialIdentifiableKeyPath<Root> {
             )
         }
     }
-    
-    public init<T: Identifiable>(_ keyPath: KeyPath<Root, T?>) {
+
+    /// Creates an instance referencing an optional `Identifiable` keyPath
+    public init<T: Identifiable>(_ keyPath: WritableKeyPath<Root, T?>) {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(
@@ -34,8 +37,8 @@ public struct PartialIdentifiableKeyPath<Root> {
             )
         }
     }
-    
-    public init<T: Aggregate>(_ keyPath: KeyPath<Root, T?>) {
+
+    public init<T: Aggregate>(_ keyPath: WritableKeyPath<Root, T?>) {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(
@@ -44,8 +47,8 @@ public struct PartialIdentifiableKeyPath<Root> {
             )
         }
     }
-    
-    public init<C: BufferedCollection>(_ keyPath: KeyPath<Root, C>) where C.Element: Identifiable, C.Index: Hashable {
+
+    public init<C: MutableCollection>(_ keyPath: WritableKeyPath<Root, C>) where C.Element: Identifiable, C.Index: Hashable {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(
@@ -54,8 +57,8 @@ public struct PartialIdentifiableKeyPath<Root> {
             )
         }
     }
-    
-    public init<C: BufferedCollection>(_ keyPath: KeyPath<Root, C>) where C.Element: Aggregate, C.Index: Hashable {
+
+    public init<C: MutableCollection>(_ keyPath: WritableKeyPath<Root, C>) where C.Element: Aggregate, C.Index: Hashable {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             visitor.visit(

@@ -74,7 +74,7 @@ class IdentityMapTests: XCTestCase {
         let identityMap = IdentityMap()
         let expectation = XCTestExpectation()
 
-        _ = withExtendedLifetime(identityMap.store(entity: root)) {
+        withExtendedLifetime(identityMap.store(entity: root)) {
             _ = identityMap.store(entity: root, ifPresent: { _ in
                 expectation.fulfill()
             })

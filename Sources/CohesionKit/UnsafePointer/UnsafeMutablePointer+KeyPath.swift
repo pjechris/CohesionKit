@@ -11,7 +11,7 @@ extension UnsafeMutablePointer {
         unsafeValuePointer.pointee = value
     }
 
-    func assign<C: BufferedCollection>(_ value: C.Element, to keyPath: KeyPath<Pointee, C>, index: C.Index) {
+    func assign<C: MutableCollection>(_ value: C.Element, to keyPath: KeyPath<Pointee, C>, index: C.Index) {
 
         guard let unsafeCollectionPointer = UnsafeMutablePointer<C>(mutating: pointer(to: keyPath)) else {
             fatalError("cannot update value for KeyPath<\(Pointee.self), \(C.self)>: failed to access memory pointer.")
@@ -22,6 +22,6 @@ extension UnsafeMutablePointer {
             .pointee
             .distance(from: unsafeCollectionPointer.pointee.startIndex, to: index)
 
-        unsafeCollectionPointer.pointee.withUnsafeMutableBufferPointer { $0[distance] = value }
+        // unsafeCollectionPointer.pointee.withUnsafeMutableBufferPointer { $0[distance] = value }
     }
 }

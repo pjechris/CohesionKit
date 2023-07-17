@@ -54,32 +54,60 @@ class EntityNode<T>: AnyEntityNode {
     }
 
     /// observe one of the node child
-    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C>) {
-        observeChild(childNode, identity: keyPath) { pointer, newValue in
-            pointer.assign(newValue, to: keyPath)
+    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C>) {
+        observeChild(childNode, identity: keyPath) { root, newValue in
+            root[keyPath: keyPath] = newValue
         }
+
+        // observeChild(childNode, identity: keyPath) { pointer, newValue in
+        //     pointer.assign(newValue, to: keyPath)
+        // }
     }
 
     /// observe a non nil child but whose keypath is represented by an Optional
-    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C?>) {
-        observeChild(childNode, identity: keyPath) { pointer, newValue in
-            pointer.assign(.some(newValue), to: keyPath)
+    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C?>) {
+        observeChild(childNode, identity: keyPath) { root, newValue in
+            root[keyPath: keyPath] = .some(newValue)
         }
+
+        // observeChild(childNode, identity: keyPath) { pointer, newValue in
+        //     pointer.assign(.some(newValue), to: keyPath)
+        // }
     }
 
     /// observe one of the node child whose type is a collection
-    func observeChild<C: BufferedCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
+    func observeChild<C: MutableCollection>(_ childNode: EntityNode<C.Element>, for keyPath: WritableKeyPath<T, C>, index: C.Index)
     where C.Index: Hashable {
-        observeChild(childNode, identity: keyPath.appending(path: \C[index])) { pointer, newValue in
-            pointer.assign(newValue, to: keyPath, index: index)
+        observeChild(childNode, identity: keyPath.appending(path: \C[index])) { root, newValue in
+            root[keyPath: keyPath][index] = newValue
         }
+    }
+
+    private func observeChild<C, Element>(
+        _ childNode: EntityNode<Element>,
+        identity keyPath: KeyPath<T, C>,
+        update: @escaping (inout T, Element) -> Void
+    ) {
+        if let subscribedChild = children[keyPath]?.node as? EntityNode<Element>, subscribedChild == childNode {
+            return
+        }
+
+        let subscription = childNode.ref.addObserver { [unowned self] newValue in
+            guard self.applyChildrenChanges else {
+                return
+            }
+
+            update(&self.ref.value, newValue)
+        }
+
+        children[keyPath] = SubscribedChild(subscription: subscription, node: childNode)
     }
 
     /// Observe a node child
     /// - Parameter childNode: the child to observe
     /// - Parameter keyPath: a **unique** keypath associated to the child. Should have similar type but maybe a little different (optional, Array.Element, ...)
     /// - Parameter assign: to assign childNode value to current node ref value
-    func observeChild<C, Element>(
+    private func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,
         identity keyPath: KeyPath<T, C>,
         update: @escaping (UnsafeMutablePointer<T>, Element) -> Void
