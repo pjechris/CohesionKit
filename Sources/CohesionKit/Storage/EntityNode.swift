@@ -58,10 +58,6 @@ class EntityNode<T>: AnyEntityNode {
         observeChild(childNode, identity: keyPath) { root, newValue in
             root[keyPath: keyPath] = newValue
         }
-
-        // observeChild(childNode, identity: keyPath) { pointer, newValue in
-        //     pointer.assign(newValue, to: keyPath)
-        // }
     }
 
     /// observe a non nil child but whose keypath is represented by an Optional
@@ -69,20 +65,12 @@ class EntityNode<T>: AnyEntityNode {
         observeChild(childNode, identity: keyPath) { root, newValue in
             root[keyPath: keyPath] = .some(newValue)
         }
-
-        // observeChild(childNode, identity: keyPath) { pointer, newValue in
-        //     pointer.assign(.some(newValue), to: keyPath)
-        // }
     }
 
-    /// observe one of the node child whose type is a collection
-    func observeChild<C: MutableCollection>(_ childNode: EntityNode<C.Element>, for keyPath: WritableKeyPath<T, C>, index: C.Index)
-    where C.Index: Hashable {
-        observeChild(childNode, identity: keyPath.appending(path: \C[index])) { root, newValue in
-            root[keyPath: keyPath][index] = newValue
-        }
-    }
-
+    /// Observe a node child
+    /// - Parameter childNode: the child to observe
+    /// - Parameter keyPath: a **unique** keypath associated to the child. Should have similar type but maybe a little different (optional)
+    /// - Parameter assign: to assign childNode value to current node ref value
     private func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,
         identity keyPath: KeyPath<T, C>,

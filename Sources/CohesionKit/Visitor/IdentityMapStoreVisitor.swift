@@ -42,8 +42,7 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
         for index in entities.indices {
             context.parent.observeChild(
                 identityMap.nodeStore(entity: entities[index], modifiedAt: context.stamp),
-                for: context.keyPath,
-                index: index
+                for: context.keyPath.appending(path: \C[index])
             )
         }
     }
@@ -54,8 +53,7 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
         for index in entities.indices {
             context.parent.observeChild(
                 identityMap.nodeStore(entity: entities[index], modifiedAt: context.stamp),
-                for: context.keyPath,
-                index: index
+                for: context.keyPath.appending(path: \C[index])
             )
         }
     }
