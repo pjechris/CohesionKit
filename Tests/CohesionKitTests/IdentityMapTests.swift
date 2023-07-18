@@ -50,6 +50,31 @@ class IdentityMapTests: XCTestCase {
         XCTAssertEqual((node.value as! RootFixture).listNodes, nestedArray)
     }
 
+    func test_storeAggregate_nestedWrapperChanged_aggregateIsUpdated() {
+        let identityMap = IdentityMap()
+        let root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
+        let updatedValue = SingleNodeFixture(id: 2, primitive: "updated")
+
+        withExtendedLifetime(identityMap.store(entity: root)) {
+            _ = identityMap.store(entity: updatedValue)
+            XCTAssertEqual(identityMap.find(RootFixture.self, id: 1)!.value.enumWrapper, .single(updatedValue))
+        }
+    }
+
+    func test_storeAggregate_nestedOptionalWrapperNullified_aggregateIsNullified() {
+        let identityMap = IdentityMap()
+        var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
+
+        withExtendedLifetime(identityMap.store(entity: root)) {
+            root.enumWrapper = nil
+
+            _ = identityMap.store(entity: root)
+            _ = identityMap.store(entity: SingleNodeFixture(id: 2, primitive: "deleted"))
+
+            XCTAssertNil(identityMap.find(RootFixture.self, id: 1)!.value.enumWrapper)
+        }
+    }
+
     func test_storeIdentifiable_entityIsInsertedForThe1stTime_loggerIsCalled() {
         let logger = LoggerMock()
         let identityMap = IdentityMap(logger: logger)
