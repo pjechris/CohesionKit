@@ -7,12 +7,14 @@ struct RootFixture: Aggregate, Equatable {
     var singleNode: SingleNodeFixture
     var optional: OptionalNodeFixture?
     var listNodes: [ListNodeFixture]
-    
-    var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<RootFixture>] {
+    var enumWrapper: EnumFixture?
+
+    var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] {
         [
             .init(\.singleNode),
             .init(\.optional),
-            .init(\.listNodes)
+            .init(\.listNodes),
+            .init(wrapper: \.enumWrapper)
         ]
     }
 }
@@ -30,4 +32,28 @@ struct OptionalNodeFixture: Identifiable, Equatable {
 struct ListNodeFixture: Identifiable, Equatable {
     let id: Int
     var key = ""
+}
+
+ enum EnumFixture: Equatable, EntityEnumWrapper {
+    case single(SingleNodeFixture)
+
+    var singleNode: SingleNodeFixture? {
+        get {
+            switch self {
+                case .single(let value):
+                return value
+            }
+        }
+        set {
+            if let newValue {
+                self = .single(newValue)
+            }
+        }
+    }
+
+    func wrappedEntitiesKeyPaths<Root>(for root: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
+        [
+            PartialIdentifiableKeyPath(root.appending(path: \.singleNode))
+        ]
+    }
 }
