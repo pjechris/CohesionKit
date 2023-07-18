@@ -12,10 +12,10 @@ public protocol EntityEnumWrapper {
     ///     case b(B)
     ///
     ///    // you would also need to create computed getter/setter for a and b
-    ///    func wrappedEntitiesKeyPaths<Root>(for root: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
+    ///    func wrappedEntitiesKeyPaths<Root>(relativeTo root: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
     ///     [.init(root.appending(\.a)), .init(root.appending(\.b))]
     ///    }
     /// }
     /// ```
-    func wrappedEntitiesKeyPaths<Root>(for root: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>]
+    func wrappedEntitiesKeyPaths<Root>(relativeTo parent: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>]
 }

@@ -51,9 +51,9 @@ struct ListNodeFixture: Identifiable, Equatable {
         }
     }
 
-    func wrappedEntitiesKeyPaths<Root>(for root: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
+    func wrappedEntitiesKeyPaths<Root>(relativeTo parent: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
         [
-            PartialIdentifiableKeyPath(root.appending(path: \.singleNode))
+            PartialIdentifiableKeyPath(parent.appending(path: \.singleNode))
         ]
     }
 }

@@ -203,8 +203,8 @@ enum MediaType: EntityEnumWrapper {
   case game(Game)
   case tvShow(TvShow)
 
-  func wrappedEntitiesKeyPaths<Root>(for root: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
-    [.init(\.book), .init(\.game), .init(\.tvShow)]
+  func wrappedEntitiesKeyPaths<Root>(relativeTo parent: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
+    [.init(parent.appending(\.book)), .init(parent.appending(\.game)), .init(parent.appending(\.tvShow))]
   }
 
   var book: Book? {
