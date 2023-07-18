@@ -133,8 +133,8 @@ To store objects containing nested identity objects you need to make them confor
 struct AuthorBooks: Aggregate {
   var id: Author.ID { author.id }
 
-  let author: Author
-  let books: [Book]
+  var author: Author
+  var books: [Book]
 
   // `nestedEntitiesKeyPaths` must list all Identifiable/Aggregate this object contain
   var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] {
@@ -192,6 +192,46 @@ Sometimes both can be used but they each have a different purpose:
 2. `update` is usually used for partial data. It's also the preferred method when receiving events from websockets.
 
 ## Advanced topics
+
+### Enum support
+
+Starting with 0.13 library has support for enum types. Note that you'll need to conform to `EntityEnumWrapper` and provide computed getter/setter for each entity you'd like to store.
+
+```swift
+enum MediaType: EntityEnumWrapper {
+  case book(Book)
+  case game(Game)
+  case tvShow(TvShow)
+
+  func wrappedEntitiesKeyPaths<Root>(for root: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
+    [.init(\.book), .init(\.game), .init(\.tvShow)]
+  }
+
+  var book: Book? {
+    get { ... }
+    set { ... }
+  }
+
+  var game: Game? {
+    get { ... }
+    set { ... }
+  }
+
+  var tvShow: TvShow? {
+    get { ... }
+    set { ... }
+  }
+}
+
+struct AuthorMedia: Aggregate {
+  var author: Author
+  var media: MediaType
+
+  var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] {
+    [.init(\.author), .init(wrapper: \.media)]
+  }
+}
+```
 
 ### Aliases
 
@@ -266,49 +306,6 @@ cancellable = nil
 
 identityMap.find(Book.self, id: "ACK") // return "A Clash of Kings" because cancellable2 still observe this book
 ```
-
-## Known limitations
-
-### Associated value enums require double update
-
-Let's say you have an enum with `Identifiable`/`Aggregate`:
-
-```swift
-enum MediaType: Identifiable {
-  case book(Book)
-  case game(Game)
-  case tvShow(TvShow)
-}
-
-struct AuthorMedia: Aggregate {
-  let author: Author
-  let media: [MediaType]
-}
-
-let lastOfUsPart1 = Game(id: xx, title: "The Last Of Us", supportedPlatforms: [.ps3, .ps4])
-
-let lastOfUs = TvShow(title: "The Last Of Us", releasedYear: 2023)
-
-let naughtyDog = Author(
-  author: .naughtyDog,
-  media: [.game(theLastOfUsPart1), .movie(theLastOfUst)]
-)
-
-identityMap.store(naughtyDog)
-```
-
-If associated value changes you might need to do a double update inside the lib in order to properly propagate the modifications:
-
-```swift
-
-let lastOfUsPart1 = Game(id: xx, title: "The Last Of Us", supportedPlatforms: [.ps3, .ps4, .ps5, .pc])
-
-identityMap.store(lastOfUsPart1) // this only notifies objects direct Game reference, not objects using MovieType.game (like our previous `naughtyDog`)
-identityMap.store(MovieType.game(lastOfUsPart1)) // on the other hand this one notifies objects like naughtyDog but not those using a plain Game
-```
-
-Note that in this context CohesionKit stores the value twice: once as `Game` and once as `MediaType.game` hence the double update.
-
 
 # License
 
