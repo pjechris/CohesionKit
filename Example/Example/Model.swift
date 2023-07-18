@@ -29,8 +29,8 @@ struct Outcome: Identifiable {
 struct MatchMarkets: Aggregate {
     var id: Match.ID { match.id }
 
-    let match: Match
-    let markets: [MarketOutcomes]
+    var match: Match
+    var markets: [MarketOutcomes]
 
     var primaryMarket: MarketOutcomes {
         // this is a sample project, we just consider that there is always at least one market
@@ -46,8 +46,8 @@ struct MatchMarkets: Aggregate {
 struct MarketOutcomes: Aggregate {
     var id: Market.ID { market.id }
 
-    let market: Market
-    let outcomes: [Outcome]
+    var market: Market
+    var outcomes: [Outcome]
     
     var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] {[
         .init(\.market),
