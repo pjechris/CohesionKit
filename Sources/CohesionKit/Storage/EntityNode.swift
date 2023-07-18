@@ -54,35 +54,27 @@ class EntityNode<T>: AnyEntityNode {
     }
 
     /// observe one of the node child
-    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C>) {
-        observeChild(childNode, identity: keyPath) { pointer, newValue in
-            pointer.assign(newValue, to: keyPath)
+    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C>) {
+        observeChild(childNode, identity: keyPath) { root, newValue in
+            root[keyPath: keyPath] = newValue
         }
     }
 
     /// observe a non nil child but whose keypath is represented by an Optional
-    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: KeyPath<T, C?>) {
-        observeChild(childNode, identity: keyPath) { pointer, newValue in
-            pointer.assign(.some(newValue), to: keyPath)
-        }
-    }
-
-    /// observe one of the node child whose type is a collection
-    func observeChild<C: BufferedCollection>(_ childNode: EntityNode<C.Element>, for keyPath: KeyPath<T, C>, index: C.Index)
-    where C.Index: Hashable {
-        observeChild(childNode, identity: keyPath.appending(path: \C[index])) { pointer, newValue in
-            pointer.assign(newValue, to: keyPath, index: index)
+    func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C?>) {
+        observeChild(childNode, identity: keyPath) { root, newValue in
+            root[keyPath: keyPath] = .some(newValue)
         }
     }
 
     /// Observe a node child
     /// - Parameter childNode: the child to observe
-    /// - Parameter keyPath: a **unique** keypath associated to the child. Should have similar type but maybe a little different (optional, Array.Element, ...)
+    /// - Parameter keyPath: a **unique** keypath associated to the child. Should have similar type but maybe a little different (optional)
     /// - Parameter assign: to assign childNode value to current node ref value
     private func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,
         identity keyPath: KeyPath<T, C>,
-        update: @escaping (UnsafeMutablePointer<T>, Element) -> Void
+        update: @escaping (inout T, Element) -> Void
     ) {
         if let subscribedChild = children[keyPath]?.node as? EntityNode<Element>, subscribedChild == childNode {
             return
@@ -93,14 +85,11 @@ class EntityNode<T>: AnyEntityNode {
                 return
             }
 
-            withUnsafeMutablePointer(to: &self.ref.value) {
-                update($0, newValue)
-            }
+            update(&self.ref.value, newValue)
         }
 
         children[keyPath] = SubscribedChild(subscription: subscription, node: childNode)
     }
-
 }
 
 extension EntityNode: Hashable {
