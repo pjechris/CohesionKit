@@ -145,7 +145,7 @@ public class IdentityMap {
         }
     }
 
-    func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
+    func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
         do {
@@ -159,7 +159,7 @@ public class IdentityMap {
         return node
     }
 
-    func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
+    func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
         // disable changes while doing the entity update

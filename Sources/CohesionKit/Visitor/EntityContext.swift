@@ -4,5 +4,5 @@ import Foundation
 struct EntityContext<Root, Value> {
     let parent: EntityNode<Root>
     let keyPath: WritableKeyPath<Root, Value>
-    let stamp: Stamp
+    let stamp: Stamp?
 }
