@@ -37,15 +37,15 @@ class EntityNode<T>: AnyEntityNode {
         self.init(ref: Observable(value: entity), modifiedAt: modifiedAt)
     }
 
-    /// change the entity to a new value only if `modifiedAt` is equal than any previous registered modification
+    /// change the entity to a new value. If modifiedAt is nil or > to previous date update the value will be changed
     /// - Parameter entity the new entity value
     /// - Parameter modifiedAt the new entity stamp
-    func updateEntity(_ newEntity: T, modifiedAt newModifiedAt: Stamp) throws {
-        if let modifiedAt, newModifiedAt <= modifiedAt  {
+    func updateEntity(_ newEntity: T, modifiedAt newModifiedAt: Stamp?) throws {
+        if let newModifiedAt, let modifiedAt, newModifiedAt <= modifiedAt  {
             throw StampError.tooOld(current: modifiedAt, received: newModifiedAt)
         }
 
-        modifiedAt = newModifiedAt
+        modifiedAt = newModifiedAt ?? modifiedAt
         ref.value = newEntity
     }
 

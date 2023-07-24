@@ -3,7 +3,7 @@ import Combine
 /// A `KeyPath` wrapper allowing only `Identifiable`/`Aggregate` keypaths
 public struct PartialIdentifiableKeyPath<Root> {
     let keyPath: PartialKeyPath<Root>
-    let accept: (EntityNode<Root>, Root, Stamp, NestedEntitiesVisitor) -> Void
+    let accept: (EntityNode<Root>, Root, Stamp?, NestedEntitiesVisitor) -> Void
 
     /// Creates an instance referencing an `Identifiable` keyPath
     public init<T: Identifiable>(_ keyPath: WritableKeyPath<Root, T>) {

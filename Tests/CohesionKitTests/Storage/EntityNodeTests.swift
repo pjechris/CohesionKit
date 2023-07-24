@@ -47,13 +47,34 @@ class EntityNodeTests: XCTestCase {
         XCTAssertEqual(node.value as? RootFixture, startEntity)
     }
 
+    func test_updateEntity_stampIsNil_entityIsUpdated() throws {
+        try node.updateEntity(newEntity, modifiedAt: nil)
+
+        XCTAssertEqual(node.value as? RootFixture, newEntity)
+    }
+
+    func test_updateEntity_stampIsNil_stampIsNotUpdated() throws {
+        let badEntity = RootFixture(id: 1, primitive: "wrong update", singleNode: .init(id: 1), listNodes: [])
+
+        try node.updateEntity(newEntity, modifiedAt: nil)
+
+        XCTAssertThrowsError(try node.updateEntity(badEntity, modifiedAt: startTimestamp - 1)) { error in
+            switch error {
+                case StampError.tooOld(let current, _):
+                    XCTAssertEqual(current, startTimestamp)
+                default:
+                    XCTFail("Wrong error thrown")
+            }
+        }
+    }
+
     func test_observeChild_childChange_entityIsUpdated() throws {
-        let childNode = EntityNode(startEntity.singleNode, modifiedAt: 0)
+        let childNode = EntityNode(startEntity.singleNode, modifiedAt: nil)
         let newChild = SingleNodeFixture(id: 1, primitive: "updated")
 
         node.observeChild(childNode, for: \.singleNode)
 
-        try childNode.updateEntity(newChild, modifiedAt: 1)
+        try childNode.updateEntity(newChild, modifiedAt: nil)
 
         XCTAssertEqual((node.value as? RootFixture)?.singleNode, newChild)
     }
@@ -71,7 +92,7 @@ class EntityNodeTests: XCTestCase {
         node = EntityNode(ref: entityRef, modifiedAt: startTimestamp)
         node.observeChild(childNode, for: \.singleNode)
 
-        try childNode.updateEntity(newChild, modifiedAt: startTimestamp + 1)
+        try childNode.updateEntity(newChild, modifiedAt: nil)
 
         subscription.unsubscribe()
 

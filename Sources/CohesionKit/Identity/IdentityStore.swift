@@ -32,7 +32,7 @@ public class IdentityMap {
     public func store<T: Identifiable>(
         entity: T,
         named: AliasKey<T>? = nil,
-        modifiedAt: Stamp = Date().stamp,
+        modifiedAt: Stamp? = nil,
         ifPresent update: Update<T>? = nil
     ) -> EntityObserver<T> {
         identityQueue.sync(flags: .barrier) {
@@ -64,7 +64,7 @@ public class IdentityMap {
     public func store<T: Aggregate>(
         entity: T,
         named: AliasKey<T>? = nil,
-        modifiedAt: Stamp = Date().stamp,
+        modifiedAt: Stamp? = nil,
         ifPresent update: Update<T>? = nil
     ) -> EntityObserver<T> {
         identityQueue.sync(flags: .barrier) {
@@ -86,7 +86,7 @@ public class IdentityMap {
     }
 
     /// Store multiple entities at once
-    public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
+    public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp? = nil)
     -> [EntityObserver<C.Element>] where C.Element: Identifiable {
         identityQueue.sync(flags: .barrier) {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
@@ -101,7 +101,7 @@ public class IdentityMap {
     }
 
     /// store multiple aggregates at once
-    public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp = Date().stamp)
+    public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp? = nil)
     -> [EntityObserver<C.Element>] where C.Element: Aggregate {
         identityQueue.sync(flags: .barrier) {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
@@ -145,7 +145,7 @@ public class IdentityMap {
         }
     }
 
-    func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
+    func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
         do {
@@ -159,7 +159,7 @@ public class IdentityMap {
         return node
     }
 
-    func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp) -> EntityNode<T> {
+    func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
         // disable changes while doing the entity update
@@ -197,7 +197,7 @@ extension IdentityMap {
     ///
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
+    public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
             guard var entity = storage[T.self, id: id]?.ref.value else {
                 return false
@@ -218,7 +218,7 @@ extension IdentityMap {
     ///
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp = Date().stamp, _ update: Update<T>) -> Bool {
+    public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp? = nil, _ update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
             guard var entity = storage[T.self, id: id]?.ref.value else {
                 return false
@@ -237,7 +237,7 @@ extension IdentityMap {
     /// the change was applied
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
+    public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
             guard let entity = refAliases[named].value else {
                 return false
@@ -259,7 +259,7 @@ extension IdentityMap {
     /// the change was applied
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp = Date().stamp, update: Update<T>) -> Bool {
+    public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
         identityQueue.sync(flags: .barrier) {
             guard let entity = refAliases[named].value else {
                 return false
@@ -281,7 +281,8 @@ extension IdentityMap {
     /// the change was applied
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>) -> Bool where C.Element: Identifiable {
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<[C.Element]>)
+    -> Bool where C.Element: Identifiable {
         identityQueue.sync(flags: .barrier) {
             guard let entities = refAliases[named].value else {
                 return false
@@ -304,7 +305,8 @@ extension IdentityMap {
     /// the change was applied
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp = Date().stamp, update: Update<[C.Element]>) -> Bool where C.Element: Aggregate {
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<[C.Element]>)
+    -> Bool where C.Element: Aggregate {
         identityQueue.sync(flags: .barrier) {
             guard let entities = refAliases[named].value else {
                 return false
@@ -343,8 +345,8 @@ extension IdentityMap {
         refAliases.removeAll()
     }
 
-    /// Removes all alias AND all objects stored weakly. You should not need this method and rather use `removeAlias`. But this can be useful
-    /// if you fear retain cycles
+    /// Removes all alias AND all objects stored weakly. You should not need this method and rather use `removeAlias`.
+    /// But this can be useful if you fear retain cycles
     public func removeAll() {
         refAliases.removeAll()
         storage.removeAll()
