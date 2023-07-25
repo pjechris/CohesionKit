@@ -2,9 +2,10 @@ import Foundation
 
 class ObserverRegistry {
     typealias Observer = (Any) -> Void
+    typealias ObserverID = Int
 
     let queue: DispatchQueue
-    private var observers: [String: [Int: Observer]] = [:]
+    private var observers: [Int: [ObserverID: Observer]] = [:]
     private var nextObserverID = 0
 
     init(queue: DispatchQueue) {
@@ -15,9 +16,8 @@ class ObserverRegistry {
     func registerObserver<T>(node: EntityNode<T>, onChange: @escaping (T) -> Void) -> Subscription {
         let observerUUID = generateID()
         let retain = Unmanaged.passRetained(node)
-        let key = "#TODO"
 
-        observers[key, default: [:]][observerUUID] = { [queue] in
+        observers[node.hashValue, default: [:]][observerUUID] = { [queue] in
             guard let newValue = $0 as? T else {
                 return
             }
@@ -30,7 +30,7 @@ class ObserverRegistry {
         // TODO: Better deallocation management? (avoid using Unmanaged)
         // explicitly declare a strong ref to node object
         return Subscription { [node] in
-            self.observers[key]?.removeValue(forKey: observerUUID)
+            self.observers[node.hashValue]?.removeValue(forKey: observerUUID)
             retain.release()
         }
     }
@@ -40,14 +40,13 @@ class ObserverRegistry {
 
     }
 
-    func notifyObservers<T>(for entity: EntityNode<T>) {
-        let key = "#TODO"
-        observers[]?.forEach { _, observer in
-            observer(entity.ref.value)
+    func notifyObservers<T>(for node: EntityNode<T>) {
+        observers[node.hashValue]?.forEach { _, observer in
+            observer(node.ref.value)
         }
     }
 
-    private func generateID() -> Int {
+    private func generateID() -> ObserverID {
       defer { nextObserverID &+= 1 }
       return nextObserverID
     }
