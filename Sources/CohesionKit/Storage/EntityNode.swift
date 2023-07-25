@@ -98,6 +98,6 @@ extension EntityNode: Hashable {
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(ObjectIdentifier(self).hashValue)
+        hasher.combine(ObjectIdentifier(self))
     }
 }
