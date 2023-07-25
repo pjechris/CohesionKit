@@ -1,11 +1,4 @@
-/// A value representing an Entity or set of Entity
-public struct AliasKey<T>: Hashable {
-    let name: String
-
-    public init(named value: String) {
-        self.name = value
-    }
-}
+public typealias AliasKey<T> = KeyPath<StoreSessionValues, T>
 
 /// A collection of values stored on a ``SessionStore``.
 ///
@@ -24,9 +17,12 @@ public struct StoreSessionValues {
 /// you clear them
 @dynamicMemberLookup
 public class StoreSession {
+    private var storage: AliasStorage = [:]
+    private let defaultValues = StoreSessionValues()
+
     public subscript<T>(dynamicMember keyPath: KeyPath<StoreSessionValues, T>) -> T {
         get {
-            fatalError("")
+            storage[keyPath].value?.ref.value ?? defaultValues[keyPath: keyPath]
         }
     }
 }
