@@ -3,16 +3,17 @@ import Foundation
 class ObserverRegistry {
     typealias Observer = (Any) -> Void
 
-    private var observers: [String: [UUID: Observer]] = [:]
     let queue: DispatchQueue
+    private var observers: [String: [Int: Observer]] = [:]
+    private var nextObserverID = 0
 
     init(queue: DispatchQueue) {
         self.queue = queue
     }
 
-    /// add an observer to an entity
-    func addObserver<T>(node: EntityNode<T>, onChange: @escaping (T) -> Void) -> Subscription {
-        let observerUUID = UUID()
+    /// register an observer for an entity node
+    func registerObserver<T>(node: EntityNode<T>, onChange: @escaping (T) -> Void) -> Subscription {
+        let observerUUID = generateID()
         let retain = Unmanaged.passRetained(node)
         let key = "#TODO"
 
@@ -44,5 +45,10 @@ class ObserverRegistry {
         observers[]?.forEach { _, observer in
             observer(entity.ref.value)
         }
+    }
+
+    private func generateID() -> Int {
+      defer { nextObserverID &+= 1 }
+      return nextObserverID
     }
 }
