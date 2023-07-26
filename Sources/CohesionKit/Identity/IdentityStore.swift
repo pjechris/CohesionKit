@@ -4,14 +4,17 @@ import Foundation
 public class IdentityMap {
     public typealias Update<T> = (inout T) -> Void
 
-    private(set) var storage: EntitiesStorage = EntitiesStorage()
-    private(set) var refAliases: AliasStorage = [:]
-    private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
     /// the queue on which identity map do its heavy work
     private let identityQueue = DispatchQueue(label: "com.cohesionkit.identitymap", attributes: .concurrent)
     /// dispatch queue to return the results
     private let observeQueue: DispatchQueue
     private let logger: Logger?
+    private let registry: ObserverRegistry
+
+    private(set) var storage: EntitiesStorage = EntitiesStorage()
+    private(set) var refAliases: AliasStorage = [:]
+    private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
+
 
     /// Create a new IdentityMap instance optionally with a queue and a logger
     /// - Parameter queue: the queue on which to receive updates. If not defined it default to main
@@ -19,6 +22,7 @@ public class IdentityMap {
     public init(queue: DispatchQueue = .main, logger: Logger? = nil) {
         self.logger = logger
         self.observeQueue = queue
+        self.registry = ObserverRegistry(queue: queue)
     }
 
     /// Store an entity in the storage. Entity will be stored only if stamp (`modifiedAt`) is higher than in previous

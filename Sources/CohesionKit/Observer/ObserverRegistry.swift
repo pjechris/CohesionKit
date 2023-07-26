@@ -9,23 +9,24 @@ class ObserverRegistry {
     /// registered observers per node
     private var observers: [EntityNodeKey: [ObserverID: Observer]] = [:]
     private var nextObserverID = 0
+    /// nodes waiting for notifiying their observes about changes
+    private var pendingChangedNodes: Set<AnyHashable> = []
 
     init(queue: DispatchQueue) {
         self.queue = queue
     }
 
-    /// register an observer for an entity node
-    func registerObserver<T>(node: EntityNode<T>, onChange: @escaping (T) -> Void) -> Subscription {
+    /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
+    /// to this node `onChange` will be called.
+    func addObserver<T>(node: EntityNode<T>, onChange: @escaping (T) -> Void) -> Subscription {
         let observerUUID = generateID()
 
-        observers[node.hashValue, default: [:]][observerUUID] = { [queue] in
+        observers[node.hashValue, default: [:]][observerUUID] = {
             guard let newValue = $0 as? T else {
                 return
             }
 
-            queue.async {
-                onChange(newValue)
-            }
+            onChange(newValue)
         }
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
@@ -34,14 +35,28 @@ class ObserverRegistry {
         }
     }
 
-    /// add a pending observer to a unknown entity using its id
-    func addObserver<T>(id: String, onChange: @escaping (T) -> Void) {
-
+    /// Queue a notification for given node. Notification won't be sent until ``postNotifications`` is called
+    func enqueueNotification<T>(for node: EntityNode<T>) {
+        pendingChangedNodes.insert(AnyHashable(node))
     }
 
-    func notifyObservers<T>(for node: EntityNode<T>) {
-        observers[node.hashValue]?.forEach { _, observer in
-            observer(node.ref.value)
+    /// Notify observers of all queued changes. Once notified pending changes are cleared out.
+    func postNotifications() {
+        /// keep notifications as-is when queue was triggered
+        queue.async { [weak self, notifications=pendingChangedNodes] in
+            guard let self else {
+                return
+            }
+
+            self.pendingChangedNodes = []
+
+            for hash in notifications {
+                let node = hash.base as! AnyEntityNode
+
+                self.observers[hash.hashValue]?.forEach { (_, observer) in
+                    observer(node.value)
+                }
+            }
         }
     }
 
