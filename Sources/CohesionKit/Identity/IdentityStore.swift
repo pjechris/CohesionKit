@@ -85,6 +85,8 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
+            self.registry.postNotifications()
+
             return EntityObserver(node: node, queue: observeQueue)
         }
     }
@@ -100,6 +102,8 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
+            self.registry.postNotifications()
+
             return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
         }
     }
@@ -114,6 +118,8 @@ public class IdentityMap {
                 refAliases.insert(nodes, key: alias)
                 logger?.didRegisterAlias(alias)
             }
+
+            self.registry.postNotifications()
 
             return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
         }
@@ -211,6 +217,8 @@ extension IdentityMap {
 
             _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
+            self.registry.postNotifications()
+
             return true
         }
     }
@@ -231,6 +239,8 @@ extension IdentityMap {
             update(&entity)
 
             _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
+
+            self.registry.postNotifications()
 
             return true
         }
@@ -254,6 +264,8 @@ extension IdentityMap {
             // ref might have changed
             refAliases.insert(node, key: named)
 
+            self.registry.postNotifications()
+
             return true
         }
     }
@@ -275,6 +287,8 @@ extension IdentityMap {
 
             // ref might have changed
             refAliases.insert(node, key: named)
+
+            self.registry.postNotifications()
 
             return true
         }
@@ -300,6 +314,8 @@ extension IdentityMap {
             // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
 
+            self.registry.postNotifications()
+
             return true
         }
     }
@@ -323,6 +339,8 @@ extension IdentityMap {
 
             // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
+
+            self.registry.postNotifications()
 
             return true
         }
