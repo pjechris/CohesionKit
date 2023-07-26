@@ -156,7 +156,9 @@ public class IdentityMap {
     }
 
     func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
-        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
+        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
+            registry.enqueueNotification(for: $0)
+        }]
 
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
@@ -170,7 +172,9 @@ public class IdentityMap {
     }
 
     func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
-        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
+        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
+            registry.enqueueNotification(for: $0)
+        }]
 
         // disable changes while doing the entity update
         node.applyChildrenChanges = false

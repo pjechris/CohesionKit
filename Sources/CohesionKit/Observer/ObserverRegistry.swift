@@ -8,7 +8,8 @@ class ObserverRegistry {
     let queue: DispatchQueue
     /// registered observers per node
     private var observers: [EntityNodeKey: [ObserverID: Observer]] = [:]
-    private var nextObserverID = 0
+    /// next available id for an observer
+    private var nextObserverID: ObserverID = 0
     /// nodes waiting for notifiying their observes about changes
     private var pendingChangedNodes: Set<AnyHashable> = []
 
@@ -19,9 +20,9 @@ class ObserverRegistry {
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
     func addObserver<T>(node: EntityNode<T>, onChange: @escaping (T) -> Void) -> Subscription {
-        let observerUUID = generateID()
+        let observerID = generateID()
 
-        observers[node.hashValue, default: [:]][observerUUID] = {
+        observers[node.hashValue, default: [:]][observerID] = {
             guard let newValue = $0 as? T else {
                 return
             }
@@ -31,7 +32,7 @@ class ObserverRegistry {
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
         return Subscription { [node] in
-            self.observers[node.hashValue]?.removeValue(forKey: observerUUID)
+            self.observers[node.hashValue]?.removeValue(forKey: observerID)
         }
     }
 
