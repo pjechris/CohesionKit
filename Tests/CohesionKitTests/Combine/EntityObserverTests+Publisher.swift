@@ -4,17 +4,17 @@ import XCTest
 
 class EntityObserverPublisherTests: XCTestCase {
     var cancellables: Set<AnyCancellable> = []
-    
+
     override func setUp() {
         cancellables = []
     }
-    
+
     func test_publisher_valueChange_receiveUpdate() {
         let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
         let expected = SingleNodeFixture(id: 1, primitive: "hello")
-        let observer = EntityObserver(node: node, queue: .main)
+        let observer = EntityObserver(node: node, registry: ObserverRegistry(queue: .main))
         let expectation = XCTestExpectation()
-        
+
         observer.asPublisher
             .dropFirst()
             .sink(receiveValue: {
@@ -22,32 +22,32 @@ class EntityObserverPublisherTests: XCTestCase {
                 XCTAssertEqual($0, expected)
             })
             .store(in: &cancellables)
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
             try! node.updateEntity(expected, modifiedAt: 1)
         }
-        
+
         wait(for: [expectation], timeout: 1)
     }
-    
+
     func test_publisher_streamIsCancelled_valueChange_receiveNothing() {
         let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
-        let observer = EntityObserver(node: node, queue: .main)
+        let observer = EntityObserver(node: node, registry: ObserverRegistry(queue: .main))
         let expectation = XCTestExpectation()
-        
+
         expectation.isInverted = true
-        
+
         observer.asPublisher
             .dropFirst()
             .sink(receiveValue: { _ in expectation.fulfill() })
             .store(in: &cancellables)
-        
+
         cancellables.removeAll()
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
             try! node.updateEntity(SingleNodeFixture(id: 1, primitive: "hello"), modifiedAt: 1)
         }
-        
+
         wait(for: [expectation], timeout: 1)
     }
 

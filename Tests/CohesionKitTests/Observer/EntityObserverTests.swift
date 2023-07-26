@@ -4,7 +4,7 @@ import XCTest
 class EntityObserverTests: XCTestCase {
     func test_entityIsUpdated_onChangeIsCalled() throws {
         let node = EntityNode(SingleNodeFixture(id: 0), modifiedAt: 0)
-        let observer = EntityObserver(node: node, queue: .main)
+        let observer = EntityObserver(node: node, registry: ObserverRegistry(queue: .main))
         let newEntity = SingleNodeFixture(id: 0, primitive: "new entity version")
         let expectation = XCTestExpectation()
 
