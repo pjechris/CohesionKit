@@ -53,7 +53,7 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            return EntityObserver(node: node, queue: observeQueue)
+            return EntityObserver(node: node, registry: registry)
         }
     }
 
@@ -87,7 +87,7 @@ public class IdentityMap {
 
             self.registry.postNotifications()
 
-            return EntityObserver(node: node, queue: observeQueue)
+            return EntityObserver(node: node, registry: registry)
         }
     }
 
@@ -104,7 +104,7 @@ public class IdentityMap {
 
             self.registry.postNotifications()
 
-            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+            return nodes.map { EntityObserver(node: $0, registry: registry) }
         }
     }
 
@@ -121,7 +121,7 @@ public class IdentityMap {
 
             self.registry.postNotifications()
 
-            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+            return nodes.map { EntityObserver(node: $0, registry: registry) }
         }
     }
 
@@ -132,7 +132,7 @@ public class IdentityMap {
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
         identityQueue.sync {
             if let node = storage[T.self, id: id] {
-                return EntityObserver(node: node, queue: observeQueue)
+                return EntityObserver(node: node, registry: registry)
             }
 
             return nil
