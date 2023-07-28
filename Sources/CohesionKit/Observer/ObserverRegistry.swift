@@ -5,15 +5,14 @@ import Foundation
 class ObserverRegistry {
     typealias Observer = (Any) -> Void
     private typealias ObserverID = Int
-    private typealias EntityNodeKey = Int
 
     let queue: DispatchQueue
-    /// registered observers per node
-    private var observers: [EntityNodeKey: [ObserverID: Observer]] = [:]
+    /// registered observers
+    private var observers: [AnyHashable: [ObserverID: Observer]] = [:]
     /// next available id for an observer
     private var nextObserverID: ObserverID = 0
     /// nodes waiting for notifiying their observes about changes
-    private var pendingChangedNodes: Set<AnyHashable> = []
+    private var pendingChanges: Set<AnyHashable> = []
 
     init(queue: DispatchQueue) {
         self.queue = queue
@@ -40,7 +39,7 @@ class ObserverRegistry {
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
     func enqueueChange<T>(for node: EntityNode<T>) {
-        pendingChangedNodes.insert(AnyHashable(node))
+        pendingChanges.insert(AnyHashable(node))
     }
 
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
@@ -51,9 +50,9 @@ class ObserverRegistry {
                 return
             }
 
-            let changes = self.pendingChangedNodes
+            let changes = self.pendingChanges
 
-            self.pendingChangedNodes = []
+            self.pendingChanges = []
 
             for hash in changes {
                 let node = hash.base as! AnyEntityNode

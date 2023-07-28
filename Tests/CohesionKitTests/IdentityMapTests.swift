@@ -75,6 +75,18 @@ class IdentityMapTests: XCTestCase {
         }
     }
 
+    func test_storeAggregate_nestedEntitiesAreEnqueuedInRegistry() {
+        let registryStub = ObserverRegistryStub(queue: .main)
+        let identityMap = IdentityMap(registry: registryStub)
+        let root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
+
+        withExtendedLifetime(identityMap.store(entity: root)) {
+            XCTAssertTrue(registryStub.hasPendingChange(SingleNodeFixture(id: 1)))
+            XCTAssertTrue(registryStub.hasPendingChange(SingleNodeFixture(id: 2)))
+            XCTAssertTrue(registryStub.hasPendingChange(OptionalNodeFixture(id: 1)))
+        }
+    }
+
     func test_storeIdentifiable_entityIsInsertedForThe1stTime_loggerIsCalled() {
         let logger = LoggerMock()
         let identityMap = IdentityMap(logger: logger)
@@ -94,7 +106,7 @@ class IdentityMapTests: XCTestCase {
         wait(for: [expectation], timeout: 0.5)
     }
 
-    func test_storeIdentifiable_entityIsAlreadyStore_updateIsCalled() {
+    func test_storeIdentifiable_entityIsAlreadyStored_updateIsCalled() {
         let root = SingleNodeFixture(id: 1)
         let identityMap = IdentityMap()
         let expectation = XCTestExpectation()
@@ -144,7 +156,9 @@ extension IdentityMapTests {
         let entity = SingleNodeFixture(id: 1)
         let update = SingleNodeFixture(id: 1, primitive: "Updated by Aggregate")
 
-        withExtendedLifetime(identityMap.store(entity: entity).observe { _ in }) {
+        let subscription = identityMap.store(entity: entity).observe { _ in }
+
+        withExtendedLifetime(subscription) {
             _ = identityMap.store(entity: RootFixture(id: 1, primitive: "", singleNode: update, listNodes: []))
 
             XCTAssertEqual(identityMap.find(SingleNodeFixture.self, id: 1)?.value, update)
@@ -272,4 +286,16 @@ private extension AliasKey where T == SingleNodeFixture {
 
 private extension AliasKey where T == [SingleNodeFixture] {
     static let listOfNodes = AliasKey(named: "listOfNodes")
+}
+
+private class ObserverRegistryStub: ObserverRegistry {
+    var pendingChangesStub: [Any] = []
+
+    override func enqueueChange<T>(for node: EntityNode<T>) {
+        pendingChangesStub.append(node)
+    }
+
+    func hasPendingChange<T: Equatable>(_ value: T) -> Bool {
+        pendingChangesStub.contains { ($0 as? EntityNode<T>)?.ref.value == value }
+    }
 }

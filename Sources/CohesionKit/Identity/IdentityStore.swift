@@ -17,9 +17,13 @@ public class IdentityMap {
     /// Create a new IdentityMap instance optionally with a queue and a logger
     /// - Parameter queue: the queue on which to receive updates. If not defined it default to main
     /// - Parameter logger: a logger to follow/debug identity internal state
-    public init(queue: DispatchQueue = .main, logger: Logger? = nil) {
+    public convenience init(queue: DispatchQueue = .main, logger: Logger? = nil) {
+        self.init(registry: ObserverRegistry(queue: queue), logger: logger)
+    }
+
+    init(registry: ObserverRegistry, logger: Logger? = nil) {
         self.logger = logger
-        self.registry = ObserverRegistry(queue: queue)
+        self.registry = registry
     }
 
     /// Store an entity in the storage. Entity will be stored only if stamp (`modifiedAt`) is higher than in previous
