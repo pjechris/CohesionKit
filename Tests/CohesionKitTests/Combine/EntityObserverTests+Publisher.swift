@@ -9,10 +9,11 @@ class EntityObserverPublisherTests: XCTestCase {
         cancellables = []
     }
 
-    func test_publisher_valueChange_receiveUpdate() {
+    func test_publisher_valueIsPosted_receiveUpdate() {
         let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
         let expected = SingleNodeFixture(id: 1, primitive: "hello")
-        let observer = EntityObserver(node: node, registry: ObserverRegistry(queue: .main))
+        let registry = ObserverRegistry(queue: .main)
+        let observer = EntityObserver(node: node, registry: registry)
         let expectation = XCTestExpectation()
 
         observer.asPublisher
@@ -24,7 +25,10 @@ class EntityObserverPublisherTests: XCTestCase {
             .store(in: &cancellables)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
-            try! node.updateEntity(expected, modifiedAt: 1)
+            try! node.updateEntity(expected, modifiedAt: nil)
+
+            registry.enqueueNotification(for: node)
+            registry.postNotifications()
         }
 
         wait(for: [expectation], timeout: 1)
@@ -32,7 +36,8 @@ class EntityObserverPublisherTests: XCTestCase {
 
     func test_publisher_streamIsCancelled_valueChange_receiveNothing() {
         let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
-        let observer = EntityObserver(node: node, registry: ObserverRegistry(queue: .main))
+        let registry = ObserverRegistry(queue: .main)
+        let observer = EntityObserver(node: node, registry: registry)
         let expectation = XCTestExpectation()
 
         expectation.isInverted = true

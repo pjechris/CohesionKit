@@ -36,6 +36,12 @@ class ObserverRegistry {
         }
     }
 
+    func postNotification<T>(for node: EntityNode<T>) {
+        self.observers[node.hashValue]?.forEach { (_, observer) in
+            observer(node.value)
+        }
+    }
+
     /// Queue a notification for given node. Notification won't be sent until ``postNotifications`` is called
     func enqueueNotification<T>(for node: EntityNode<T>) {
         pendingChangedNodes.insert(AnyHashable(node))
