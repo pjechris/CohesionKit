@@ -1,5 +1,7 @@
 import Foundation
 
+/// Registers observers associated to an ``EntityNode``.
+/// The registry will handle notifying observers when a node is marked as changed
 class ObserverRegistry {
     typealias Observer = (Any) -> Void
     private typealias ObserverID = Int
@@ -36,19 +38,13 @@ class ObserverRegistry {
         }
     }
 
-    func postNotification<T>(for node: EntityNode<T>) {
-        self.observers[node.hashValue]?.forEach { (_, observer) in
-            observer(node.value)
-        }
-    }
-
-    /// Queue a notification for given node. Notification won't be sent until ``postNotifications`` is called
-    func enqueueNotification<T>(for node: EntityNode<T>) {
+    /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
+    func enqueueChange<T>(for node: EntityNode<T>) {
         pendingChangedNodes.insert(AnyHashable(node))
     }
 
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
-    func postNotifications() {
+    func postChanges() {
         /// keep notifications as-is when queue was triggered
         queue.async { [weak self] in
             guard let self else {

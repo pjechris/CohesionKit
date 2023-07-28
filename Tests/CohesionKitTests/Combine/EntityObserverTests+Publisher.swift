@@ -27,8 +27,8 @@ class EntityObserverPublisherTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
             try! node.updateEntity(expected, modifiedAt: nil)
 
-            registry.enqueueNotification(for: node)
-            registry.postNotifications()
+            registry.enqueueChange(for: node)
+            registry.postChanges()
         }
 
         wait(for: [expectation], timeout: 1)

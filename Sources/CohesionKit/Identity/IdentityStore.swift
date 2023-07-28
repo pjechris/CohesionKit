@@ -50,7 +50,7 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return EntityObserver(node: node, registry: registry)
         }
@@ -84,7 +84,7 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return EntityObserver(node: node, registry: registry)
         }
@@ -101,7 +101,7 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return nodes.map { EntityObserver(node: $0, registry: registry) }
         }
@@ -118,7 +118,7 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return nodes.map { EntityObserver(node: $0, registry: registry) }
         }
@@ -156,7 +156,7 @@ public class IdentityMap {
 
     func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
-            registry.postNotification(for: $0)
+            registry.enqueueChange(for: $0)
         }]
 
         do {
@@ -172,7 +172,7 @@ public class IdentityMap {
 
     func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
-            registry.postNotification(for: $0)
+            registry.enqueueChange(for: $0)
         }]
 
         // disable changes while doing the entity update
@@ -220,7 +220,7 @@ extension IdentityMap {
 
             _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return true
         }
@@ -243,7 +243,7 @@ extension IdentityMap {
 
             _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return true
         }
@@ -267,7 +267,7 @@ extension IdentityMap {
             // ref might have changed
             refAliases.insert(node, key: named)
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return true
         }
@@ -291,7 +291,7 @@ extension IdentityMap {
             // ref might have changed
             refAliases.insert(node, key: named)
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return true
         }
@@ -317,7 +317,7 @@ extension IdentityMap {
             // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return true
         }
@@ -343,7 +343,7 @@ extension IdentityMap {
             // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
 
-            self.registry.postNotifications()
+            self.registry.postChanges()
 
             return true
         }
