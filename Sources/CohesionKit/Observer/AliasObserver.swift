@@ -9,18 +9,18 @@ public struct AliasObserver<T>: Observer {
     let createObserve: (@escaping OnChangeClosure) -> Subscription
 
     /// create an observer for a single entity node ref
-    init(alias: Observable<EntityNode<T>?>, queue: DispatchQueue) {
+    init(alias: Observable<EntityNode<T>?>, registry: ObserverRegistry) {
         self.value = alias.value?.ref.value
         self.createObserve = {
-            Self.createObserve(for: alias, queue: queue, onChange: $0)
+            Self.createObserve(for: alias, registry: registry, onChange: $0)
         }
     }
 
     /// create an observer for a list of node ref
-    init<E>(alias: Observable<[EntityNode<E>]?>, queue: DispatchQueue) where T == Array<E> {
+    init<E>(alias: Observable<[EntityNode<E>]?>, registry: ObserverRegistry) where T == Array<E> {
         self.value = alias.value?.map(\.ref.value)
         self.createObserve = {
-            Self.createObserve(for: alias, queue: queue, onChange: $0)
+            Self.createObserve(for: alias, registry: registry, onChange: $0)
         }
     }
 
@@ -35,21 +35,19 @@ extension AliasObserver {
     /// - the ref node value change
     private static func createObserve(
         for alias: Observable<EntityNode<T>?>,
-        queue: DispatchQueue,
+        registry: ObserverRegistry,
         onChange: @escaping OnChangeClosure
     ) -> Subscription {
         var entityChangesSubscription: Subscription? = alias
             .value
-            .map { node in EntityObserver(node: node, queue: .main) }?
-            .observe(onChange: onChange)
+            .map { node in registry.addObserver(node: node, onChange: onChange) }
 
         // subscribe to alias changes
         let subscription = alias.addObserver { node in
-            let nodeObserver = node.map { EntityObserver(node: $0, queue: queue) }
-
-            queue.async { onChange(nodeObserver?.value) }
             // update entity changes subscription
-            entityChangesSubscription = nodeObserver?.observe(onChange: onChange)
+            entityChangesSubscription = node.map { registry.addObserver(node: $0) { onChange($0) }}
+
+            registry.queue.async { onChange(node?.ref.value) }
         }
 
         return Subscription {
@@ -63,19 +61,19 @@ extension AliasObserver {
     /// - any of the ref node element change
   private static func createObserve<E>(
         for alias: Observable<[EntityNode<E>]?>,
-        queue: DispatchQueue,
+        registry: ObserverRegistry,
         onChange: @escaping OnChangeClosure
     ) -> Subscription where T == Array<E> {
         var entitiesChangesSubscriptions: Subscription? = alias
             .value
-            .map { nodes in nodes.map { EntityObserver(node: $0, queue: queue) } }?
+            .map { nodes in nodes.map { EntityObserver(node: $0, registry: registry) } }?
             .observe(onChange: onChange)
 
         // Subscribe to alias ref changes and to any changes made on the ref collection nodes.
         let subscription = alias.addObserver { nodes in
-            let nodeObservers = nodes?.map { EntityObserver(node: $0, queue: queue) }
+            let nodeObservers = nodes?.map { EntityObserver(node: $0, registry: registry) }
 
-            queue.async { onChange(nodeObservers?.value) }
+            registry.queue.async { onChange(nodeObservers?.value) }
 
             // update collection changes subscription
             entitiesChangesSubscriptions = nodeObservers?.observe(onChange: onChange)

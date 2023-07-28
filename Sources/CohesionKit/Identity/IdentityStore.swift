@@ -4,21 +4,22 @@ import Foundation
 public class IdentityMap {
     public typealias Update<T> = (inout T) -> Void
 
+    /// the queue on which identity map do its heavy work
+    private let identityQueue = DispatchQueue(label: "com.cohesionkit.identitymap", attributes: .concurrent)
+    private let logger: Logger?
+    private let registry: ObserverRegistry
+
     private(set) var storage: EntitiesStorage = EntitiesStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
-    /// the queue on which identity map do its heavy work
-    private let identityQueue = DispatchQueue(label: "com.cohesionkit.identitymap", attributes: .concurrent)
-    /// dispatch queue to return the results
-    private let observeQueue: DispatchQueue
-    private let logger: Logger?
+
 
     /// Create a new IdentityMap instance optionally with a queue and a logger
     /// - Parameter queue: the queue on which to receive updates. If not defined it default to main
     /// - Parameter logger: a logger to follow/debug identity internal state
     public init(queue: DispatchQueue = .main, logger: Logger? = nil) {
         self.logger = logger
-        self.observeQueue = queue
+        self.registry = ObserverRegistry(queue: queue)
     }
 
     /// Store an entity in the storage. Entity will be stored only if stamp (`modifiedAt`) is higher than in previous
@@ -49,7 +50,9 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            return EntityObserver(node: node, queue: observeQueue)
+            self.registry.postNotifications()
+
+            return EntityObserver(node: node, registry: registry)
         }
     }
 
@@ -81,7 +84,9 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            return EntityObserver(node: node, queue: observeQueue)
+            self.registry.postNotifications()
+
+            return EntityObserver(node: node, registry: registry)
         }
     }
 
@@ -96,7 +101,9 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+            self.registry.postNotifications()
+
+            return nodes.map { EntityObserver(node: $0, registry: registry) }
         }
     }
 
@@ -111,7 +118,9 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            return nodes.map { EntityObserver(node: $0, queue: observeQueue) }
+            self.registry.postNotifications()
+
+            return nodes.map { EntityObserver(node: $0, registry: registry) }
         }
     }
 
@@ -122,7 +131,7 @@ public class IdentityMap {
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
         identityQueue.sync {
             if let node = storage[T.self, id: id] {
-                return EntityObserver(node: node, queue: observeQueue)
+                return EntityObserver(node: node, registry: registry)
             }
 
             return nil
@@ -133,7 +142,7 @@ public class IdentityMap {
     /// - Parameter named: the alias to look for
     public func find<T: Identifiable>(named: AliasKey<T>) -> AliasObserver<T> {
         identityQueue.sync {
-            AliasObserver(alias: refAliases[named], queue: observeQueue)
+            AliasObserver(alias: refAliases[named], registry: registry)
         }
     }
 
@@ -141,12 +150,14 @@ public class IdentityMap {
     /// - Returns: an observer returning the alias value. Note that the value will be an Array
     public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<[C.Element]> {
         identityQueue.sync {
-            AliasObserver(alias: refAliases[named], queue: observeQueue)
+            AliasObserver(alias: refAliases[named], registry: registry)
         }
     }
 
     func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
-        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
+        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
+            registry.postNotification(for: $0)
+        }]
 
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
@@ -160,7 +171,9 @@ public class IdentityMap {
     }
 
     func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
-        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil)]
+        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
+            registry.postNotification(for: $0)
+        }]
 
         // disable changes while doing the entity update
         node.applyChildrenChanges = false
@@ -207,6 +220,8 @@ extension IdentityMap {
 
             _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
+            self.registry.postNotifications()
+
             return true
         }
     }
@@ -227,6 +242,8 @@ extension IdentityMap {
             update(&entity)
 
             _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
+
+            self.registry.postNotifications()
 
             return true
         }
@@ -250,6 +267,8 @@ extension IdentityMap {
             // ref might have changed
             refAliases.insert(node, key: named)
 
+            self.registry.postNotifications()
+
             return true
         }
     }
@@ -271,6 +290,8 @@ extension IdentityMap {
 
             // ref might have changed
             refAliases.insert(node, key: named)
+
+            self.registry.postNotifications()
 
             return true
         }
@@ -296,6 +317,8 @@ extension IdentityMap {
             // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
 
+            self.registry.postNotifications()
+
             return true
         }
     }
@@ -319,6 +342,8 @@ extension IdentityMap {
 
             // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
+
+            self.registry.postNotifications()
 
             return true
         }
