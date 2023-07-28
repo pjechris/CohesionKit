@@ -48,4 +48,63 @@ class ObserverRegistryTests: XCTestCase {
 
         wait(for: [expectation], timeout: 0.5)
     }
+
+    func test_postNotification_observerIsUnsubscribed_observerIsNotCalled() {
+        let registry = ObserverRegistry(queue: .main)
+        let node = EntityNode(SingleNodeFixture(id: 0), modifiedAt: nil)
+        let expectation = XCTestExpectation()
+
+        expectation.isInverted = true
+
+        _ = registry.addObserver(node: node) { _ in
+            XCTFail()
+            expectation.fulfill()
+        }
+
+        registry.enqueueNotification(for: node)
+        registry.postNotifications()
+
+        wait(for: [expectation], timeout: 0.1)
+    }
+
+    func test_postNotification_isEnqueuedAfter_observerIsCalled() {
+        let registry = ObserverRegistry(queue: .main)
+        let node = EntityNode(SingleNodeFixture(id: 0), modifiedAt: nil)
+        let expectation = XCTestExpectation()
+
+        let subscription = registry.addObserver(node: node) { _ in
+            expectation.fulfill()
+        }
+
+        registry.postNotifications()
+        registry.enqueueNotification(for: node)
+
+        withExtendedLifetime(subscription) {
+            wait(for: [expectation], timeout: 0.1)
+        }
+    }
+
+    func test_postNotification_calledMultipleTimes_observerIsCalledOnlyOnce() {
+        let registry = ObserverRegistry(queue: .main)
+        let node = EntityNode(SingleNodeFixture(id: 0), modifiedAt: nil)
+        let expectation = XCTestExpectation()
+
+        expectation.assertForOverFulfill = true
+        expectation.expectedFulfillmentCount = 1
+
+        let subscription = registry.addObserver(node: node) { _ in
+            expectation.fulfill()
+        }
+
+        registry.enqueueNotification(for: node)
+        registry.postNotifications()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            registry.postNotifications()
+        }
+
+        withExtendedLifetime(subscription) {
+            wait(for: [expectation], timeout: 0.2)
+        }
+    }
 }

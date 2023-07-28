@@ -50,14 +50,16 @@ class ObserverRegistry {
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
     func postNotifications() {
         /// keep notifications as-is when queue was triggered
-        queue.async { [weak self, notifications=pendingChangedNodes] in
+        queue.async { [weak self] in
             guard let self else {
                 return
             }
 
+            let changes = self.pendingChangedNodes
+
             self.pendingChangedNodes = []
 
-            for hash in notifications {
+            for hash in changes {
                 let node = hash.base as! AnyEntityNode
 
                 self.observers[hash.hashValue]?.forEach { (_, observer) in
