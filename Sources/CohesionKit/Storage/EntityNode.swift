@@ -22,26 +22,22 @@ class EntityNode<T>: AnyEntityNode {
 
     /// An observable entity reference
     let ref: Observable<T>
-    private var subscription: Subscription?
+
+    private let onChange: ((EntityNode<T>) -> Void)?
     /// last time the ref.value was changed. Any subsequent change must have a higher value to be applied
     /// if nil ref has no stamp and any change will be accepted
     private var modifiedAt: Stamp?
     /// entity children
     private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
 
-    init(ref: Observable<T>, modifiedAt: Stamp?, onRefChange: ((EntityNode<T>) -> Void)? = nil) {
+    init(ref: Observable<T>, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
         self.ref = ref
         self.modifiedAt = modifiedAt
-
-        if let onRefChange {
-            self.subscription = ref.addObserver { [unowned self] _ in
-                onRefChange(self)
-            }
-        }
+        self.onChange = onChange
     }
 
-    convenience init(_ entity: T, modifiedAt: Stamp?, onRefChange: ((EntityNode<T>) -> Void)? = nil) {
-        self.init(ref: Observable(value: entity), modifiedAt: modifiedAt, onRefChange: onRefChange)
+    convenience init(_ entity: T, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
+        self.init(ref: Observable(value: entity), modifiedAt: modifiedAt, onChange: onChange)
     }
 
     /// change the entity to a new value. If modifiedAt is nil or > to previous date update the value will be changed
@@ -54,6 +50,7 @@ class EntityNode<T>: AnyEntityNode {
 
         modifiedAt = newModifiedAt ?? modifiedAt
         ref.value = newEntity
+        onChange?(self)
     }
 
     func removeAllChildren() {
@@ -93,6 +90,7 @@ class EntityNode<T>: AnyEntityNode {
             }
 
             update(&self.ref.value, newValue)
+            self.onChange?(self)
         }
 
         children[keyPath] = SubscribedChild(subscription: subscription, node: childNode)
