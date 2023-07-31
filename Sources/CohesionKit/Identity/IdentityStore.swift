@@ -13,7 +13,6 @@ public class IdentityMap {
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
 
-
     /// Create a new IdentityMap instance optionally with a queue and a logger
     /// - Parameter queue: the queue on which to receive updates. If not defined it default to main
     /// - Parameter logger: a logger to follow/debug identity internal state

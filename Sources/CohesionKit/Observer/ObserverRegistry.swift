@@ -5,14 +5,15 @@ import Foundation
 class ObserverRegistry {
     typealias Observer = (Any) -> Void
     private typealias ObserverID = Int
+    private typealias Hash = Int
 
     let queue: DispatchQueue
     /// registered observers
-    private var observers: [AnyHashable: [ObserverID: Observer]] = [:]
+    private var observers: [Hash: [ObserverID: Observer]] = [:]
     /// next available id for an observer
     private var nextObserverID: ObserverID = 0
     /// nodes waiting for notifiying their observes about changes
-    private var pendingChanges: Set<AnyHashable> = []
+    private var pendingChanges: [Hash: AnyWeak] = [:]
 
     init(queue: DispatchQueue) {
         self.queue = queue
@@ -39,26 +40,24 @@ class ObserverRegistry {
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
     func enqueueChange<T>(for node: EntityNode<T>) {
-        pendingChanges.insert(AnyHashable(node))
+        pendingChanges[node.hashValue] = Weak(value: node)
     }
 
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
     func postChanges() {
-        /// keep notifications as-is when queue was triggered
-        queue.async { [weak self] in
-            guard let self else {
-                return
-            }
+        let changes = pendingChanges
+        let observers = self.observers
 
-            let changes = self.pendingChanges
+        self.pendingChanges = [:]
 
-            self.pendingChanges = []
+        queue.async {
+            for (hashKey, weakNode) in changes {
+                guard let node = weakNode.unwrap() else {
+                    continue
+                }
 
-            for hash in changes {
-                let node = hash.base as! AnyEntityNode
-
-                self.observers[hash.hashValue]?.forEach { (_, observer) in
-                    observer(node.value)
+                observers[hashKey]?.forEach { (_, observer) in
+                    observer(node)
                 }
             }
         }
