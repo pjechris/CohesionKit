@@ -75,12 +75,13 @@ class IdentityMapTests: XCTestCase {
         }
     }
 
-    func test_storeAggregate_registry_itContainsStoredEntities() {
+    func test_storeAggregate_registryContainsModifiedEntities() {
         let registryStub = ObserverRegistryStub(queue: .main)
         let identityMap = IdentityMap(registry: registryStub)
         let root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
 
         withExtendedLifetime(identityMap.store(entity: root)) {
+            XCTAssertTrue(registryStub.hasPendingChange(for: root))
             XCTAssertTrue(registryStub.hasPendingChange(for: SingleNodeFixture(id: 1)))
             XCTAssertTrue(registryStub.hasPendingChange(for: SingleNodeFixture(id: 2)))
             XCTAssertTrue(registryStub.hasPendingChange(for: OptionalNodeFixture(id: 1)))

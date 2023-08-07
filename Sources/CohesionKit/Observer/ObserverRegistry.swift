@@ -4,16 +4,16 @@ import Foundation
 /// The registry will handle notifying observers when a node is marked as changed
 class ObserverRegistry {
     typealias Observer = (Any) -> Void
-    typealias ObserverID = Int
-    typealias Hash = Int
+    private typealias ObserverID = Int
+    private typealias Hash = Int
 
     let queue: DispatchQueue
-    /// nodes waiting for notifiying their observes about changes
-    var pendingChanges: [Hash: AnyWeak] = [:]
     /// registered observers
     private var observers: [Hash: [ObserverID: Observer]] = [:]
     /// next available id for an observer
     private var nextObserverID: ObserverID = 0
+    /// nodes waiting for notifiying their observes about changes
+    private var pendingChanges: [Hash: AnyWeak] = [:]
 
     init(queue: DispatchQueue) {
         self.queue = queue
