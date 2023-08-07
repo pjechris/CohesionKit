@@ -39,7 +39,7 @@ public class IdentityMap {
         modifiedAt: Stamp? = nil,
         ifPresent update: Update<T>? = nil
     ) -> EntityObserver<T> {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             var entity = entity
 
             if storage[entity] != nil {
@@ -52,8 +52,6 @@ public class IdentityMap {
                 refAliases.insert(node, key: alias)
                 logger?.didRegisterAlias(alias)
             }
-
-            self.registry.postChanges()
 
             return EntityObserver(node: node, registry: registry)
         }
@@ -73,7 +71,7 @@ public class IdentityMap {
         modifiedAt: Stamp? = nil,
         ifPresent update: Update<T>? = nil
     ) -> EntityObserver<T> {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             var entity = entity
 
             if storage[entity] != nil {
@@ -87,8 +85,6 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            self.registry.postChanges()
-
             return EntityObserver(node: node, registry: registry)
         }
     }
@@ -96,15 +92,13 @@ public class IdentityMap {
     /// Store multiple entities at once
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp? = nil)
     -> [EntityObserver<C.Element>] where C.Element: Identifiable {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
             if let alias = named {
                 refAliases.insert(nodes, key: alias)
                 logger?.didRegisterAlias(alias)
             }
-
-            self.registry.postChanges()
 
             return nodes.map { EntityObserver(node: $0, registry: registry) }
         }
@@ -113,15 +107,13 @@ public class IdentityMap {
     /// store multiple aggregates at once
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp? = nil)
     -> [EntityObserver<C.Element>] where C.Element: Aggregate {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
             if let alias = named {
                 refAliases.insert(nodes, key: alias)
                 logger?.didRegisterAlias(alias)
             }
-
-            self.registry.postChanges()
 
             return nodes.map { EntityObserver(node: $0, registry: registry) }
         }
@@ -201,6 +193,16 @@ public class IdentityMap {
         return node
     }
 
+    private func transaction<T>(_ body: () -> T) -> T {
+        identityQueue.sync(flags: .barrier) {
+            let returnValue = body()
+
+            self.registry.postChanges()
+
+            return returnValue
+        }
+    }
+
 }
 
 // MARK: Update
@@ -214,7 +216,7 @@ extension IdentityMap {
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
     public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             guard var entity = storage[T.self, id: id]?.ref.value else {
                 return false
             }
@@ -222,8 +224,6 @@ extension IdentityMap {
             update(&entity)
 
             _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
-
-            self.registry.postChanges()
 
             return true
         }
@@ -237,7 +237,7 @@ extension IdentityMap {
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
     public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp? = nil, _ update: Update<T>) -> Bool {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             guard var entity = storage[T.self, id: id]?.ref.value else {
                 return false
             }
@@ -245,8 +245,6 @@ extension IdentityMap {
             update(&entity)
 
             _ = nodeStore(entity: entity, modifiedAt: modifiedAt)
-
-            self.registry.postChanges()
 
             return true
         }
@@ -258,7 +256,7 @@ extension IdentityMap {
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
     public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             guard let entity = refAliases[named].value else {
                 return false
             }
@@ -269,8 +267,6 @@ extension IdentityMap {
 
             // ref might have changed
             refAliases.insert(node, key: named)
-
-            self.registry.postChanges()
 
             return true
         }
@@ -282,7 +278,7 @@ extension IdentityMap {
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
     public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             guard let entity = refAliases[named].value else {
                 return false
             }
@@ -293,8 +289,6 @@ extension IdentityMap {
 
             // ref might have changed
             refAliases.insert(node, key: named)
-
-            self.registry.postChanges()
 
             return true
         }
@@ -307,7 +301,7 @@ extension IdentityMap {
     @discardableResult
     public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<[C.Element]>)
     -> Bool where C.Element: Identifiable {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             guard let entities = refAliases[named].value else {
                 return false
             }
@@ -319,8 +313,6 @@ extension IdentityMap {
 
             // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
-
-            self.registry.postChanges()
 
             return true
         }
@@ -333,7 +325,7 @@ extension IdentityMap {
     @discardableResult
     public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<[C.Element]>)
     -> Bool where C.Element: Aggregate {
-        identityQueue.sync(flags: .barrier) {
+        transaction {
             guard let entities = refAliases[named].value else {
                 return false
             }
@@ -345,8 +337,6 @@ extension IdentityMap {
 
             // update alias because `update` may have added/removed entities
             refAliases.insert(nodes, key: named)
-
-            self.registry.postChanges()
 
             return true
         }
