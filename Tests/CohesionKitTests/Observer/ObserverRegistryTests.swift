@@ -21,9 +21,9 @@ class ObserverRegistryTests: XCTestCase {
             registry.enqueueChange(for: node)
 
             registry.postChanges()
-        }
 
-        wait(for: [expectation], timeout: 0.5)
+            wait(for: [expectation], timeout: 0.1)
+        }
     }
 
     func test_postNotification_nodeEnqueuedMultipleTimes_postOnlyOnce() {
@@ -46,7 +46,7 @@ class ObserverRegistryTests: XCTestCase {
             registry.postChanges()
         }
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 0.1)
     }
 
     func test_postNotification_observerIsUnsubscribed_observerIsNotCalled() {
@@ -67,14 +67,15 @@ class ObserverRegistryTests: XCTestCase {
         wait(for: [expectation], timeout: 0.1)
     }
 
-    func test_postNotification_isEnqueuedAfter_observerIsCalled() {
+    func test_postNotification_isEnqueuedAfter_observerIsNotCalled() {
         let registry = ObserverRegistry(queue: .main)
         let node = EntityNode(SingleNodeFixture(id: 0), modifiedAt: nil)
         let expectation = XCTestExpectation()
-
         let subscription = registry.addObserver(node: node) { _ in
             expectation.fulfill()
         }
+
+        expectation.isInverted = true
 
         registry.postChanges()
         registry.enqueueChange(for: node)
