@@ -17,7 +17,6 @@ class EntityNode<T>: AnyEntityNode {
         let node: AnyEntityNode
     }
 
-    var applyChildrenChanges = true
     var value: Any { ref.value }
 
     /// An observable entity reference
@@ -85,10 +84,6 @@ class EntityNode<T>: AnyEntityNode {
         }
 
         let subscription = childNode.ref.addObserver { [unowned self] newValue in
-            guard self.applyChildrenChanges else {
-                return
-            }
-
             update(&self.ref.value, newValue)
             self.onChange?(self)
         }

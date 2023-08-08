@@ -170,17 +170,12 @@ public class IdentityMap {
             registry.enqueueChange(for: $0)
         }]
 
-        // disable changes while doing the entity update
-        node.applyChildrenChanges = false
-
         // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()
 
         for keyPathContainer in entity.nestedEntitiesKeyPaths {
             keyPathContainer.accept(node, entity, modifiedAt, storeVisitor)
         }
-
-        node.applyChildrenChanges = true
 
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
