@@ -35,8 +35,8 @@ class AliasObserverTests: XCTestCase {
       try withExtendedLifetime(subscription) {
         try node.updateEntity(newValue, modifiedAt: nil)
 
-        registry.enqueueNotification(for: node)
-        registry.postNotifications()
+        registry.enqueueChange(for: node)
+        registry.postChanges()
 
         wait(for: [expectation], timeout: 1)
       }
@@ -100,8 +100,8 @@ class AliasObserverTests: XCTestCase {
 
         try withExtendedLifetime(subscription) {
             try nodes[0].updateEntity(SingleNodeFixture(id: 1, primitive: "Update"), modifiedAt: nil)
-            registry.enqueueNotification(for: nodes[0])
-            registry.postNotifications()
+            registry.enqueueChange(for: nodes[0])
+            registry.postChanges()
 
             wait(for: [expectation], timeout: 1)
             XCTAssertEqual(lastObservedValue?.first, update)

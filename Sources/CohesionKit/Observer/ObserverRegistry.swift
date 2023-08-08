@@ -1,17 +1,19 @@
 import Foundation
 
+/// Registers observers associated to an ``EntityNode``.
+/// The registry will handle notifying observers when a node is marked as changed
 class ObserverRegistry {
     typealias Observer = (Any) -> Void
     private typealias ObserverID = Int
-    private typealias EntityNodeKey = Int
+    private typealias Hash = Int
 
     let queue: DispatchQueue
-    /// registered observers per node
-    private var observers: [EntityNodeKey: [ObserverID: Observer]] = [:]
+    /// registered observers
+    private var observers: [Hash: [ObserverID: Observer]] = [:]
     /// next available id for an observer
     private var nextObserverID: ObserverID = 0
     /// nodes waiting for notifiying their observes about changes
-    private var pendingChangedNodes: Set<AnyHashable> = []
+    private var pendingChanges: [Hash: AnyWeak] = [:]
 
     init(queue: DispatchQueue) {
         self.queue = queue
@@ -23,11 +25,11 @@ class ObserverRegistry {
         let observerID = generateID()
 
         observers[node.hashValue, default: [:]][observerID] = {
-            guard let newValue = $0 as? T else {
+            guard let newValue = $0 as? EntityNode<T> else {
                 return
             }
 
-            onChange(newValue)
+            onChange(newValue.ref.value)
         }
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
@@ -36,34 +38,31 @@ class ObserverRegistry {
         }
     }
 
-    func postNotification<T>(for node: EntityNode<T>) {
-        self.observers[node.hashValue]?.forEach { (_, observer) in
-            observer(node.value)
-        }
+    /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
+    func enqueueChange<T>(for node: EntityNode<T>) {
+        pendingChanges[node.hashValue] = Weak(value: node)
     }
 
-    /// Queue a notification for given node. Notification won't be sent until ``postNotifications`` is called
-    func enqueueNotification<T>(for node: EntityNode<T>) {
-        pendingChangedNodes.insert(AnyHashable(node))
+    func hasPendingChange<T>(for node: EntityNode<T>) -> Bool {
+        pendingChanges[node.hashValue] != nil
     }
 
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
-    func postNotifications() {
-        /// keep notifications as-is when queue was triggered
-        queue.async { [weak self] in
-            guard let self else {
-                return
-            }
+    func postChanges() {
+        let changes = pendingChanges
+        // let observers = self.observers
 
-            let changes = self.pendingChangedNodes
+        self.pendingChanges = [:]
 
-            self.pendingChangedNodes = []
+        queue.async { [unowned self] in
+            for (hashKey, weakNode) in changes {
+                // node was released: no one to notify
+                guard let node = weakNode.unwrap() else {
+                    continue
+                }
 
-            for hash in changes {
-                let node = hash.base as! AnyEntityNode
-
-                self.observers[hash.hashValue]?.forEach { (_, observer) in
-                    observer(node.value)
+                self.observers[hashKey]?.forEach { (_, observer) in
+                    observer(node)
                 }
             }
         }

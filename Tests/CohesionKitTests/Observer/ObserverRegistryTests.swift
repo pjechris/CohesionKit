@@ -14,16 +14,16 @@ class ObserverRegistryTests: XCTestCase {
         }
 
         withExtendedLifetime(subscription) {
-            registry.enqueueNotification(for: node)
+            registry.enqueueChange(for: node)
 
             // simulates node changing twice
             try? node.updateEntity(newEntity, modifiedAt: nil)
-            registry.enqueueNotification(for: node)
+            registry.enqueueChange(for: node)
 
-            registry.postNotifications()
+            registry.postChanges()
+
+            wait(for: [expectation], timeout: 0.1)
         }
-
-        wait(for: [expectation], timeout: 0.5)
     }
 
     func test_postNotification_nodeEnqueuedMultipleTimes_postOnlyOnce() {
@@ -39,14 +39,14 @@ class ObserverRegistryTests: XCTestCase {
         }
 
         withExtendedLifetime(subscription) {
-            registry.enqueueNotification(for: node)
-            registry.enqueueNotification(for: node)
-            registry.enqueueNotification(for: node)
+            registry.enqueueChange(for: node)
+            registry.enqueueChange(for: node)
+            registry.enqueueChange(for: node)
 
-            registry.postNotifications()
+            registry.postChanges()
         }
 
-        wait(for: [expectation], timeout: 0.5)
+        wait(for: [expectation], timeout: 0.1)
     }
 
     func test_postNotification_observerIsUnsubscribed_observerIsNotCalled() {
@@ -61,23 +61,24 @@ class ObserverRegistryTests: XCTestCase {
             expectation.fulfill()
         }
 
-        registry.enqueueNotification(for: node)
-        registry.postNotifications()
+        registry.enqueueChange(for: node)
+        registry.postChanges()
 
         wait(for: [expectation], timeout: 0.1)
     }
 
-    func test_postNotification_isEnqueuedAfter_observerIsCalled() {
+    func test_postNotification_isEnqueuedAfter_observerIsNotCalled() {
         let registry = ObserverRegistry(queue: .main)
         let node = EntityNode(SingleNodeFixture(id: 0), modifiedAt: nil)
         let expectation = XCTestExpectation()
-
         let subscription = registry.addObserver(node: node) { _ in
             expectation.fulfill()
         }
 
-        registry.postNotifications()
-        registry.enqueueNotification(for: node)
+        expectation.isInverted = true
+
+        registry.postChanges()
+        registry.enqueueChange(for: node)
 
         withExtendedLifetime(subscription) {
             wait(for: [expectation], timeout: 0.1)
@@ -96,11 +97,11 @@ class ObserverRegistryTests: XCTestCase {
             expectation.fulfill()
         }
 
-        registry.enqueueNotification(for: node)
-        registry.postNotifications()
+        registry.enqueueChange(for: node)
+        registry.postChanges()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            registry.postNotifications()
+            registry.postChanges()
         }
 
         withExtendedLifetime(subscription) {
