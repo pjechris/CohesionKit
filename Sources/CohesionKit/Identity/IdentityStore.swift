@@ -154,6 +154,10 @@ public class IdentityMap {
             registry.enqueueChange(for: $0)
         }]
 
+        guard !registry.hasPendingChange(for: node) else {
+            return node
+        }
+
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
             logger?.didStore(T.self, id: entity.id)
@@ -169,6 +173,10 @@ public class IdentityMap {
         let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
             registry.enqueueChange(for: $0)
         }]
+
+        guard !registry.hasPendingChange(for: node) else {
+            return node
+        }
 
         // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()

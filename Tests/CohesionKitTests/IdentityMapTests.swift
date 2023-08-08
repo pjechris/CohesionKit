@@ -20,34 +20,41 @@ class IdentityMapTests: XCTestCase {
         }
     }
 
-    func test_nodeStoreAggregate_nestedOptionalReplacedByNil_previousOptionalIdentityChange_nestedOptionalRemainsNil() {
+    func test_storeAggregate_nestedEntityReplacedByNil_entityIsUpdated_aggregateEntityRemainsNil() {
         let identityMap = IdentityMap()
-        var nestedOptional = OptionalNodeFixture(id: 1)
+        let nestedOptional = OptionalNodeFixture(id: 1)
         var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: nestedOptional, listNodes: [])
-        var node: EntityNode<RootFixture> = identityMap.nodeStore(entity: root, modifiedAt: Date().stamp)
 
-        root.optional = nil
-        node = identityMap.nodeStore(entity: root, modifiedAt: Date().stamp)
+        withExtendedLifetime(identityMap.store(entity: root)) {
+            root.optional = nil
 
-        nestedOptional.properties = ["bla": "blob"]
-        _ = identityMap.store(entity: nestedOptional)
+            _ = identityMap.store(entity: root)
+            _ = identityMap.store(entity: nestedOptional)
 
-        XCTAssertNil((node.value as! RootFixture).optional)
+            XCTAssertNotNil(identityMap.find(RootFixture.self, id: 1))
+            XCTAssertNil(identityMap.find(RootFixture.self, id: 1)!.value.optional)
+        }
     }
 
-    func test_nodeStoreAggregate_nestedArrayHasEntityRemoved_removedEntityChange_aggregateArrayNotChanged() {
+    /// check that removed relations do not trigger an update
+    func test_storeAggregate_removeEntityFromNestedArray_removedEntityChange_aggregateArrayNotChanged() {
         let identityMap = IdentityMap()
-        var nestedArray: [ListNodeFixture] = [ListNodeFixture(id: 1), ListNodeFixture(id: 2)]
+        var entityToRemove = ListNodeFixture(id: 2)
+        let nestedArray: [ListNodeFixture] = [entityToRemove, ListNodeFixture(id: 1)]
         var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: nestedArray)
-        var node: EntityNode<RootFixture> = identityMap.nodeStore(entity: root, modifiedAt: Date().stamp)
 
-        nestedArray.removeLast()
-        root.listNodes = nestedArray
-        node = identityMap.nodeStore(entity: root, modifiedAt: Date().stamp)
+        withExtendedLifetime(identityMap.store(entity: root)) {
+            root.listNodes = Array(nestedArray[1...])
+            entityToRemove.key = "changed"
 
-        _ = identityMap.store(entity: ListNodeFixture(id: 2, key: "changed"))
+            _ = identityMap.store(entity: root)
+            _ = identityMap.store(entity: entityToRemove)
 
-        XCTAssertEqual((node.value as! RootFixture).listNodes, nestedArray)
+            let storedRoot = identityMap.find(RootFixture.self, id: 1)!.value
+
+            XCTAssertFalse(storedRoot.listNodes.contains(entityToRemove))
+            XCTAssertFalse(storedRoot.listNodes.map(\.id).contains(entityToRemove.id))
+        }
     }
 
     func test_storeAggregate_nestedWrapperChanged_aggregateIsUpdated() {
@@ -86,6 +93,19 @@ class IdentityMapTests: XCTestCase {
             XCTAssertTrue(registryStub.hasPendingChange(for: SingleNodeFixture(id: 2)))
             XCTAssertTrue(registryStub.hasPendingChange(for: OptionalNodeFixture(id: 1)))
         }
+    }
+
+    /// make sure when inserting multiple time the same entity that it actually gets inserted only once
+    func test_storeEntities_sameEntityPresentMultipleTimes_itIsInsertedOnce() {
+        let registry = ObserverRegistryStub(queue: .main)
+        let identityMap = IdentityMap(registry: registry)
+        let commonEntity = SingleNodeFixture(id: 1)
+        let root1 = RootFixture(id: 1, primitive: "", singleNode: commonEntity, optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
+        let root2 = RootFixture(id: 1, primitive: "", singleNode: commonEntity, optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: nil)
+
+        _ = identityMap.store(entities: [root1, root2])
+
+        XCTAssertEqual(registry.pendingChangeCount(for: commonEntity), 1)
     }
 
     func test_storeIdentifiable_entityIsInsertedForThe1stTime_loggerIsCalled() {
