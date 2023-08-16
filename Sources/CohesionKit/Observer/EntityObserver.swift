@@ -13,6 +13,6 @@ public struct EntityObserver<T>: Observer {
     }
 
     public func observe(onChange: @escaping (T) -> Void) -> Subscription {
-        registry.addObserver(node: node, onChange: onChange)
+        registry.addObserver(node: node, initial: true, onChange: onChange)
     }
 }

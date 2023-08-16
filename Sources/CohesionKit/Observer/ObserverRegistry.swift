@@ -21,7 +21,7 @@ class ObserverRegistry {
 
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
-    func addObserver<T>(node: EntityNode<T>, onChange: @escaping (T) -> Void) -> Subscription {
+    func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
         let observerID = generateID()
 
         observers[node.hashValue, default: [:]][observerID] = {
@@ -30,6 +30,12 @@ class ObserverRegistry {
             }
 
             onChange(newValue.ref.value)
+        }
+
+        if initial {
+           // queue.sync {
+                onChange(node.ref.value)
+           // }
         }
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
