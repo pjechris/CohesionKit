@@ -15,8 +15,8 @@ class ObserverRegistry {
     /// nodes waiting for notifiying their observes about changes
     private var pendingChanges: [Hash: AnyWeak] = [:]
 
-    init(queue: DispatchQueue) {
-        self.queue = queue
+    init(queue: DispatchQueue? = nil) {
+        self.queue = queue ?? DispatchQueue(label: "com.cohesionkit.registry")
     }
 
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
@@ -33,9 +33,14 @@ class ObserverRegistry {
         }
 
         if initial {
-           // queue.sync {
-                onChange(node.ref.value)
-           // }
+          if queue == DispatchQueue.main && Thread.isMainThread {
+            onChange(node.ref.value)
+          }
+          else {
+            queue.sync {
+              onChange(node.ref.value)
+            }
+          }
         }
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
