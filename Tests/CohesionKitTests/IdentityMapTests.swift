@@ -191,8 +191,14 @@ extension IdentityMapTests {
         let entity = SingleNodeFixture(id: 1)
         let update = SingleNodeFixture(id: 1, primitive: "Updated by Aggregate")
         let insertion = identityMap.store(entity: entity)
+        var firstDropped = false
 
         let subscription = insertion.observe {
+            guard firstDropped else {
+                firstDropped = true
+                return
+            }
+
             XCTAssertEqual($0, update)
         }
 
