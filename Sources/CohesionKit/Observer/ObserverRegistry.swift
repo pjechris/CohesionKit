@@ -15,13 +15,13 @@ class ObserverRegistry {
     /// nodes waiting for notifiying their observes about changes
     private var pendingChanges: [Hash: AnyWeak] = [:]
 
-    init(queue: DispatchQueue) {
-        self.queue = queue
+    init(queue: DispatchQueue? = nil) {
+        self.queue = queue ?? DispatchQueue(label: "com.cohesionkit.registry")
     }
 
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
-    func addObserver<T>(node: EntityNode<T>, onChange: @escaping (T) -> Void) -> Subscription {
+    func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
         let observerID = generateID()
 
         observers[node.hashValue, default: [:]][observerID] = {
@@ -30,6 +30,17 @@ class ObserverRegistry {
             }
 
             onChange(newValue.ref.value)
+        }
+
+        if initial {
+          if queue == DispatchQueue.main && Thread.isMainThread {
+            onChange(node.ref.value)
+          }
+          else {
+            queue.sync {
+              onChange(node.ref.value)
+            }
+          }
         }
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
@@ -50,7 +61,7 @@ class ObserverRegistry {
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
     func postChanges() {
         let changes = pendingChanges
-        // let observers = self.observers
+        let observers = self.observers
 
         self.pendingChanges = [:]
 
@@ -61,7 +72,7 @@ class ObserverRegistry {
                     continue
                 }
 
-                self.observers[hashKey]?.forEach { (_, observer) in
+                observers[hashKey]?.forEach { (_, observer) in
                     observer(node)
                 }
             }

@@ -14,9 +14,10 @@ public class IdentityMap {
     private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
 
     /// Create a new IdentityMap instance optionally with a queue and a logger
-    /// - Parameter queue: the queue on which to receive updates. If not defined it default to main
+    /// - Parameter queue: the queue on which to receive updates. If nil identitymap will create its own. DO NOT USE
+    /// main thread as you may end up with data races
     /// - Parameter logger: a logger to follow/debug identity internal state
-    public convenience init(queue: DispatchQueue = .main, logger: Logger? = nil) {
+    public convenience init(queue: DispatchQueue? = nil, logger: Logger? = nil) {
         self.init(registry: ObserverRegistry(queue: queue), logger: logger)
     }
 

@@ -11,11 +11,10 @@ class EntityObserverPublisherTests: XCTestCase {
   }
 
   /// make sure publisher signal does not over trigger
-  func test_asPublisher_registryPostChanges_itSinksOnce() {
+  func test_asPublisher_itSinksOnce() {
     let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
     let registry = ObserverRegistry(queue: .main)
     let observer = EntityObserver(node: node, registry: registry)
-    let expectation = XCTestExpectation()
     var sinkCount = 0
 
     observer
@@ -23,26 +22,19 @@ class EntityObserverPublisherTests: XCTestCase {
       .sink(receiveValue: { _ in sinkCount += 1 })
       .store(in: &cancellables)
 
-    registry.enqueueChange(for: node)
-    registry.postChanges()
-
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-      expectation.fulfill()
-      XCTAssertEqual(sinkCount, 1)
-    }
-
-    wait(for: [expectation], timeout: 0.2)
+    XCTAssertEqual(sinkCount, 1)
   }
 
   func test_asPublisher_registryPostChangesAfterDelay_itSinks() {
-    let expected = SingleNodeFixture(id: 1, primitive: "hello")
-    let node = EntityNode(expected, modifiedAt: 0)
+    let expected = SingleNodeFixture(id: 1, primitive: "expected")
+    let node = EntityNode(SingleNodeFixture(id: 1, primitive: "init"), modifiedAt: 0)
     let registry = ObserverRegistry(queue: .main)
     let observer = EntityObserver(node: node, registry: registry)
     let expectation = XCTestExpectation()
 
     observer
       .asPublisher
+      .dropFirst()
       .sink(receiveValue: {
         expectation.fulfill()
         XCTAssertEqual($0, expected)
@@ -50,6 +42,7 @@ class EntityObserverPublisherTests: XCTestCase {
       .store(in: &cancellables)
 
     DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500)) {
+      try? node.updateEntity(expected, modifiedAt: nil)
       registry.enqueueChange(for: node)
       registry.postChanges()
     }

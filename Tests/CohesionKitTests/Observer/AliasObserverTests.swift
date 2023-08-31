@@ -91,20 +91,26 @@ class AliasObserverTests: XCTestCase {
         let registry = ObserverRegistry(queue: .main)
         let observer = AliasObserver(alias: ref, registry: registry)
         let update = SingleNodeFixture(id: 1, primitive: "Update")
-        var lastObservedValue: [SingleNodeFixture]?
+        var initialDropped = 0
+        var subscription: Subscription?
 
-        let subscription = observer.observe {
-            lastObservedValue = $0
-            expectation.fulfill()
+        subscription = observer.observe { value in
+            guard initialDropped == nodes.count else {
+                initialDropped += 1
+                return
+            }
+
+            withExtendedLifetime(subscription) {
+                expectation.fulfill()
+                XCTAssertEqual(value?.first, update)
+            }
         }
 
-        try withExtendedLifetime(subscription) {
-            try nodes[0].updateEntity(SingleNodeFixture(id: 1, primitive: "Update"), modifiedAt: nil)
-            registry.enqueueChange(for: nodes[0])
-            registry.postChanges()
+        try nodes[0].updateEntity(update, modifiedAt: nil)
 
-            wait(for: [expectation], timeout: 1)
-            XCTAssertEqual(lastObservedValue?.first, update)
-        }
+        registry.enqueueChange(for: nodes[0])
+        registry.postChanges()
+
+        wait(for: [expectation], timeout: 1)
     }
 }
