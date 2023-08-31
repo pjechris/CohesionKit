@@ -81,7 +81,7 @@ class AliasObserverTests: XCTestCase {
         XCTAssertNil(lastReceivedValue)
     }
 
-    func test_observeArray_registryPostNotificationForElement_onChangeIsCalled() async throws {
+    func test_observeArray_registryPostNotificationForElement_onChangeIsCalled() throws {
         let expectation = XCTestExpectation()
         let nodes = [
             EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0),
@@ -91,16 +91,19 @@ class AliasObserverTests: XCTestCase {
         let registry = ObserverRegistry(queue: .main)
         let observer = AliasObserver(alias: ref, registry: registry)
         let update = SingleNodeFixture(id: 1, primitive: "Update")
-        var lastObservedValue: [SingleNodeFixture]?
-        var firstDropped = false
+        var initialDropped = 0
+        var subscription: Subscription?
 
-        let subscription = observer.observe {
-            guard firstDropped else {
-                firstDropped = true
+        subscription = observer.observe { value in
+            guard initialDropped == nodes.count else {
+                initialDropped += 1
                 return
             }
-            lastObservedValue = $0
-            expectation.fulfill()
+
+            withExtendedLifetime(subscription) {
+                expectation.fulfill()
+                XCTAssertEqual(value?.first, update)
+            }
         }
 
         try nodes[0].updateEntity(update, modifiedAt: nil)
@@ -108,10 +111,6 @@ class AliasObserverTests: XCTestCase {
         registry.enqueueChange(for: nodes[0])
         registry.postChanges()
 
-        await fulfillment(of: [expectation], timeout: 1)
-
-        withExtendedLifetime(subscription) {
-            XCTAssertEqual(lastObservedValue?.first, update)
-        }
+        wait(for: [expectation], timeout: 1)
     }
 }
