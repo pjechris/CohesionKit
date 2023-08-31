@@ -61,7 +61,7 @@ class ObserverRegistry {
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
     func postChanges() {
         let changes = pendingChanges
-        // let observers = self.observers
+        let observers = self.observers
 
         self.pendingChanges = [:]
 
@@ -72,7 +72,7 @@ class ObserverRegistry {
                     continue
                 }
 
-                self.observers[hashKey]?.forEach { (_, observer) in
+                observers[hashKey]?.forEach { (_, observer) in
                     observer(node)
                 }
             }
