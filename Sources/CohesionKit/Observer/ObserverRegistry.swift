@@ -18,7 +18,44 @@ class ObserverRegistry {
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
     func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
-        addHandler(node: node, initial: initial, onChange: onChange)
+        let handler = Handler { onChange($0.ref.value) }
+
+        if initial {
+          if queue == DispatchQueue.main && Thread.isMainThread {
+            onChange(node.ref.value)
+          }
+          else {
+            queue.sync {
+              onChange(node.ref.value)
+            }
+          }
+        }
+
+        return subscribeHandler(handler, for: node)
+    }
+
+    func addObserver<T>(nodes: [EntityNode<T>], initial: Bool = false, onChange: @escaping ([T]) -> Void) -> Subscription {
+        let handler = Handler { (_: EntityNode<T>) in
+            // use last value from nodes
+            onChange(nodes.map(\.ref.value))
+        }
+
+        if initial {
+          if queue == DispatchQueue.main && Thread.isMainThread {
+            onChange(nodes.map(\.ref.value))
+          }
+          else {
+            queue.sync {
+              onChange(nodes.map(\.ref.value))
+            }
+          }
+        }
+
+        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node) }
+
+        return Subscription {
+            subscriptions.forEach { $0.unsubscribe() }
+        }
     }
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
@@ -57,21 +94,8 @@ class ObserverRegistry {
         }
     }
 
-    private func addHandler<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
-        let handler = Handler { onChange($0.ref.value) }
-
+    private func subscribeHandler<T>(_ handler: Handler, for node: EntityNode<T>) -> Subscription {
         handlers[node.hashValue, default: []].insert(handler)
-
-        if initial {
-          if queue == DispatchQueue.main && Thread.isMainThread {
-            onChange(node.ref.value)
-          }
-          else {
-            queue.sync {
-              onChange(node.ref.value)
-            }
-          }
-        }
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
         return Subscription { [node] in
