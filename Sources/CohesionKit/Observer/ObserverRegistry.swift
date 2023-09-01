@@ -70,6 +70,8 @@ class ObserverRegistry {
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
     func postChanges() {
         let changes = pendingChanges
+        let handlers = self.handlers
+        var executedHandlers: Set<Handler> = []
 
         self.pendingChanges = [:]
 
@@ -84,12 +86,14 @@ class ObserverRegistry {
                     continue
                 }
 
-                self.handlers[hashKey]?.forEach { handle in handle(node) }
-            }
+                for handler in handlers[hashKey] ?? [] {
+                    guard !executedHandlers.contains(handler) else {
+                        continue
+                    }
 
-            // reset handlers execution count for next postChanges calls
-            for (hashKey, _) in changes {
-                self.handlers[hashKey]?.forEach { handler in handler.resetExecuteCount() }
+                    handler(node)
+                    executedHandlers.insert(handler)
+                }
             }
         }
     }
@@ -108,13 +112,8 @@ extension ObserverRegistry {
     /// Handle observation for a given node
     class Handler: Hashable {
         let executor: (Any) -> Void
-        /// number of times an handler can be executed. By default it will be 1
-        let executeAtMost: Int
-        /// number of times handler was already executed
-        private var executeCount = 0
 
-        init<T>(executeAtMost: Int = 1, executor: @escaping (EntityNode<T>) -> Void) {
-            self.executeAtMost = executeAtMost
+        init<T>(executor: @escaping (EntityNode<T>) -> Void) {
             self.executor = {
                 guard let entity = $0 as? EntityNode<T> else {
                     return
@@ -124,18 +123,8 @@ extension ObserverRegistry {
             }
         }
 
-        /// reset execution count allowing handler to re-execute if max execution was reached
-        func resetExecuteCount() {
-            executeCount = 0
-        }
-
         /// execute the handler if `executeAtMost` does not exceed `executeCount`
         func callAsFunction(_ value: Any) {
-            guard executeCount < executeAtMost else {
-                return
-            }
-
-            executeCount += 1
             executor(value)
         }
 
