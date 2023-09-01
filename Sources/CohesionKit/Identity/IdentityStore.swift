@@ -91,7 +91,7 @@ public class IdentityMap {
 
     /// Store multiple entities at once
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp? = nil)
-    -> [EntityObserver<C.Element>] where C.Element: Identifiable {
+    -> EntityObserver<[C.Element]> where C.Element: Identifiable {
         transaction {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
@@ -100,13 +100,13 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            return nodes.map { EntityObserver(node: $0, registry: registry) }
+            return EntityObserver(nodes: nodes, registry: registry)
         }
     }
 
     /// store multiple aggregates at once
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp? = nil)
-    -> [EntityObserver<C.Element>] where C.Element: Aggregate {
+    -> EntityObserver<[C.Element]> where C.Element: Aggregate {
         transaction {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
@@ -115,7 +115,7 @@ public class IdentityMap {
                 logger?.didRegisterAlias(alias)
             }
 
-            return nodes.map { EntityObserver(node: $0, registry: registry) }
+            return EntityObserver(nodes: nodes, registry: registry)
         }
     }
 

@@ -38,16 +38,15 @@ extension AliasObserver {
         registry: ObserverRegistry,
         onChange: @escaping OnChangeClosure
     ) -> Subscription {
+        // register for current alias value
         var entityChangesSubscription: Subscription? = alias
             .value
-            .map { node in registry.addObserver(node: node, onChange: onChange) }
+            .map { node in registry.addObserver(node: node, initial: true, onChange: onChange) }
 
         // subscribe to alias changes
         let subscription = alias.addObserver { node in
             // update entity changes subscription
-            entityChangesSubscription = node.map { registry.addObserver(node: $0) { onChange($0) }}
-
-            registry.queue.async { onChange(node?.ref.value) }
+            entityChangesSubscription = node.map { registry.addObserver(node: $0, initial: true, onChange: onChange) }
         }
 
         return Subscription {
@@ -64,16 +63,15 @@ extension AliasObserver {
         registry: ObserverRegistry,
         onChange: @escaping OnChangeClosure
     ) -> Subscription where T == Array<E> {
+        // register for current alias value
         var entitiesChangesSubscriptions: Subscription? = alias
             .value
-            .map { nodes in nodes.map { EntityObserver(node: $0, registry: registry) } }?
+            .map { nodes in EntityObserver(nodes: nodes, registry: registry) }?
             .observe(onChange: onChange)
 
         // Subscribe to alias ref changes and to any changes made on the ref collection nodes.
         let subscription = alias.addObserver { nodes in
-            let nodeObservers = nodes?.map { EntityObserver(node: $0, registry: registry) }
-
-            registry.queue.async { onChange(nodeObservers?.value) }
+            let nodeObservers = nodes.map { EntityObserver(nodes: $0, registry: registry) }
 
             // update collection changes subscription
             entitiesChangesSubscriptions = nodeObservers?.observe(onChange: onChange)
@@ -83,6 +81,5 @@ extension AliasObserver {
             subscription.unsubscribe()
             entitiesChangesSubscriptions?.unsubscribe()
         }
-    }
-
+      }
 }
