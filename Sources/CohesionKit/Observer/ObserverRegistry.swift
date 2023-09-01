@@ -6,9 +6,8 @@ class ObserverRegistry {
     private typealias Hash = Int
 
     let queue: DispatchQueue
-    /// registered observers
+    /// registered observer handlers
     private var handlers: [Hash: Set<Handler>] = [:]
-
     /// nodes waiting for notifiying their observes about changes
     private var pendingChanges: [Hash: AnyWeak] = [:]
 
@@ -51,6 +50,7 @@ class ObserverRegistry {
                 self.handlers[hashKey]?.forEach { handle in handle(node) }
             }
 
+            // reset handlers execution count for next postChanges calls
             for (hashKey, _) in changes {
                 self.handlers[hashKey]?.forEach { handler in handler.resetExecuteCount() }
             }
@@ -81,10 +81,12 @@ class ObserverRegistry {
 }
 
 extension ObserverRegistry {
-    /// Handle an observation for a given node
+    /// Handle observation for a given node
     class Handler: Hashable {
         let executor: (Any) -> Void
+        /// number of times an handler can be executed. By default it will be 1
         let executeAtMost: Int
+        /// number of times handler was already executed
         private var executeCount = 0
 
         init<T>(executeAtMost: Int = 1, executor: @escaping (EntityNode<T>) -> Void) {
@@ -98,10 +100,12 @@ extension ObserverRegistry {
             }
         }
 
+        /// reset execution count allowing handler to re-execute if max execution was reached
         func resetExecuteCount() {
             executeCount = 0
         }
 
+        /// execute the handler if `executeAtMost` does not exceed `executeCount`
         func callAsFunction(_ value: Any) {
             guard executeCount < executeAtMost else {
                 return
