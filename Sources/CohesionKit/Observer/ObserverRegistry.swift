@@ -3,15 +3,12 @@ import Foundation
 /// Registers observers associated to an ``EntityNode``.
 /// The registry will handle notifying observers when a node is marked as changed
 class ObserverRegistry {
-    typealias Observer = (Any) -> Void
-    private typealias ObserverID = Int
     private typealias Hash = Int
 
     let queue: DispatchQueue
     /// registered observers
-    private var observers: [Hash: [ObserverID: Observer]] = [:]
-    /// next available id for an observer
-    private var nextObserverID: ObserverID = 0
+    private var handlers: [Hash: Set<Handler>] = [:]
+
     /// nodes waiting for notifiying their observes about changes
     private var pendingChanges: [Hash: AnyWeak] = [:]
 
@@ -22,31 +19,7 @@ class ObserverRegistry {
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
     func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
-        let observerID = generateID()
-
-        observers[node.hashValue, default: [:]][observerID] = {
-            guard let newValue = $0 as? EntityNode<T> else {
-                return
-            }
-
-            onChange(newValue.ref.value)
-        }
-
-        if initial {
-          if queue == DispatchQueue.main && Thread.isMainThread {
-            onChange(node.ref.value)
-          }
-          else {
-            queue.sync {
-              onChange(node.ref.value)
-            }
-          }
-        }
-
-        // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
-        return Subscription { [node] in
-            self.observers[node.hashValue]?.removeValue(forKey: observerID)
-        }
+        addHandler(node: node, initial: initial, onChange: onChange)
     }
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
@@ -61,26 +34,89 @@ class ObserverRegistry {
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
     func postChanges() {
         let changes = pendingChanges
-        let observers = self.observers
 
         self.pendingChanges = [:]
 
-        queue.async { [unowned self] in
+        queue.async { [weak self] in
+            guard let self else {
+                return
+            }
+
             for (hashKey, weakNode) in changes {
                 // node was released: no one to notify
                 guard let node = weakNode.unwrap() else {
                     continue
                 }
 
-                observers[hashKey]?.forEach { (_, observer) in
-                    observer(node)
-                }
+                self.handlers[hashKey]?.forEach { handle in handle(node) }
+            }
+
+            for (hashKey, _) in changes {
+                self.handlers[hashKey]?.forEach { handler in handler.resetExecuteCount() }
             }
         }
     }
 
-    private func generateID() -> ObserverID {
-      defer { nextObserverID &+= 1 }
-      return nextObserverID
+    private func addHandler<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
+        let handler = Handler { onChange($0.ref.value) }
+
+        handlers[node.hashValue, default: []].insert(handler)
+
+        if initial {
+          if queue == DispatchQueue.main && Thread.isMainThread {
+            onChange(node.ref.value)
+          }
+          else {
+            queue.sync {
+              onChange(node.ref.value)
+            }
+          }
+        }
+
+        // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
+        return Subscription { [node] in
+            self.handlers[node.hashValue]?.remove(handler)
+        }
+    }
+}
+
+extension ObserverRegistry {
+    /// Handle an observation for a given node
+    class Handler: Hashable {
+        let executor: (Any) -> Void
+        let executeAtMost: Int
+        private var executeCount = 0
+
+        init<T>(executeAtMost: Int = 1, executor: @escaping (EntityNode<T>) -> Void) {
+            self.executeAtMost = executeAtMost
+            self.executor = {
+                guard let entity = $0 as? EntityNode<T> else {
+                    return
+                }
+
+                executor(entity)
+            }
+        }
+
+        func resetExecuteCount() {
+            executeCount = 0
+        }
+
+        func callAsFunction(_ value: Any) {
+            guard executeCount < executeAtMost else {
+                return
+            }
+
+            executeCount += 1
+            executor(value)
+        }
+
+        static func == (lhs: Handler, rhs: Handler) -> Bool {
+            ObjectIdentifier(lhs) == ObjectIdentifier(rhs)
+        }
+
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(ObjectIdentifier(self))
+        }
     }
 }
