@@ -34,6 +34,8 @@ class ObserverRegistry {
         return subscribeHandler(handler, for: node)
     }
 
+    /// Add an observer handler to multiple nodes.
+    /// Note that the same handler will be added to each nodes. But it should get notified only once per transaction
     func addObserver<T>(nodes: [EntityNode<T>], initial: Bool = false, onChange: @escaping ([T]) -> Void) -> Subscription {
         let handler = Handler { (_: EntityNode<T>) in
             // use last value from nodes
@@ -75,11 +77,7 @@ class ObserverRegistry {
 
         self.pendingChanges = [:]
 
-        queue.async { [weak self] in
-            guard let self else {
-                return
-            }
-
+        queue.async {
             for (hashKey, weakNode) in changes {
                 // node was released: no one to notify
                 guard let node = weakNode.unwrap() else {
@@ -87,6 +85,7 @@ class ObserverRegistry {
                 }
 
                 for handler in handlers[hashKey] ?? [] {
+                    // if some handlers are used multiple times (like for collections), make sure we don't notify them multiple times
                     guard !executedHandlers.contains(handler) else {
                         continue
                     }
