@@ -16,7 +16,7 @@ class ObserverRegistry {
     private var pendingChanges: [Hash: AnyWeak] = [:]
 
     init(queue: DispatchQueue? = nil) {
-        self.queue = queue ?? DispatchQueue(label: "com.cohesionkit.registry")
+        self.queue = queue ?? DispatchQueue.main
     }
 
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
