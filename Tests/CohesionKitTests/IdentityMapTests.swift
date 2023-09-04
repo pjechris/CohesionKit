@@ -268,10 +268,16 @@ extension IdentityMapTests {
         let identityMap = IdentityMap(queue: .main)
         let newEntity = SingleNodeFixture(id: 2)
         let expectation = XCTestExpectation()
+        var firstDropped = false
 
         _ = identityMap.store(entity: SingleNodeFixture(id: 1), named: .test, modifiedAt: 0)
 
         let subscription = identityMap.find(named: .test).observe {
+            guard firstDropped else {
+                firstDropped = true
+                return
+            }
+
             expectation.fulfill()
             XCTAssertEqual($0, newEntity)
         }
@@ -289,10 +295,16 @@ extension IdentityMapTests {
         let identityMap = IdentityMap(queue: .main)
         let entities = [SingleNodeFixture(id: 1)]
         let expectation = XCTestExpectation()
+        var firstDropped = false
 
         _ = identityMap.store(entities: [], named: .listOfNodes, modifiedAt: 0)
 
         let subscription = identityMap.find(named: .listOfNodes).observe {
+            guard firstDropped else {
+                firstDropped = true
+                return
+            }
+
             expectation.fulfill()
             XCTAssertEqual($0, entities)
         }

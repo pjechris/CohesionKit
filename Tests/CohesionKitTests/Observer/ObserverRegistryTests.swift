@@ -108,4 +108,41 @@ class ObserverRegistryTests: XCTestCase {
             wait(for: [expectation], timeout: 0.2)
         }
     }
+
+    func test_addObserverNodes_sendInitial_onChangeIsCalledOnce() {
+        let registry = ObserverRegistry()
+        let node1 = EntityNode(SingleNodeFixture(id: 1), modifiedAt: nil)
+        let node2 = EntityNode(SingleNodeFixture(id: 2), modifiedAt: nil)
+        let expectation = XCTestExpectation()
+
+        expectation.assertForOverFulfill = true
+
+        _ = registry.addObserver(nodes: [node1, node2], initial: true) { _ in
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 0)
+    }
+
+    func test_postChanges_enqueueMultipleChanges_nodesOnChangeIsCalledOnce() throws {
+        let registry = ObserverRegistry()
+        let node1 = EntityNode(SingleNodeFixture(id: 1), modifiedAt: nil)
+        let node2 = EntityNode(SingleNodeFixture(id: 2), modifiedAt: nil)
+        let expectation = XCTestExpectation()
+        var subscription: Subscription!
+
+        expectation.assertForOverFulfill = true
+
+        subscription = registry.addObserver(nodes: [node1, node2], initial: false) { _ in
+            withExtendedLifetime(subscription) {
+                expectation.fulfill()
+            }
+        }
+
+        registry.enqueueChange(for: node1)
+        registry.enqueueChange(for: node2)
+        registry.postChanges()
+
+        wait(for: [expectation], timeout: 0.5)
+    }
 }

@@ -4,17 +4,29 @@ import XCTest
 class AliasObserverTests: XCTestCase {
     func test_observe_refValueChanged_onChangeIsCalled() {
         let ref = Observable(value: Optional.some(EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)))
-        let observer = AliasObserver(alias: ref, registry: ObserverRegistry(queue: .main))
+        let registry = ObserverRegistry(queue: .main)
+        let observer = AliasObserver(alias: ref, registry: registry)
         let newValue = SingleNodeFixture(id: 2)
         let expectation = XCTestExpectation()
+        var droppedFirst = false
 
         let subscription = observer.observe {
+            guard droppedFirst else {
+                droppedFirst = true
+                return
+            }
+
             XCTAssertEqual($0, newValue)
             expectation.fulfill()
         }
 
         withExtendedLifetime(subscription) {
-            ref.value = EntityNode(newValue, modifiedAt: 0)
+            let newNode = EntityNode(newValue, modifiedAt: 0)
+
+            ref.value = newNode
+
+            registry.enqueueChange(for: newNode)
+            registry.postChanges()
         }
 
         wait(for: [expectation], timeout: 1)
@@ -26,8 +38,14 @@ class AliasObserverTests: XCTestCase {
       let observer = AliasObserver(alias: Observable(value: node), registry: registry)
       let newValue = RootFixture(id: 1, primitive: "new value", singleNode: SingleNodeFixture(id: 1), listNodes: [])
       let expectation = XCTestExpectation()
+      var droppedFirst = false
 
       let subscription = observer.observe {
+        guard droppedFirst else {
+            droppedFirst = true
+            return
+        }
+
         XCTAssertEqual($0, newValue)
         expectation.fulfill()
       }
@@ -44,11 +62,14 @@ class AliasObserverTests: XCTestCase {
 
     func test_observe_refValueChanged_entityIsUpdated_onChangeIsCalled() throws {
         let ref = Observable(value: Optional.some(EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)))
-        let observer = AliasObserver(alias: ref, registry: ObserverRegistry(queue: .main))
+        let registry = ObserverRegistry(queue: .main)
+        let observer = AliasObserver(alias: ref, registry: registry)
         let newNode = EntityNode(SingleNodeFixture(id: 2), modifiedAt: 0)
         let newValue = SingleNodeFixture(id: 3)
         var lastReceivedValue: SingleNodeFixture?
         let expectation = XCTestExpectation()
+
+        expectation.expectedFulfillmentCount = 3
 
         let subscription = observer.observe {
             lastReceivedValue = $0
@@ -57,7 +78,11 @@ class AliasObserverTests: XCTestCase {
 
         try withExtendedLifetime(subscription) {
             ref.value = newNode
-            try newNode.updateEntity(newValue, modifiedAt: 1)
+
+            try newNode.updateEntity(newValue, modifiedAt: nil)
+
+            registry.enqueueChange(for: newNode)
+            registry.postChanges()
         }
 
         wait(for: [expectation], timeout: 1)
@@ -66,17 +91,27 @@ class AliasObserverTests: XCTestCase {
 
     func test_observe_subscriptionIsCancelled_unsubscribeToUpdates() throws {
         let initialValue = SingleNodeFixture(id: 1)
+        let registry = ObserverRegistry(queue: .main)
         let node = EntityNode(initialValue, modifiedAt: 0)
         let ref = Observable(value: Optional.some(node))
-        let observer = AliasObserver(alias: ref, registry: ObserverRegistry(queue: .main))
+        let observer = AliasObserver(alias: ref, registry: registry)
         let newValue = SingleNodeFixture(id: 3)
         var lastReceivedValue: SingleNodeFixture?
+        var firstDropped = false
 
         _ = observer.observe {
+            guard firstDropped else {
+                firstDropped = true
+                return
+            }
+
             lastReceivedValue = $0
         }
 
         try node.updateEntity(newValue, modifiedAt: 1)
+
+        registry.enqueueChange(for: node)
+        registry.postChanges()
 
         XCTAssertNil(lastReceivedValue)
     }
@@ -91,12 +126,12 @@ class AliasObserverTests: XCTestCase {
         let registry = ObserverRegistry(queue: .main)
         let observer = AliasObserver(alias: ref, registry: registry)
         let update = SingleNodeFixture(id: 1, primitive: "Update")
-        var initialDropped = 0
+        var firstDropped = false
         var subscription: Subscription?
 
         subscription = observer.observe { value in
-            guard initialDropped == nodes.count else {
-                initialDropped += 1
+            guard firstDropped else {
+                firstDropped = true
                 return
             }
 
