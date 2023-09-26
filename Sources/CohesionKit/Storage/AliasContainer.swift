@@ -5,7 +5,7 @@ struct AliasContainer<T>: Identifiable, Aggregate {
 
     let key: AliasKey<T>
 
-    var content: T
+    var content: T?
 }
 
 extension AliasContainer where T: Aggregate {

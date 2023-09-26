@@ -58,6 +58,18 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
     }
 
+    public init<C: MutableCollection>(_ keyPath: WritableKeyPath<Root, C?>) where C.Element: Identifiable, C.Index: Hashable {
+        self.keyPath = keyPath
+        self.accept = { parent, root, stamp, visitor in
+            if let entities = root[keyPath: keyPath] {
+                visitor.visit(
+                    context: EntityContext(parent: parent, keyPath: keyPath.unwrapped(), stamp: stamp),
+                    entities: entities
+                )
+            }
+        }
+    }
+
     public init<C: MutableCollection>(_ keyPath: WritableKeyPath<Root, C>) where C.Element: Aggregate, C.Index: Hashable {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
@@ -65,6 +77,18 @@ public struct PartialIdentifiableKeyPath<Root> {
                 context: EntityContext(parent: parent, keyPath: keyPath, stamp: stamp),
                 entities: root[keyPath: keyPath]
             )
+        }
+    }
+
+    public init<C: MutableCollection>(_ keyPath: WritableKeyPath<Root, C?>) where C.Element: Aggregate, C.Index: Hashable {
+        self.keyPath = keyPath
+        self.accept = { parent, root, stamp, visitor in
+            if let entities = root[keyPath: keyPath] {
+                visitor.visit(
+                    context: EntityContext(parent: parent, keyPath: keyPath.unwrapped(), stamp: stamp),
+                    entities: entities
+                )
+            }
         }
     }
 
