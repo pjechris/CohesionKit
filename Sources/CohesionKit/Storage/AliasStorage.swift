@@ -2,12 +2,12 @@
 typealias AliasStorage = [String: Any]
 
 extension AliasStorage {
-    subscript<T>(_ type: T.Type, key aliasKey: AliasKey<T>) -> EntityNode<AliasContainer<T>>? {
+    subscript<T>(_ aliasKey: AliasKey<T>) -> EntityNode<AliasContainer<T>>? {
         get { self[buildKey(for: T.self, key: aliasKey)] as? EntityNode<AliasContainer<T>> }
         set { self[buildKey(for: T.self, key: aliasKey)] = newValue }
     }
 
-    subscript<T>(key key: AliasKey<T>) -> EntityNode<AliasContainer<T>> {
+    subscript<T>(safe key: AliasKey<T>) -> EntityNode<AliasContainer<T>> {
         mutating get {
             self[key: key, default: EntityNode(AliasContainer(key: key), modifiedAt: nil)]
         }
@@ -16,10 +16,10 @@ extension AliasStorage {
     subscript<T>(key key: AliasKey<T>, default defaultValue: @autoclosure () -> EntityNode<AliasContainer<T>>)
     -> EntityNode<AliasContainer<T>> {
         mutating get {
-            guard let node = self[T.self, key: key] else {
+            guard let node = self[key] else {
                 let node = defaultValue()
 
-                self[T.self, key: key] = node
+                self[key] = node
 
                 return node
             }
