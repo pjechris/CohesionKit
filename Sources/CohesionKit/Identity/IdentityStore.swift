@@ -131,17 +131,19 @@ public class IdentityMap {
 
     /// Try to find an entity/aggregate registered under `named` alias
     /// - Parameter named: the alias to look for
-    public func find<T: Identifiable>(named: AliasKey<T>) -> AliasObserver<T> {
+    public func find<T: Identifiable>(named: AliasKey<T>) -> AliasObserver<T?> {
         identityQueue.sync {
-            AliasObserver(alias: refAliases[named], registry: registry)
+            let node = refAliases[key: named]
+            return EntityObserver(alias: node, registry: registry)
         }
     }
 
     /// Try to find a collected registered under `named` alias
     /// - Returns: an observer returning the alias value. Note that the value will be an Array
-    public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<[C.Element]> {
+    public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<C?> {
         identityQueue.sync {
-            AliasObserver(alias: refAliases[named], registry: registry)
+            let node = refAliases[key: named]
+            return EntityObserver(alias: node, registry: registry)
         }
     }
 

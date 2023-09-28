@@ -22,6 +22,20 @@ public struct EntityObserver<T>: Observer {
         }
     }
 
+    init<Wrapped>(alias node: EntityNode<AliasContainer<Wrapped>>, registry: ObserverRegistry)
+    where T == Optional<Wrapped> {
+        self.init(value: node.ref.value.content) { onChange in
+            registry.addObserver(node: node, initial: true, onChange: { container in
+                onChange(container.content)
+            })
+        }
+    }
+
+    init(value: T, createObserver: @escaping (@escaping OnChange) -> Subscription) {
+        self.value = value
+        self.createObserver = createObserver
+    }
+
     public func observe(onChange: @escaping OnChange) -> Subscription {
         createObserver(onChange)
     }
