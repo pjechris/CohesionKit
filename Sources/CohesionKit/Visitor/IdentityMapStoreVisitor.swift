@@ -38,7 +38,6 @@ struct IdentityMapStoreVisitor: NestedEntitiesVisitor {
 
     func visit<Root, C: MutableCollection>(context: EntityContext<Root, C>, entities: C)
     where C.Element: Identifiable, C.Index: Hashable {
-
         for index in entities.indices {
             context.parent.observeChild(
                 identityMap.nodeStore(entity: entities[index], modifiedAt: context.stamp),

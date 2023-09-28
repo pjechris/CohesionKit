@@ -140,6 +140,17 @@ class IdentityMapTests: XCTestCase {
 
         wait(for: [expectation], timeout: 0)
     }
+
+    func test_storeAlias_itEnqueuesAliasInRegistry() {
+        let root = SingleNodeFixture(id: 1)
+        let registry = ObserverRegistryStub()
+        let identityMap = IdentityMap(registry: registry)
+
+        withExtendedLifetime(identityMap.store(entity: root, named: .test)) {
+            XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<SingleNodeFixture>.self))
+            XCTAssertTrue(registry.hasPendingChange(for: SingleNodeFixture.self))
+        }
+    }
 }
 
 // MARK: Find
@@ -317,6 +328,28 @@ extension IdentityMapTests {
             wait(for: [expectation], timeout: 0.5)
         }
     }
+
+    func test_updateNamed_entityIsCollection_itEnqueuesNestedObjectsInRegistry() {
+        let registry = ObserverRegistryStub()
+        let identityMap = IdentityMap(registry: registry)
+        let initialValue = RootFixture(
+            id: 1,
+            primitive: "",
+            singleNode: .init(id: 1),
+            listNodes: []
+        )
+        let singleNodeUpdate = SingleNodeFixture(id: 1, primitive: "update")
+
+        _ = identityMap.store(entity: initialValue, named: .root)
+
+        registry.clearPendingChangesStub()
+
+        identityMap.update(named: .root) {
+            $0.singleNode = singleNodeUpdate
+        }
+
+        XCTAssertTrue(registry.hasPendingChange(for: singleNodeUpdate))
+    }
 }
 
 private extension AliasKey where T == SingleNodeFixture {
@@ -325,4 +358,8 @@ private extension AliasKey where T == SingleNodeFixture {
 
 private extension AliasKey where T == [SingleNodeFixture] {
     static let listOfNodes = AliasKey(named: "listOfNodes")
+}
+
+private extension AliasKey where T == RootFixture {
+    static let root = AliasKey(named: "root")
 }

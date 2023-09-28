@@ -2,38 +2,23 @@ import XCTest
 @testable import CohesionKit
 
 class AliasStorageTests: XCTestCase {
-    func test_subscriptGet_aliasIsCollection_noValue_returnObservable() {
+    func test_subscriptGetSafe_aliasIsCollection_noValue_emptyAliasContainer() {
         var storage: AliasStorage = [:]
 
-        XCTAssertNotNil(storage[.testCollection])
-        XCTAssertNil(storage[.testCollection].value)
+        XCTAssertNotNil(storage[safe: .testCollection])
+        XCTAssertNil(storage[safe: .testCollection].ref.value.content)
     }
 
-    func test_subscriptGet_twoAliasWithSameNameButDifferentType_returnBothCollections() {
+    func test_subscriptGet_aliasHasSameNameThanAnotherType_itReturnsAliasContainer() {
         var storage: AliasStorage = [:]
+        let singleNode = EntityNode(AliasContainer(key: .test, content: 1), modifiedAt: 0)
+        let collectionNode = EntityNode(AliasContainer(key: .testCollection, content: [2, 3]), modifiedAt: 0)
 
-        storage[.testCollection].value = [EntityNode(1, modifiedAt: 0), EntityNode(2, modifiedAt: 0)]
-        storage[.test].value = EntityNode(3, modifiedAt: 0)
+        storage[.testCollection] = collectionNode
+        storage[.test] = singleNode
 
-        XCTAssertEqual(storage.count, 2)
-    }
-
-    func test_subscriptGet_valueSet_returnValue() {
-        var storage: AliasStorage = [:]
-        let expectedValue = [EntityNode(1, modifiedAt: 0)]
-
-        storage[.testCollection].value = expectedValue
-
-        XCTAssertEqual(storage[.testCollection].value, expectedValue)
-    }
-
-    func test_remove_aliasInsertedBefore_itRemovesValue() {
-        var storage: AliasStorage = [:]
-
-        storage.insert(EntityNode(ref: Observable(value: 1), modifiedAt: nil), key: .test)
-        storage.remove(for: .test)
-
-        XCTAssertNil(storage[.test].value)
+        XCTAssertEqual(storage[.test], singleNode)
+        XCTAssertEqual(storage[.testCollection], collectionNode)
     }
 }
 

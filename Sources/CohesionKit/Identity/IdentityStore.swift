@@ -48,9 +48,8 @@ public class IdentityMap {
 
             let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
-            if let alias = named {
-                refAliases.insert(node, key: alias)
-                logger?.didRegisterAlias(alias)
+            if let key = named {
+                storeAlias(content: entity, key: key, modifiedAt: modifiedAt)
             }
 
             return EntityObserver(node: node, registry: registry)
@@ -80,9 +79,8 @@ public class IdentityMap {
 
             let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
-            if let alias = named {
-                refAliases.insert(node, key: alias)
-                logger?.didRegisterAlias(alias)
+            if let key = named {
+                storeAlias(content: entity, key: key, modifiedAt: modifiedAt)
             }
 
             return EntityObserver(node: node, registry: registry)
@@ -95,9 +93,8 @@ public class IdentityMap {
         transaction {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
-            if let alias = named {
-                refAliases.insert(nodes, key: alias)
-                logger?.didRegisterAlias(alias)
+            if let key = named {
+                storeAlias(content: entities, key: key, modifiedAt: modifiedAt)
             }
 
             return EntityObserver(nodes: nodes, registry: registry)
@@ -110,9 +107,8 @@ public class IdentityMap {
         transaction {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
-            if let alias = named {
-                refAliases.insert(nodes, key: alias)
-                logger?.didRegisterAlias(alias)
+            if let key = named {
+                storeAlias(content: entities, key: key, modifiedAt: modifiedAt)
             }
 
             return EntityObserver(nodes: nodes, registry: registry)
@@ -135,17 +131,19 @@ public class IdentityMap {
 
     /// Try to find an entity/aggregate registered under `named` alias
     /// - Parameter named: the alias to look for
-    public func find<T: Identifiable>(named: AliasKey<T>) -> AliasObserver<T> {
+    public func find<T: Identifiable>(named: AliasKey<T>) -> EntityObserver<T?> {
         identityQueue.sync {
-            AliasObserver(alias: refAliases[named], registry: registry)
+            let node = refAliases[safe: named]
+            return EntityObserver(alias: node, registry: registry)
         }
     }
 
     /// Try to find a collected registered under `named` alias
     /// - Returns: an observer returning the alias value. Note that the value will be an Array
-    public func find<C: Collection>(named: AliasKey<C>) -> AliasObserver<[C.Element]> {
+    public func find<C: Collection>(named: AliasKey<C>) -> EntityObserver<C?> {
         identityQueue.sync {
-            AliasObserver(alias: refAliases[named], registry: registry)
+            let node = refAliases[safe: named]
+            return EntityObserver(alias: node, registry: registry)
         }
     }
 
@@ -194,6 +192,20 @@ public class IdentityMap {
         }
 
         return node
+    }
+
+    private func storeAlias<T>(content: T, key: AliasKey<T>, modifiedAt: Stamp?) {
+        let aliasNode = refAliases[safe: key]
+
+        do {
+            try aliasNode.updateEntity(AliasContainer(key: key, content: content), modifiedAt: modifiedAt)
+
+            registry.enqueueChange(for: aliasNode)
+            logger?.didRegisterAlias(key)
+        }
+        catch {
+
+        }
     }
 
     private func transaction<T>(_ body: () -> T) -> T {
@@ -260,16 +272,15 @@ extension IdentityMap {
     @discardableResult
     public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
         transaction {
-            guard let entity = refAliases[named].value else {
+            guard let aliasNode = refAliases[named], var content = aliasNode.ref.value.content else {
                 return false
             }
 
-            var value = entity.ref.value
-            update(&value)
-            let node = nodeStore(entity: value, modifiedAt: modifiedAt)
+            update(&content)
 
-            // ref might have changed
-            refAliases.insert(node, key: named)
+            _ = nodeStore(entity: content, modifiedAt: modifiedAt)
+
+            storeAlias(content: content, key: named, modifiedAt: modifiedAt)
 
             return true
         }
@@ -282,16 +293,15 @@ extension IdentityMap {
     @discardableResult
     public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
         transaction {
-            guard let entity = refAliases[named].value else {
+            guard let aliasNode = refAliases[named], var content = aliasNode.ref.value.content else {
                 return false
             }
 
-            var value = entity.ref.value
-            update(&value)
-            let node = nodeStore(entity: value, modifiedAt: modifiedAt)
+            update(&content)
 
-            // ref might have changed
-            refAliases.insert(node, key: named)
+            _ = nodeStore(entity: content, modifiedAt: modifiedAt)
+
+            storeAlias(content: content, key: named, modifiedAt: modifiedAt)
 
             return true
         }
@@ -302,20 +312,18 @@ extension IdentityMap {
     /// the change was applied
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<[C.Element]>)
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<C>)
     -> Bool where C.Element: Identifiable {
         transaction {
-            guard let entities = refAliases[named].value else {
+            guard let aliasNode = refAliases[named], var content = aliasNode.ref.value.content else {
                 return false
             }
 
-            var values = entities.map(\.ref.value)
-            update(&values)
+            update(&content)
 
-            let nodes = values.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
+            _ = content.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
-            // update alias because `update` may have added/removed entities
-            refAliases.insert(nodes, key: named)
+            storeAlias(content: content, key: named, modifiedAt: modifiedAt)
 
             return true
         }
@@ -326,20 +334,18 @@ extension IdentityMap {
     /// the change was applied
     /// - Returns: true if entity exists and might be updated, false otherwise. The update might **not** be applied if modifiedAt is too old
     @discardableResult
-    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<[C.Element]>)
+    public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<C>)
     -> Bool where C.Element: Aggregate {
         transaction {
-            guard let entities = refAliases[named].value else {
+            guard let aliasNode = refAliases[named], var content = aliasNode.ref.value.content else {
                 return false
             }
 
-            var values = entities.map(\.ref.value)
-            update(&values)
+            update(&content)
 
-            let nodes = values.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
+            _ = content.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
-            // update alias because `update` may have added/removed entities
-            refAliases.insert(nodes, key: named)
+            storeAlias(content: content, key: named, modifiedAt: modifiedAt)
 
             return true
         }
@@ -351,13 +357,13 @@ extension IdentityMap {
 extension IdentityMap {
     /// Removes an alias from the storage
     public func removeAlias<T>(named: AliasKey<T>) {
-        refAliases.remove(for: named)
+        refAliases[named] = nil
         logger?.didUnregisterAlias(named)
     }
 
     /// Removes an alias from the storage
     public func removeAlias<C: Collection>(named: AliasKey<C>) {
-        refAliases.remove(for: named)
+        refAliases[named] = nil
         logger?.didUnregisterAlias(named)
     }
 
