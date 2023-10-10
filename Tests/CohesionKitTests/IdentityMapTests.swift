@@ -141,7 +141,7 @@ class IdentityMapTests: XCTestCase {
         wait(for: [expectation], timeout: 0)
     }
 
-    func test_storeAlias_itEnqueuesAliasInRegistry() {
+    func test_storeAggregate_named_itEnqueuesAliasInRegistry() {
         let root = SingleNodeFixture(id: 1)
         let registry = ObserverRegistryStub()
         let identityMap = IdentityMap(registry: registry)
@@ -216,6 +216,23 @@ extension IdentityMapTests {
         withExtendedLifetime(subscription) {
             _ = identityMap.store(entity: RootFixture(id: 1, primitive: "", singleNode: update, listNodes: []))
         }
+    }
+
+    func test_find_storedByAliasCollection_itReturnsEntity() {
+        let identityMap = IdentityMap()
+
+        _ = identityMap.store(entities: [SingleNodeFixture(id: 1)], named: .listOfNodes)
+
+        XCTAssertNotNil(identityMap.find(SingleNodeFixture.self, id: 1))
+    }
+
+    func test_find_storedByAliasAggregate_itReturnsEntity() {
+        let identityMap = IdentityMap()
+        let aggregate = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), listNodes: [])
+
+        _ = identityMap.store(entity: aggregate, named: .root)
+
+        XCTAssertNotNil(identityMap.find(SingleNodeFixture.self, id: 1))
     }
 
     func test_findNamed_entityStored_noObserver_returnValue() {
