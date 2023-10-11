@@ -147,8 +147,8 @@ public class IdentityMap {
         }
     }
 
-    func nodeStore<T: Identifiable>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
-        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
+    func nodeStore<T: Identifiable>(in node: EntityNode<T>? = nil, entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
+        let node = node ?? storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
             registry.enqueueChange(for: $0)
         }]
 
@@ -167,8 +167,8 @@ public class IdentityMap {
         return node
     }
 
-    func nodeStore<T: Aggregate>(entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
-        let node = storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
+    func nodeStore<T: Aggregate>(in node: EntityNode<T>? = nil, entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
+        let node = node ?? storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
             registry.enqueueChange(for: $0)
         }]
 
@@ -196,16 +196,12 @@ public class IdentityMap {
 
     private func storeAlias<T>(content: T, key: AliasKey<T>, modifiedAt: Stamp?) {
         let aliasNode = refAliases[safe: key]
+        let aliasContainer = AliasContainer(key: key, content: content)
 
-        do {
-            try aliasNode.updateEntity(AliasContainer(key: key, content: content), modifiedAt: modifiedAt)
+        _ = nodeStore(in: aliasNode, entity: aliasContainer, modifiedAt: modifiedAt)
 
-            registry.enqueueChange(for: aliasNode)
-            logger?.didRegisterAlias(key)
-        }
-        catch {
-
-        }
+        registry.enqueueChange(for: aliasNode)
+        logger?.didRegisterAlias(key)
     }
 
     private func transaction<T>(_ body: () -> T) -> T {
