@@ -368,7 +368,7 @@ extension IdentityMapTests {
         XCTAssertTrue(registry.hasPendingChange(for: singleNodeUpdate))
     }
 
-    func test_updateNamed_entityIsAggregate_itEnqueuesAliasInRegistry() {
+    func test_updateNamed_aliasIsAggregate_itEnqueuesAliasInRegistry() {
         let registry = ObserverRegistryStub()
         let identityMap = IdentityMap(registry: registry)
         let initialValue = RootFixture(
@@ -390,7 +390,7 @@ extension IdentityMapTests {
         XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<RootFixture>.self))
     }
 
-    func test_updateNamed_entityIsCollection_itEnqueuesAliasInRegistry() {
+    func test_update_entityIsIndirectlyUsedByAlias_itEnqueuesAliasInRegistry() {
         let aggregate = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), listNodes: [])
         let registry = ObserverRegistryStub()
         let identityMap = IdentityMap(registry: registry)
