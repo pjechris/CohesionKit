@@ -346,7 +346,7 @@ extension IdentityMapTests {
         }
     }
 
-    func test_updateNamed_entityIsCollection_itEnqueuesNestedObjectsInRegistry() {
+    func test_updateNamed_entityIsAggregate_itEnqueuesNestedObjectsInRegistry() {
         let registry = ObserverRegistryStub()
         let identityMap = IdentityMap(registry: registry)
         let initialValue = RootFixture(
@@ -367,6 +367,44 @@ extension IdentityMapTests {
 
         XCTAssertTrue(registry.hasPendingChange(for: singleNodeUpdate))
     }
+
+    func test_updateNamed_entityIsAggregate_itEnqueuesAliasInRegistry() {
+        let registry = ObserverRegistryStub()
+        let identityMap = IdentityMap(registry: registry)
+        let initialValue = RootFixture(
+            id: 1,
+            primitive: "",
+            singleNode: .init(id: 1),
+            listNodes: []
+        )
+        let singleNodeUpdate = SingleNodeFixture(id: 1, primitive: "update")
+
+        _ = identityMap.store(entity: initialValue, named: .root)
+
+        registry.clearPendingChangesStub()
+
+        identityMap.update(named: .root) {
+            $0.singleNode = singleNodeUpdate
+        }
+
+        XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<RootFixture>.self))
+    }
+
+    func test_updateNamed_entityIsCollection_itEnqueuesAliasInRegistry() {
+        let aggregate = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), listNodes: [])
+        let registry = ObserverRegistryStub()
+        let identityMap = IdentityMap(registry: registry)
+
+        _ = identityMap.store(entities: [aggregate], named: .rootList)
+
+        registry.clearPendingChangesStub()
+
+        identityMap.update(SingleNodeFixture.self, id: 1) {
+            $0.primitive = "updated"
+        }
+
+        XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<[RootFixture]>.self))
+    }
 }
 
 private extension AliasKey where T == SingleNodeFixture {
@@ -379,4 +417,8 @@ private extension AliasKey where T == [SingleNodeFixture] {
 
 private extension AliasKey where T == RootFixture {
     static let root = AliasKey(named: "root")
+}
+
+private extension AliasKey where T == [RootFixture] {
+    static let rootList = AliasKey(named: "root")
 }
