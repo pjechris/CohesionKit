@@ -7,9 +7,9 @@ extension AliasStorage {
         set { self[buildKey(for: T.self, key: aliasKey)] = newValue }
     }
 
-    subscript<T>(safe key: AliasKey<T>) -> EntityNode<AliasContainer<T>> {
+    subscript<T>(safe key: AliasKey<T>, onChange onChange: ((EntityNode<AliasContainer<T>>) -> Void)? = nil) -> EntityNode<AliasContainer<T>> {
         mutating get {
-            self[key: key, default: EntityNode(AliasContainer(key: key), modifiedAt: nil)]
+            self[key: key, default: EntityNode(AliasContainer(key: key), modifiedAt: nil, onChange: onChange)]
         }
     }
 

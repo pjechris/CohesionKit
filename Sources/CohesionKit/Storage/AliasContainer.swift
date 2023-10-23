@@ -10,7 +10,15 @@ struct AliasContainer<T>: Identifiable, Aggregate {
 
 extension AliasContainer {
     var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] {
+        if let self = self as? AggregateKeyPathsEraser {
+            return self.erasedEntitiesKeyPaths as! [PartialIdentifiableKeyPath<Self>]
+        }
+
         if let self = self as? IdentifiableKeyPathsEraser {
+            return self.erasedEntitiesKeyPaths as! [PartialIdentifiableKeyPath<Self>]
+        }
+
+        if let self = self as? CollectionAggregateKeyPathsEraser {
             return self.erasedEntitiesKeyPaths as! [PartialIdentifiableKeyPath<Self>]
         }
 
@@ -27,6 +35,26 @@ private protocol IdentifiableKeyPathsEraser {
 }
 
 extension AliasContainer: IdentifiableKeyPathsEraser where T: Identifiable {
+    var erasedEntitiesKeyPaths: [Any] {
+        [PartialIdentifiableKeyPath<Self>(\.content)]
+    }
+}
+
+private protocol AggregateKeyPathsEraser {
+    var erasedEntitiesKeyPaths: [Any] { get }
+}
+
+extension AliasContainer: AggregateKeyPathsEraser where T: Aggregate {
+    var erasedEntitiesKeyPaths: [Any] {
+        [PartialIdentifiableKeyPath<Self>(\.content)]
+    }
+}
+
+private protocol CollectionAggregateKeyPathsEraser {
+    var erasedEntitiesKeyPaths: [Any] { get }
+}
+
+extension AliasContainer: CollectionAggregateKeyPathsEraser where T: MutableCollection, T.Element: Aggregate, T.Index: Hashable {
     var erasedEntitiesKeyPaths: [Any] {
         [PartialIdentifiableKeyPath<Self>(\.content)]
     }

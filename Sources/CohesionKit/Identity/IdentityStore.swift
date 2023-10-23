@@ -133,7 +133,7 @@ public class IdentityMap {
     /// - Parameter named: the alias to look for
     public func find<T: Identifiable>(named: AliasKey<T>) -> EntityObserver<T?> {
         identityQueue.sync {
-            let node = refAliases[safe: named]
+            let node = refAliases[safe: named, onChange: registry.enqueueChange(for:)]
             return EntityObserver(alias: node, registry: registry)
         }
     }
@@ -142,7 +142,7 @@ public class IdentityMap {
     /// - Returns: an observer returning the alias value. Note that the value will be an Array
     public func find<C: Collection>(named: AliasKey<C>) -> EntityObserver<C?> {
         identityQueue.sync {
-            let node = refAliases[safe: named]
+            let node = refAliases[safe: named, onChange: registry.enqueueChange(for:)]
             return EntityObserver(alias: node, registry: registry)
         }
     }
@@ -195,12 +195,11 @@ public class IdentityMap {
     }
 
     private func storeAlias<T>(content: T, key: AliasKey<T>, modifiedAt: Stamp?) {
-        let aliasNode = refAliases[safe: key]
+        let aliasNode = refAliases[safe: key, onChange: registry.enqueueChange(for:)]
         let aliasContainer = AliasContainer(key: key, content: content)
 
         _ = nodeStore(in: aliasNode, entity: aliasContainer, modifiedAt: modifiedAt)
 
-        registry.enqueueChange(for: aliasNode)
         logger?.didRegisterAlias(key)
     }
 
@@ -274,8 +273,6 @@ extension IdentityMap {
 
             update(&content)
 
-            _ = nodeStore(entity: content, modifiedAt: modifiedAt)
-
             storeAlias(content: content, key: named, modifiedAt: modifiedAt)
 
             return true
@@ -294,8 +291,6 @@ extension IdentityMap {
             }
 
             update(&content)
-
-            _ = nodeStore(entity: content, modifiedAt: modifiedAt)
 
             storeAlias(content: content, key: named, modifiedAt: modifiedAt)
 
@@ -317,8 +312,6 @@ extension IdentityMap {
 
             update(&content)
 
-            _ = content.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
-
             storeAlias(content: content, key: named, modifiedAt: modifiedAt)
 
             return true
@@ -338,8 +331,6 @@ extension IdentityMap {
             }
 
             update(&content)
-
-            _ = content.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
             storeAlias(content: content, key: named, modifiedAt: modifiedAt)
 
