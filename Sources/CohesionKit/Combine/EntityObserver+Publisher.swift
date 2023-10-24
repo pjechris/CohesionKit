@@ -1,7 +1,7 @@
 #if canImport(Combine)
 import Combine
 
-extension Observer {
+extension EntityObserver {
     /// A `Publisher` emitting the observer current value and subscribing to any subsequents new values
     public var asPublisher: AnyPublisher<T, Never> {
         let subject = CurrentValueSubject<T, Never>(value)

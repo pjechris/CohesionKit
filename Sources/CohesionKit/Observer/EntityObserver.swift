@@ -1,7 +1,7 @@
 import Foundation
 
 /// A type registering observers on a given entity from identity storage
-public struct EntityObserver<T>: Observer {
+public struct EntityObserver<T> {
     public typealias OnChange = (T) -> Void
 
     public let value: T
