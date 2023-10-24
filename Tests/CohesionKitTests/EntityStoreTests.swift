@@ -2,7 +2,7 @@ import XCTest
 @testable import CohesionKit
 
 // MARK: Store
-class IdentityMapTests: XCTestCase {
+class EntityStoreTests: XCTestCase {
     func test_storeAggregate_nestedEntitiesAreStored() {
         let entity = RootFixture(
             id: 1,
@@ -154,7 +154,7 @@ class IdentityMapTests: XCTestCase {
 }
 
 // MARK: Find
-extension IdentityMapTests {
+extension EntityStoreTests {
     func test_find_entityStored_noObserverAdded_returnNil() {
         let identityMap = IdentityMap()
         let entity = SingleNodeFixture(id: 1)
@@ -277,7 +277,7 @@ extension IdentityMapTests {
 
 // MARK: Update
 
-extension IdentityMapTests {
+extension EntityStoreTests {
 
     func test_update_entityIsAlreadyInserted_entityIsUpdated() {
         let identityMap = IdentityMap()
