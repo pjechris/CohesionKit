@@ -2,7 +2,7 @@ import XCTest
 @testable import CohesionKit
 
 // MARK: Store
-class IdentityMapTests: XCTestCase {
+class EntityStoreTests: XCTestCase {
     func test_storeAggregate_nestedEntitiesAreStored() {
         let entity = RootFixture(
             id: 1,
