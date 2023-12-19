@@ -1,8 +1,8 @@
 import XCTest
 @testable import CohesionKit
 
-// MARK: Store
 class EntityStoreTests: XCTestCase {
+    // MARK: Store Aggregate
     func test_storeAggregate_nestedEntitiesAreStored() {
         let entity = RootFixture(
             id: 1,
@@ -95,6 +95,20 @@ class EntityStoreTests: XCTestCase {
         }
     }
 
+    func test_storeAggregate_named_itEnqueuesAliasInRegistry() {
+        let root = SingleNodeFixture(id: 1)
+        let registry = ObserverRegistryStub()
+        let identityMap = IdentityMap(registry: registry)
+
+        withExtendedLifetime(identityMap.store(entity: root, named: .test)) {
+            XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<SingleNodeFixture>.self))
+            XCTAssertTrue(registry.hasPendingChange(for: SingleNodeFixture.self))
+        }
+    }
+}
+
+// MARK: Store Entities
+extension EntityStoreTests {
     /// make sure when inserting multiple time the same entity that it actually gets inserted only once
     func test_storeEntities_sameEntityPresentMultipleTimes_itIsInsertedOnce() {
         let registry = ObserverRegistryStub(queue: .main)
@@ -108,6 +122,20 @@ class EntityStoreTests: XCTestCase {
         XCTAssertEqual(registry.pendingChangeCount(for: commonEntity), 1)
     }
 
+    func test_storeEntities_named_calledMultipleTimes_lastValueIsStored() {
+        let identityMap = IdentityMap()
+        let root = SingleNodeFixture(id: 1)
+        let root2 = SingleNodeFixture(id: 2)
+
+        _ = identityMap.store(entities: [root], named: .listOfNodes)
+        _ = identityMap.store(entities: [root, root2], named: .listOfNodes)
+
+        XCTAssertEqual(identityMap.find(named: .listOfNodes).value, [root, root2])
+    }
+}
+
+// MARK: Store Identifiable
+extension EntityStoreTests {
     func test_storeIdentifiable_entityIsInsertedForThe1stTime_loggerIsCalled() {
         let logger = LoggerMock()
         let identityMap = IdentityMap(logger: logger)
@@ -139,17 +167,6 @@ class EntityStoreTests: XCTestCase {
         }
 
         wait(for: [expectation], timeout: 0)
-    }
-
-    func test_storeAggregate_named_itEnqueuesAliasInRegistry() {
-        let root = SingleNodeFixture(id: 1)
-        let registry = ObserverRegistryStub()
-        let identityMap = IdentityMap(registry: registry)
-
-        withExtendedLifetime(identityMap.store(entity: root, named: .test)) {
-            XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<SingleNodeFixture>.self))
-            XCTAssertTrue(registry.hasPendingChange(for: SingleNodeFixture.self))
-        }
     }
 }
 
