@@ -77,11 +77,11 @@ public class IdentityMap {
                 update?(&entity)
             }
 
-            let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
-
             if let key = named {
                 storeAlias(content: entity, key: key, modifiedAt: modifiedAt)
             }
+
+            let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
             return EntityObserver(node: node, registry: registry)
         }
@@ -91,11 +91,11 @@ public class IdentityMap {
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp? = nil)
     -> EntityObserver<[C.Element]> where C.Element: Identifiable {
         transaction {
-            let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
-
             if let key = named {
                 storeAlias(content: entities, key: key, modifiedAt: modifiedAt)
             }
+
+            let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
             return EntityObserver(nodes: nodes, registry: registry)
         }
@@ -105,11 +105,12 @@ public class IdentityMap {
     public func store<C: Collection>(entities: C, named: AliasKey<C>? = nil, modifiedAt: Stamp? = nil)
     -> EntityObserver<[C.Element]> where C.Element: Aggregate {
         transaction {
-            let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
-
             if let key = named {
                 storeAlias(content: entities, key: key, modifiedAt: modifiedAt)
             }
+
+            let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
+
 
             return EntityObserver(nodes: nodes, registry: registry)
         }
@@ -212,7 +213,6 @@ public class IdentityMap {
             return returnValue
         }
     }
-
 }
 
 // MARK: Update
