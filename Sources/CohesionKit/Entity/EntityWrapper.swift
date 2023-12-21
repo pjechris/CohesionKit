@@ -1,17 +1,17 @@
-/// a type wrapping one or more Identifiable types. As the name indicates you should use this type **only** on enums:
-/// this is the easiest way to extract types they are containing. If you facing a non enum case where you feel you need
-/// this type: rethink about it ;)
-public protocol EntityEnumWrapper {
+/// A type wrapping one or more Identifiable types.
+/// You should rarely need to use this type. However it can happens to have a non Aggregate object containing Identifiable
+/// objects to group them (for consistency or naming). This is especially true with enum cases.
+public protocol EntityWrapper {
     /// Entities contained by all cases relative to the parent container
-    /// - Returns: entities contained in the enum
+    /// - Returns: entities contained in the wrapper
     ////
     /// Example:
     //// ```swift
-    /// enum MyEnum: EntityEnumWrapper {
+    /// enum MyEnum: EntityWrapper {
     ///     case a(A)
     ///     case b(B)
     ///
-    ///    // you would also need to create computed getter/setter for a and b
+    ///    // note: you would also need to create computed getter/setter for a and b
     ///    func wrappedEntitiesKeyPaths<Root>(relativeTo root: WritableKeyPath<Root, Self>) -> [PartialIdentifiableKeyPath<Root>] {
     ///     [.init(root.appending(\.a)), .init(root.appending(\.b))]
     ///    }

@@ -34,7 +34,7 @@ struct ListNodeFixture: Identifiable, Equatable {
     var key = ""
 }
 
- enum EnumFixture: Equatable, EntityEnumWrapper {
+ enum EnumFixture: Equatable, EntityWrapper {
     case single(SingleNodeFixture)
 
     var singleNode: SingleNodeFixture? {

@@ -92,7 +92,7 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
     }
 
-    public init<W: EntityEnumWrapper>(wrapper keyPath: WritableKeyPath<Root, W>) {
+    public init<W: EntityWrapper>(wrapper keyPath: WritableKeyPath<Root, W>) {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             for wrappedKeyPath in root[keyPath: keyPath].wrappedEntitiesKeyPaths(relativeTo: keyPath) {
@@ -101,7 +101,7 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
     }
 
-    public init<W: EntityEnumWrapper>(wrapper keyPath: WritableKeyPath<Root, W?>) {
+    public init<W: EntityWrapper>(wrapper keyPath: WritableKeyPath<Root, W?>) {
         self.keyPath = keyPath
         self.accept = { parent, root, stamp, visitor in
             if let wrapper = root[keyPath: keyPath] {

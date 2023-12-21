@@ -195,10 +195,10 @@ Sometimes both can be used but they each have a different purpose:
 
 ### Enum support
 
-Starting with 0.13 library has support for enum types. Note that you'll need to conform to `EntityEnumWrapper` and provide computed getter/setter for each entity you'd like to store.
+Starting with 0.13 library has support for enum types. Note that you'll need to conform to `EntityWrapper` and provide computed getter/setter for each entity you'd like to store.
 
 ```swift
-enum MediaType: EntityEnumWrapper {
+enum MediaType: EntityWrapper {
   case book(Book)
   case game(Game)
   case tvShow(TvShow)
