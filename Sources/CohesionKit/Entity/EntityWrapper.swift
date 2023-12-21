@@ -1,3 +1,6 @@
+@available(unavailable, renamed: "EntityWrapper")
+public typealias EntityEnumWrapper = EntityWrapper
+
 /// A type wrapping one or more Identifiable types.
 /// You should rarely need to use this type. However it can happens to have a non Aggregate object containing Identifiable
 /// objects to group them (for consistency or naming). This is especially true with enum cases.
