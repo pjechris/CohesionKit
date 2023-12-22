@@ -11,46 +11,46 @@ class EntityStoreTests: XCTestCase {
             optional: .init(id: 1),
             listNodes: [ListNodeFixture(id: 1)]
         )
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
 
-        withExtendedLifetime(identityMap.store(entity: entity)) { _ in
-            XCTAssertNotNil(identityMap.storage[SingleNodeFixture.self, id: 1])
-            XCTAssertNotNil(identityMap.storage[OptionalNodeFixture.self, id: 1])
-            XCTAssertNotNil(identityMap.storage[ListNodeFixture.self, id: 1])
+        withExtendedLifetime(entityStore.store(entity: entity)) { _ in
+            XCTAssertNotNil(entityStore.storage[SingleNodeFixture.self, id: 1])
+            XCTAssertNotNil(entityStore.storage[OptionalNodeFixture.self, id: 1])
+            XCTAssertNotNil(entityStore.storage[ListNodeFixture.self, id: 1])
         }
     }
 
     func test_storeAggregate_nestedEntityReplacedByNil_entityIsUpdated_aggregateEntityRemainsNil() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let nestedOptional = OptionalNodeFixture(id: 1)
         var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: nestedOptional, listNodes: [])
 
-        withExtendedLifetime(identityMap.store(entity: root)) {
+        withExtendedLifetime(entityStore.store(entity: root)) {
             root.optional = nil
 
-            _ = identityMap.store(entity: root)
-            _ = identityMap.store(entity: nestedOptional)
+            _ = entityStore.store(entity: root)
+            _ = entityStore.store(entity: nestedOptional)
 
-            XCTAssertNotNil(identityMap.find(RootFixture.self, id: 1))
-            XCTAssertNil(identityMap.find(RootFixture.self, id: 1)!.value.optional)
+            XCTAssertNotNil(entityStore.find(RootFixture.self, id: 1))
+            XCTAssertNil(entityStore.find(RootFixture.self, id: 1)!.value.optional)
         }
     }
 
     /// check that removed relations do not trigger an update
     func test_storeAggregate_removeEntityFromNestedArray_removedEntityChange_aggregateArrayNotChanged() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         var entityToRemove = ListNodeFixture(id: 2)
         let nestedArray: [ListNodeFixture] = [entityToRemove, ListNodeFixture(id: 1)]
         var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: nestedArray)
 
-        withExtendedLifetime(identityMap.store(entity: root)) {
+        withExtendedLifetime(entityStore.store(entity: root)) {
             root.listNodes = Array(nestedArray[1...])
             entityToRemove.key = "changed"
 
-            _ = identityMap.store(entity: root)
-            _ = identityMap.store(entity: entityToRemove)
+            _ = entityStore.store(entity: root)
+            _ = entityStore.store(entity: entityToRemove)
 
-            let storedRoot = identityMap.find(RootFixture.self, id: 1)!.value
+            let storedRoot = entityStore.find(RootFixture.self, id: 1)!.value
 
             XCTAssertFalse(storedRoot.listNodes.contains(entityToRemove))
             XCTAssertFalse(storedRoot.listNodes.map(\.id).contains(entityToRemove.id))
@@ -58,36 +58,36 @@ class EntityStoreTests: XCTestCase {
     }
 
     func test_storeAggregate_nestedWrapperChanged_aggregateIsUpdated() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
         let updatedValue = SingleNodeFixture(id: 2, primitive: "updated")
 
-        withExtendedLifetime(identityMap.store(entity: root)) {
-            _ = identityMap.store(entity: updatedValue)
-            XCTAssertEqual(identityMap.find(RootFixture.self, id: 1)!.value.enumWrapper, .single(updatedValue))
+        withExtendedLifetime(entityStore.store(entity: root)) {
+            _ = entityStore.store(entity: updatedValue)
+            XCTAssertEqual(entityStore.find(RootFixture.self, id: 1)!.value.enumWrapper, .single(updatedValue))
         }
     }
 
     func test_storeAggregate_nestedOptionalWrapperNullified_aggregateIsNullified() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
 
-        withExtendedLifetime(identityMap.store(entity: root)) {
+        withExtendedLifetime(entityStore.store(entity: root)) {
             root.enumWrapper = nil
 
-            _ = identityMap.store(entity: root)
-            _ = identityMap.store(entity: SingleNodeFixture(id: 2, primitive: "deleted"))
+            _ = entityStore.store(entity: root)
+            _ = entityStore.store(entity: SingleNodeFixture(id: 2, primitive: "deleted"))
 
-            XCTAssertNil(identityMap.find(RootFixture.self, id: 1)!.value.enumWrapper)
+            XCTAssertNil(entityStore.find(RootFixture.self, id: 1)!.value.enumWrapper)
         }
     }
 
     func test_storeAggregate_registryContainsModifiedEntities() {
         let registryStub = ObserverRegistryStub(queue: .main)
-        let identityMap = IdentityMap(registry: registryStub)
+        let entityStore = EntityStore(registry: registryStub)
         let root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
 
-        withExtendedLifetime(identityMap.store(entity: root)) {
+        withExtendedLifetime(entityStore.store(entity: root)) {
             XCTAssertTrue(registryStub.hasPendingChange(for: root))
             XCTAssertTrue(registryStub.hasPendingChange(for: SingleNodeFixture(id: 1)))
             XCTAssertTrue(registryStub.hasPendingChange(for: SingleNodeFixture(id: 2)))
@@ -98,9 +98,9 @@ class EntityStoreTests: XCTestCase {
     func test_storeAggregate_named_itEnqueuesAliasInRegistry() {
         let root = SingleNodeFixture(id: 1)
         let registry = ObserverRegistryStub()
-        let identityMap = IdentityMap(registry: registry)
+        let entityStore = EntityStore(registry: registry)
 
-        withExtendedLifetime(identityMap.store(entity: root, named: .test)) {
+        withExtendedLifetime(entityStore.store(entity: root, named: .test)) {
             XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<SingleNodeFixture>.self))
             XCTAssertTrue(registry.hasPendingChange(for: SingleNodeFixture.self))
         }
@@ -112,25 +112,25 @@ extension EntityStoreTests {
     /// make sure when inserting multiple time the same entity that it actually gets inserted only once
     func test_storeEntities_sameEntityPresentMultipleTimes_itIsInsertedOnce() {
         let registry = ObserverRegistryStub(queue: .main)
-        let identityMap = IdentityMap(registry: registry)
+        let entityStore = EntityStore(registry: registry)
         let commonEntity = SingleNodeFixture(id: 1)
         let root1 = RootFixture(id: 1, primitive: "", singleNode: commonEntity, optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
         let root2 = RootFixture(id: 1, primitive: "", singleNode: commonEntity, optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: nil)
 
-        _ = identityMap.store(entities: [root1, root2])
+        _ = entityStore.store(entities: [root1, root2])
 
         XCTAssertEqual(registry.pendingChangeCount(for: commonEntity), 1)
     }
 
     func test_storeEntities_named_calledMultipleTimes_lastValueIsStored() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let root = SingleNodeFixture(id: 1)
         let root2 = SingleNodeFixture(id: 2)
 
-        _ = identityMap.store(entities: [root], named: .listOfNodes)
-        _ = identityMap.store(entities: [root, root2], named: .listOfNodes)
+        _ = entityStore.store(entities: [root], named: .listOfNodes)
+        _ = entityStore.store(entities: [root, root2], named: .listOfNodes)
 
-        XCTAssertEqual(identityMap.find(named: .listOfNodes).value, [root, root2])
+        XCTAssertEqual(entityStore.find(named: .listOfNodes).value, [root, root2])
     }
 }
 
@@ -138,7 +138,7 @@ extension EntityStoreTests {
 extension EntityStoreTests {
     func test_storeIdentifiable_entityIsInsertedForThe1stTime_loggerIsCalled() {
         let logger = LoggerMock()
-        let identityMap = IdentityMap(logger: logger)
+        let entityStore = EntityStore(logger: logger)
         let root = SingleNodeFixture(id: 1)
         let expectation = XCTestExpectation()
 
@@ -150,18 +150,18 @@ extension EntityStoreTests {
             XCTFail()
         }
 
-        _ = identityMap.store(entity: root)
+        _ = entityStore.store(entity: root)
 
         wait(for: [expectation], timeout: 0.5)
     }
 
     func test_storeIdentifiable_entityIsAlreadyStored_updateIsCalled() {
         let root = SingleNodeFixture(id: 1)
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let expectation = XCTestExpectation()
 
-        withExtendedLifetime(identityMap.store(entity: root)) {
-            _ = identityMap.store(entity: root, ifPresent: { _ in
+        withExtendedLifetime(entityStore.store(entity: root)) {
+            _ = entityStore.store(entity: root, ifPresent: { _ in
                 expectation.fulfill()
             })
         }
@@ -173,52 +173,52 @@ extension EntityStoreTests {
 // MARK: Find
 extension EntityStoreTests {
     func test_find_entityStored_noObserverAdded_returnNil() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
 
-        _ = identityMap.store(entity: entity)
+        _ = entityStore.store(entity: entity)
 
-        XCTAssertNil(identityMap.find(SingleNodeFixture.self, id: 1))
+        XCTAssertNil(entityStore.find(SingleNodeFixture.self, id: 1))
     }
 
     func test_find_entityStored_observedAdded_subscriptionIsReleased_returnNil() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
 
         // don't keep a direct ref to EntityObserver to check memory release management
-        _ = identityMap.store(entity: entity).observe { _ in }
+        _ = entityStore.store(entity: entity).observe { _ in }
 
-        XCTAssertNil(identityMap.find(SingleNodeFixture.self, id: 1))
+        XCTAssertNil(entityStore.find(SingleNodeFixture.self, id: 1))
     }
 
     func test_find_entityStored_observerAdded_returnEntity() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
 
-        withExtendedLifetime(identityMap.store(entity: entity).observe { _ in }) {
-            XCTAssertEqual(identityMap.find(SingleNodeFixture.self, id: 1)?.value, entity)
+        withExtendedLifetime(entityStore.store(entity: entity).observe { _ in }) {
+            XCTAssertEqual(entityStore.find(SingleNodeFixture.self, id: 1)?.value, entity)
         }
     }
 
     func test_find_entityStored_entityUpdatedByAnAggregate_returnUpdatedEntity() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
         let update = SingleNodeFixture(id: 1, primitive: "Updated by Aggregate")
 
-        let subscription = identityMap.store(entity: entity).observe { _ in }
+        let subscription = entityStore.store(entity: entity).observe { _ in }
 
         withExtendedLifetime(subscription) {
-            _ = identityMap.store(entity: RootFixture(id: 1, primitive: "", singleNode: update, listNodes: []))
+            _ = entityStore.store(entity: RootFixture(id: 1, primitive: "", singleNode: update, listNodes: []))
 
-            XCTAssertEqual(identityMap.find(SingleNodeFixture.self, id: 1)?.value, update)
+            XCTAssertEqual(entityStore.find(SingleNodeFixture.self, id: 1)?.value, update)
         }
     }
 
     func test_find_entityStored_aggregateUpdateEntity_observerReturnUpdatedValue() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
         let update = SingleNodeFixture(id: 1, primitive: "Updated by Aggregate")
-        let insertion = identityMap.store(entity: entity)
+        let insertion = entityStore.store(entity: entity)
         var firstDropped = false
 
         let subscription = insertion.observe {
@@ -231,64 +231,64 @@ extension EntityStoreTests {
         }
 
         withExtendedLifetime(subscription) {
-            _ = identityMap.store(entity: RootFixture(id: 1, primitive: "", singleNode: update, listNodes: []))
+            _ = entityStore.store(entity: RootFixture(id: 1, primitive: "", singleNode: update, listNodes: []))
         }
     }
 
     func test_find_storedByAliasCollection_itReturnsEntity() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
 
-        _ = identityMap.store(entities: [SingleNodeFixture(id: 1)], named: .listOfNodes)
+        _ = entityStore.store(entities: [SingleNodeFixture(id: 1)], named: .listOfNodes)
 
-        XCTAssertNotNil(identityMap.find(SingleNodeFixture.self, id: 1))
+        XCTAssertNotNil(entityStore.find(SingleNodeFixture.self, id: 1))
     }
 
     func test_find_storedByAliasAggregate_itReturnsEntity() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let aggregate = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), listNodes: [])
 
-        _ = identityMap.store(entity: aggregate, named: .root)
+        _ = entityStore.store(entity: aggregate, named: .root)
 
-        XCTAssertNotNil(identityMap.find(SingleNodeFixture.self, id: 1))
+        XCTAssertNotNil(entityStore.find(SingleNodeFixture.self, id: 1))
     }
 
     func test_findNamed_entityStored_noObserver_returnValue() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
 
-        _ = identityMap.store(entity: entity, named: .test)
+        _ = entityStore.store(entity: entity, named: .test)
 
-        XCTAssertEqual(identityMap.find(named: .test).value, entity)
+        XCTAssertEqual(entityStore.find(named: .test).value, entity)
     }
 
     func test_findNamed_allAliasRemoved_returnNil() {
-        let identityMap = IdentityMap(queue: .main)
+        let entityStore = EntityStore(queue: .main)
 
-        _ = identityMap.store(entity: SingleNodeFixture(id: 1), named: .test, modifiedAt: 0)
+        _ = entityStore.store(entity: SingleNodeFixture(id: 1), named: .test, modifiedAt: 0)
 
-        XCTAssertNotNil(identityMap.find(named: .test).value)
+        XCTAssertNotNil(entityStore.find(named: .test).value)
 
-        identityMap.removeAllAlias()
+        entityStore.removeAllAlias()
 
-        XCTAssertNil(identityMap.find(named: .test).value)
+        XCTAssertNil(entityStore.find(named: .test).value)
     }
 
     func test_findNamed_entityStored_thenRemoved_returnNil() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
 
-        _ = identityMap.store(entity: entity, named: .test)
-        identityMap.removeAlias(named: .test)
+        _ = entityStore.store(entity: entity, named: .test)
+        entityStore.removeAlias(named: .test)
 
-        XCTAssertNil(identityMap.find(named: .test).value)
+        XCTAssertNil(entityStore.find(named: .test).value)
     }
 
     func test_findNamed_aliasIsACollection_returnEntities() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
 
-        _ = identityMap.store(entities: [SingleNodeFixture(id: 1)], named: .listOfNodes)
+        _ = entityStore.store(entities: [SingleNodeFixture(id: 1)], named: .listOfNodes)
 
-        XCTAssertNotNil(identityMap.find(named: .listOfNodes).value)
+        XCTAssertNotNil(entityStore.find(named: .listOfNodes).value)
     }
 }
 
@@ -297,27 +297,27 @@ extension EntityStoreTests {
 extension EntityStoreTests {
 
     func test_update_entityIsAlreadyInserted_entityIsUpdated() {
-        let identityMap = IdentityMap()
+        let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
 
-        withExtendedLifetime(identityMap.store(entity: entity)) { _ in
-            identityMap.update(SingleNodeFixture.self, id: 1) {
+        withExtendedLifetime(entityStore.store(entity: entity)) { _ in
+            entityStore.update(SingleNodeFixture.self, id: 1) {
                 $0.primitive = "hello"
             }
 
-            XCTAssertEqual(identityMap.find(SingleNodeFixture.self, id: 1)?.value.primitive, "hello")
+            XCTAssertEqual(entityStore.find(SingleNodeFixture.self, id: 1)?.value.primitive, "hello")
         }
     }
 
     func test_updateNamed_entityIsIdentifiable_aliasIsExisting_observersAreNotified() {
-        let identityMap = IdentityMap(queue: .main)
+        let entityStore = EntityStore(queue: .main)
         let newEntity = SingleNodeFixture(id: 2)
         let expectation = XCTestExpectation()
         var firstDropped = false
 
-        _ = identityMap.store(entity: SingleNodeFixture(id: 1), named: .test, modifiedAt: 0)
+        _ = entityStore.store(entity: SingleNodeFixture(id: 1), named: .test, modifiedAt: 0)
 
-        let subscription = identityMap.find(named: .test).observe {
+        let subscription = entityStore.find(named: .test).observe {
             guard firstDropped else {
                 firstDropped = true
                 return
@@ -328,7 +328,7 @@ extension EntityStoreTests {
         }
 
         withExtendedLifetime(subscription) {
-            identityMap.update(named: .test, modifiedAt: 1) {
+            entityStore.update(named: .test, modifiedAt: 1) {
                 $0 = newEntity
             }
 
@@ -337,14 +337,14 @@ extension EntityStoreTests {
     }
 
     func test_updateNamed_entityIsCollection_aliasIsExisting_observersAreNotified() {
-        let identityMap = IdentityMap(queue: .main)
+        let entityStore = EntityStore(queue: .main)
         let entities = [SingleNodeFixture(id: 1)]
         let expectation = XCTestExpectation()
         var firstDropped = false
 
-        _ = identityMap.store(entities: [], named: .listOfNodes, modifiedAt: 0)
+        _ = entityStore.store(entities: [], named: .listOfNodes, modifiedAt: 0)
 
-        let subscription = identityMap.find(named: .listOfNodes).observe {
+        let subscription = entityStore.find(named: .listOfNodes).observe {
             guard firstDropped else {
                 firstDropped = true
                 return
@@ -355,7 +355,7 @@ extension EntityStoreTests {
         }
 
         withExtendedLifetime(subscription) {
-            identityMap.update(named: .listOfNodes, modifiedAt: 1) {
+            entityStore.update(named: .listOfNodes, modifiedAt: 1) {
                 $0.append(contentsOf: entities)
             }
 
@@ -365,7 +365,7 @@ extension EntityStoreTests {
 
     func test_updateNamed_entityIsAggregate_itEnqueuesNestedObjectsInRegistry() {
         let registry = ObserverRegistryStub()
-        let identityMap = IdentityMap(registry: registry)
+        let entityStore = EntityStore(registry: registry)
         let initialValue = RootFixture(
             id: 1,
             primitive: "",
@@ -374,11 +374,11 @@ extension EntityStoreTests {
         )
         let singleNodeUpdate = SingleNodeFixture(id: 1, primitive: "update")
 
-        _ = identityMap.store(entity: initialValue, named: .root)
+        _ = entityStore.store(entity: initialValue, named: .root)
 
         registry.clearPendingChangesStub()
 
-        identityMap.update(named: .root) {
+        entityStore.update(named: .root) {
             $0.singleNode = singleNodeUpdate
         }
 
@@ -387,7 +387,7 @@ extension EntityStoreTests {
 
     func test_updateNamed_aliasIsAggregate_itEnqueuesAliasInRegistry() {
         let registry = ObserverRegistryStub()
-        let identityMap = IdentityMap(registry: registry)
+        let entityStore = EntityStore(registry: registry)
         let initialValue = RootFixture(
             id: 1,
             primitive: "",
@@ -396,11 +396,11 @@ extension EntityStoreTests {
         )
         let singleNodeUpdate = SingleNodeFixture(id: 1, primitive: "update")
 
-        _ = identityMap.store(entity: initialValue, named: .root)
+        _ = entityStore.store(entity: initialValue, named: .root)
 
         registry.clearPendingChangesStub()
 
-        identityMap.update(named: .root) {
+        entityStore.update(named: .root) {
             $0.singleNode = singleNodeUpdate
         }
 
@@ -410,13 +410,13 @@ extension EntityStoreTests {
     func test_update_entityIsIndirectlyUsedByAlias_itEnqueuesAliasInRegistry() {
         let aggregate = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), listNodes: [])
         let registry = ObserverRegistryStub()
-        let identityMap = IdentityMap(registry: registry)
+        let entityStore = EntityStore(registry: registry)
 
-        _ = identityMap.store(entities: [aggregate], named: .rootList)
+        _ = entityStore.store(entities: [aggregate], named: .rootList)
 
         registry.clearPendingChangesStub()
 
-        identityMap.update(SingleNodeFixture.self, id: 1) {
+        entityStore.update(SingleNodeFixture.self, id: 1) {
             $0.primitive = "updated"
         }
 

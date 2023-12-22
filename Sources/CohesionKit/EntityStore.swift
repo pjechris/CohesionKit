@@ -1,7 +1,10 @@
 import Foundation
 
+@available(*, deprecated, renamed: "EntityStore")
+public typealias IdentityMap = EntityStore
+
 /// Manages entities lifecycle and synchronisation
-public class IdentityMap {
+public class EntityStore {
     public typealias Update<T> = (inout T) -> Void
 
     /// the queue on which identity map do its heavy work
@@ -11,9 +14,9 @@ public class IdentityMap {
 
     private(set) var storage: EntitiesStorage = EntitiesStorage()
     private(set) var refAliases: AliasStorage = [:]
-    private lazy var storeVisitor = IdentityMapStoreVisitor(identityMap: self)
+    private lazy var storeVisitor = EntityStoreStoreVisitor(entityStore: self)
 
-    /// Create a new IdentityMap instance optionally with a queue and a logger
+    /// Create a new EntityStore instance optionally with a queue and a logger
     /// - Parameter queue: the queue on which to receive updates. If nil identitymap will create its own.
     /// - Parameter logger: a logger to follow/debug identity internal state
     public convenience init(queue: DispatchQueue? = nil, logger: Logger? = nil) {
@@ -217,7 +220,7 @@ public class IdentityMap {
 
 // MARK: Update
 
-extension IdentityMap {
+extension EntityStore {
     /// Updates an **already stored** entity using a closure. Useful to update a few properties or when you assume the entity
     /// should already be stored.
     /// Note: the closure is evaluated before checking `modifiedAt`. As such the closure execution does not mean
@@ -341,7 +344,7 @@ extension IdentityMap {
 
 // MARK: Delete
 
-extension IdentityMap {
+extension EntityStore {
     /// Removes an alias from the storage
     public func removeAlias<T>(named: AliasKey<T>) {
         refAliases[named] = nil

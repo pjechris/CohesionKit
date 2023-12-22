@@ -73,13 +73,13 @@ Library comes with an [example project](https://github.com/pjechris/CohesionKit/
 
 ### Storing an object
 
-First create an instance of `IdentityMap`:
+First create an instance of `EntityStore`:
 
 ```swift
-let identityMap = IdentityMap()
+let entityStore = EntityStore()
 ```
 
-`IdentityMap` let you store `Identifiable` objects:
+`EntityStore` let you store `Identifiable` objects:
 
 ```swift
 struct Book: Identifiable {
@@ -89,39 +89,39 @@ struct Book: Identifiable {
 
 let book = Book(id: "ABCD", name: "My Book")
 
-identityMap.store(book)
+entityStore.store(book)
 ```
 
 Then You can retrieve the object from anywhere in your code:
 
 ```swift
 // somewhere else in the code
-identityMap.find(Book.self, id: "ABCD") // return Book(id: "ABCD", name: "My Book")
+entityStore.find(Book.self, id: "ABCD") // return Book(id: "ABCD", name: "My Book")
 ```
 
 ### Observing changes
 
-Every time data is updated in `IdentityMap` triggers a notification to any registered observer. To register yourself as an observer just use result from `store` or `find` methods:
+Every time data is updated in `EntityStore` triggers a notification to any registered observer. To register yourself as an observer just use result from `store` or `find` methods:
 
 ```swift
 func findBooks() -> some Publisher<[Book], Error> {
   // 1. load data using URLSession
   URLSession(...)
-  // 2. store data inside our identityMap
-    .store(in: identityMap)
+  // 2. store data inside our entityStore
+    .store(in: entityStore)
     .sink { ... }
     .store(in: &cancellables)
 }
 ```
 
 ```swift
-identityMap.find(Book.self, id: 1)?
+entityStore.find(Book.self, id: 1)?
   .asPublisher
   .sink { ... }
   .store(in: &cancellables)
 ```
 
-> CohesionKit has a [weak memory policy](#weak-memory-management) you should read about. As such, returned value from identityMap.store must be strongly retained to not lose value.
+> CohesionKit has a [weak memory policy](#weak-memory-management) you should read about. As such, returned value from entityStore.store must be strongly retained to not lose value.
 
 > For brievety, next examples will omit `.sink { ... }.store(in:&cancellables)`.
 
@@ -160,11 +160,11 @@ let authorBooks = AuthorBooks(
     ]
 )
 
-identityMap.store(authorBooks)
+entityStore.store(authorBooks)
 
-identityMap.find(Author.self, id: 1) // George R.R Martin
-identityMap.find(Book.self, id: "ACK") // A Clash of Kings
-identityMap.find(Book.self, id: "ADD") // A Dance with Dragons
+entityStore.find(Author.self, id: 1) // George R.R Martin
+entityStore.find(Book.self, id: "ACK") // A Clash of Kings
+entityStore.find(Book.self, id: "ADD") // A Dance with Dragons
 ```
 
 You can also modify any of them however you want. Notice the change is visible from the object itself AND from aggregate objects:
@@ -172,10 +172,10 @@ You can also modify any of them however you want. Notice the change is visible f
 ```swift
 let newAuthor = Author(id: 1, name: "George R.R MartinI")
 
-identityMap.store(newAuthor)
+entityStore.store(newAuthor)
 
-identityMap.find(Author.self, id: 1) // George R.R MartinI
-identityMap.find(AuthorBooks.self, id: 1) // George R.R MartinI + [A Clash of Kings, A Dance with Dragons]
+entityStore.find(Author.self, id: 1) // George R.R MartinI
+entityStore.find(AuthorBooks.self, id: 1) // George R.R MartinI + [A Clash of Kings, A Dance with Dragons]
 ```
 
 > You might think about storing books on `Author` directly (`author.books`). In this case `Author` needs to implement `Aggregate` and declare `books` as nested entity.
@@ -184,7 +184,7 @@ identityMap.find(AuthorBooks.self, id: 1) // George R.R MartinI + [A Clash of Ki
 
 ### Storing vs Updating
 
-For now we only focused on `identityMap.store` but CohesionKit comes with another method to store data: `identityMap.update`.
+For now we only focused on `entityStore.store` but CohesionKit comes with another method to store data: `entityStore.update`.
 
 Sometimes both can be used but they each have a different purpose:
 
@@ -195,10 +195,10 @@ Sometimes both can be used but they each have a different purpose:
 
 ### Enum support
 
-Starting with 0.13 library has support for enum types. Note that you'll need to conform to `EntityEnumWrapper` and provide computed getter/setter for each entity you'd like to store.
+Starting with 0.13 library has support for enum types. Note that you'll need to conform to `EntityWrapper` and provide computed getter/setter for each entity you'd like to store.
 
 ```swift
-enum MediaType: EntityEnumWrapper {
+enum MediaType: EntityWrapper {
   case book(Book)
   case game(Game)
   case tvShow(TvShow)
@@ -244,21 +244,21 @@ extension AliasKey where T == User {
   static let currentUser = AliasKey("user")
 }
 
-identityMap.store(currentUser, named: .currentUser)
+entityStore.store(currentUser, named: .currentUser)
 ```
 
 Then request it somewhere else:
 
 ```swift
-identityMap.find(named: .currentUser) // return the current user
+entityStore.find(named: .currentUser) // return the current user
 ```
 
 Compared to regular entities, aliased objects are long-live objects: they will be kept in the storage **even if no one observes them**. This allow registered observers to be notified when alias value change:
 
 ```swift
-identityMap.removeAlias(named: .currentUser) // observers will be notified currentUser is nil.
+entityStore.removeAlias(named: .currentUser) // observers will be notified currentUser is nil.
 
-identityMap.store(newCurrentUser, named: .currentUser) // observers will be notified that currentUser changed even if currentUser was nil before
+entityStore.store(newCurrentUser, named: .currentUser) // observers will be notified that currentUser changed even if currentUser was nil before
 ```
 
 ### Stale data
@@ -268,43 +268,43 @@ When storing data CohesionKit actually require you to set a modification stamp o
 By default CohesionKit will use the current date as stamp.
 
 ```swift
-identityMap.store(book) // use default stamp: current date
-identityMap.store(book, modifiedAt: Date().stamp) // explicitly use Date time stamp
-identityMap.store(book, modifiedAt: 9000) // any Double value is valid
+entityStore.store(book) // use default stamp: current date
+entityStore.store(book, modifiedAt: Date().stamp) // explicitly use Date time stamp
+entityStore.store(book, modifiedAt: 9000) // any Double value is valid
 ```
 
 If for some reason you try to store data with a stamp lower than the already stamped stored data then the update will be discarded.
 
 ### Weak memory management
 
-CohesionKit has a weak memory policy: objects are kept in `IdentityMap` as long as someone use them.
+CohesionKit has a weak memory policy: objects are kept in `EntityStore` as long as someone use them.
 
 To that end you need to retain observers as long as you're interested in the data:
 
 ```swift
 let book = Book(id: "ACK", title: "A Clash of Kings")
-let cancellable = identityMap.store(book) // observer is retained: data is retained
+let cancellable = entityStore.store(book) // observer is retained: data is retained
 
-identityMap.find(Book.self, id: "ACK") // return  "A Clash of Kings"
+entityStore.find(Book.self, id: "ACK") // return  "A Clash of Kings"
 ```
 
 If you don't create/retain observers then once entities have no more observers they will be automatically discarded from the storage.
 
 ```swift
 let book = Book(id: "ACK", title: "A Clash of Kings")
-_ = identityMap.store(book) // observer is not retained and no one else observe this book: data is released
+_ = entityStore.store(book) // observer is not retained and no one else observe this book: data is released
 
-identityMap.find(Book.self, id: "ACK") // return nil
+entityStore.find(Book.self, id: "ACK") // return nil
 ```
 
 ```swift
 let book = Book(id: "ACK", title: "A Clash of Kings")
-var cancellable = identityMap.store(book).asPublisher.sink { ... }
-let cancellable2 = identityMap.find(Book.self, id: "ACK") // return a publisher
+var cancellable = entityStore.store(book).asPublisher.sink { ... }
+let cancellable2 = entityStore.find(Book.self, id: "ACK") // return a publisher
 
 cancellable = nil
 
-identityMap.find(Book.self, id: "ACK") // return "A Clash of Kings" because cancellable2 still observe this book
+entityStore.find(Book.self, id: "ACK") // return "A Clash of Kings" because cancellable2 still observe this book
 ```
 
 # License

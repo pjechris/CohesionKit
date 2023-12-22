@@ -1,7 +1,7 @@
 import XCTest
 @testable import CohesionKit
 
-class IdentityMapStoreVisitorTests: XCTestCase {
+class EntityStoreStoreVisitorTests: XCTestCase {
     let parent = RootFixture(id: 1, primitive: "", singleNode: .init(id: 1), optional: nil, listNodes: [.init(id: 2)])
     private var parentNode: EntityNodeStub<RootFixture>!
 
@@ -20,7 +20,7 @@ class IdentityMapStoreVisitorTests: XCTestCase {
             XCTAssertTrue(type(of: keyPath).valueType == ListNodeFixture.self)
         }
 
-        IdentityMapStoreVisitor(identityMap: IdentityMap())
+        EntityStoreStoreVisitor(entityStore: EntityStore())
             .visit(context: context, entities: collection)
 
         wait(for: [expectation], timeout: 0)
@@ -35,7 +35,7 @@ class IdentityMapStoreVisitorTests: XCTestCase {
             expectation.fulfill()
         }
 
-        IdentityMapStoreVisitor(identityMap: IdentityMap())
+        EntityStoreStoreVisitor(entityStore: EntityStore())
             .visit(context: context, entity: .some(entity))
 
         wait(for: [expectation], timeout: 0)
@@ -51,7 +51,7 @@ class IdentityMapStoreVisitorTests: XCTestCase {
             expectation.fulfill()
         }
 
-        IdentityMapStoreVisitor(identityMap: IdentityMap())
+        EntityStoreStoreVisitor(entityStore: EntityStore())
             .visit(context: context, entity: nil)
 
         wait(for: [expectation], timeout: 0)
