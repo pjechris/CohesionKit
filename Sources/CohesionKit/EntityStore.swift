@@ -183,9 +183,11 @@ public class EntityStore {
         // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()
 
+        node.applyChildrenChanges = false
         for keyPathContainer in entity.nestedEntitiesKeyPaths {
             keyPathContainer.accept(node, entity, modifiedAt, storeVisitor)
         }
+        node.applyChildrenChanges = true
 
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
