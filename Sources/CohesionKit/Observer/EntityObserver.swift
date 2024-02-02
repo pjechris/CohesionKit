@@ -8,6 +8,18 @@ public struct EntityObserver<T> {
 
     let createObserver: (@escaping OnChange) -> Subscription
 
+    public var async: AsyncStream<T> {
+        AsyncStream { continuation in
+            let subscription = createObserver {
+                continuation.yield($0)
+            }
+
+            continuation.onTermination = { _ in
+                subscription.unsubscribe()
+            }
+        }
+    }
+
     init(node: EntityNode<T>, registry: ObserverRegistry) {
         self.value = node.ref.value
         self.createObserver = { onChange in
