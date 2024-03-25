@@ -149,6 +149,8 @@ CohesionKit then handles synchronisation for the three entities:
 - Author
 - Book
 
+> Only writable keypath are accepted. Using a KeyPath (let) will result in error: "Key path value type KeyPath<XX> cannot be converted to contextual type WritableKeyPath<XX>"
+
 This gives you the ability to retrieve them independently from each other:
 
 ```swift
