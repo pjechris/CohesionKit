@@ -424,6 +424,37 @@ extension EntityStoreTests {
     }
 }
 
+// MARK: Remove
+extension EntityStoreTests {
+    func test_removeAlias_itEnqueuesNilInRegistry() {
+        let registry = ObserverRegistryStub()
+        let store = EntityStore(registry: registry)
+
+        _ = store.store(entity: SingleNodeFixture(id: 1), named: .test)
+
+        registry.clearPendingChangesStub()
+
+        store.removeAlias(named: .test)
+
+        XCTAssertTrue(registry.hasPendingChange(for: AliasContainer(key: .test, content: nil)))
+    }
+
+    func test_removeAllAlias_itEnqueuesNilForEachAlias() {
+        let registry = ObserverRegistryStub()
+        let store = EntityStore(registry: registry)
+
+        _ = store.store(entity: SingleNodeFixture(id: 1), named: .test)
+        _ = store.store(entities: [SingleNodeFixture(id: 2)], named: .listOfNodes)
+
+        registry.clearPendingChangesStub()
+
+        store.removeAllAlias()
+
+        XCTAssertTrue(registry.hasPendingChange(for: AliasContainer(key: .test, content: nil)))
+        XCTAssertTrue(registry.hasPendingChange(for: AliasContainer(key: .listOfNodes, content: nil)))
+    }
+}
+
 private extension AliasKey where T == SingleNodeFixture {
     static let test = AliasKey(named: "test")
 }

@@ -1,5 +1,5 @@
 /// Keep a strong reference on each aliased node
-typealias AliasStorage = [String: Any]
+typealias AliasStorage = [String: AnyEntityNode]
 
 extension AliasStorage {
     subscript<T>(_ aliasKey: AliasKey<T>) -> EntityNode<AliasContainer<T>>? {
