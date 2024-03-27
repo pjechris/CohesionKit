@@ -4,6 +4,8 @@ import Combine
 /// Typed erased protocol
 protocol AnyEntityNode: AnyObject {
     var value: Any { get }
+
+  func nullify()
 }
 
 /// A graph node representing a entity of type `T` and its children. Anytime one of its children is updated the node
@@ -51,6 +53,12 @@ class EntityNode<T>: AnyEntityNode {
         modifiedAt = newModifiedAt ?? modifiedAt
         ref.value = newEntity
         onChange?(self)
+    }
+
+    func nullify() {
+        if let value = ref.value as? Nullable {
+            try? updateEntity(value.nullified() as! T, modifiedAt: nil)
+        }
     }
 
     func removeAllChildren() {

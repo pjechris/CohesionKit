@@ -69,3 +69,17 @@ extension AliasContainer: CollectionIdentifiableKeyPathsEraser where T: MutableC
         [PartialIdentifiableKeyPath<Self>(\.content)]
     }
 }
+
+extension AliasContainer: Equatable where T: Equatable {
+
+}
+
+protocol Nullable {
+  func nullified() -> Self
+}
+
+extension AliasContainer: Nullable {
+  func nullified() -> AliasContainer<T> {
+    AliasContainer(key: key, content: nil)
+  }
+}

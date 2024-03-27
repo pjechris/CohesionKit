@@ -349,25 +349,54 @@ extension EntityStore {
 extension EntityStore {
     /// Removes an alias from the storage
     public func removeAlias<T>(named: AliasKey<T>) {
-        refAliases[named] = nil
-        logger?.didUnregisterAlias(named)
+        transaction {
+            if let alias = refAliases[named] {
+                do {
+                    try alias.updateEntity(AliasContainer(key: named, content: nil), modifiedAt: nil)
+                    logger?.didUnregisterAlias(named)
+                }
+                catch {
+
+                }
+            }
+        }
     }
 
     /// Removes an alias from the storage
     public func removeAlias<C: Collection>(named: AliasKey<C>) {
-        refAliases[named] = nil
-        logger?.didUnregisterAlias(named)
+        transaction {
+            if let alias = refAliases[named] {
+                do {
+                    try alias.updateEntity(AliasContainer(key: named, content: nil), modifiedAt: nil)
+                    logger?.didUnregisterAlias(named)
+                }
+                catch {
+
+                }
+            }
+        }
+
     }
 
     /// Removes all alias from identity map
     public func removeAllAlias() {
-        refAliases.removeAll()
+        transaction {
+            removeAliases()
+        }
     }
 
     /// Removes all alias AND all objects stored weakly. You should not need this method and rather use `removeAlias`.
     /// But this can be useful if you fear retain cycles
     public func removeAll() {
-        refAliases.removeAll()
-        storage.removeAll()
+        transaction {
+            removeAliases()
+            storage.removeAll()
+        }
+    }
+
+    private func removeAliases() {
+        for (_, node) in refAliases {
+                node.nullify()
+        }
     }
 }
