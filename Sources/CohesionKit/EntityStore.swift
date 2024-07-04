@@ -200,7 +200,7 @@ public class EntityStore {
         return node
     }
 
-    private func storeAlias<T>(content: T, key: AliasKey<T>, modifiedAt: Stamp?) {
+    private func storeAlias<T>(content: T?, key: AliasKey<T>, modifiedAt: Stamp?) {
         let aliasNode = refAliases[safe: key, onChange: registry.enqueueChange(for:)]
         let aliasContainer = AliasContainer(key: key, content: content)
 
@@ -350,14 +350,9 @@ extension EntityStore {
     /// Removes an alias from the storage
     public func removeAlias<T>(named: AliasKey<T>) {
         transaction {
-            if let alias = refAliases[named] {
-                do {
-                    try alias.updateEntity(AliasContainer(key: named, content: nil), modifiedAt: nil)
-                    logger?.didUnregisterAlias(named)
-                }
-                catch {
-
-                }
+            if refAliases[named] != nil {
+                storeAlias(content: nil, key: named, modifiedAt: nil)
+                logger?.didUnregisterAlias(named)
             }
         }
     }
@@ -365,14 +360,9 @@ extension EntityStore {
     /// Removes an alias from the storage
     public func removeAlias<C: Collection>(named: AliasKey<C>) {
         transaction {
-            if let alias = refAliases[named] {
-                do {
-                    try alias.updateEntity(AliasContainer(key: named, content: nil), modifiedAt: nil)
-                    logger?.didUnregisterAlias(named)
-                }
-                catch {
-
-                }
+            if refAliases[named] != nil {
+                storeAlias(content: nil, key: named, modifiedAt: nil)
+                logger?.didUnregisterAlias(named)
             }
         }
 
