@@ -3,13 +3,13 @@ import Foundation
 /// Registers observers associated to an ``EntityNode``.
 /// The registry will handle notifying observers when a node is marked as changed
 class ObserverRegistry {
-    private typealias Hash = Int
+    typealias Identifier = String
 
     let queue: DispatchQueue
     /// registered observer handlers
-    private var handlers: [Hash: Set<Handler>] = [:]
+    private var handlers: [Identifier: Set<Handler>] = [:]
     /// nodes waiting for notifiying their observes about changes
-    private var pendingChanges: [Hash: AnyWeak] = [:]
+    private var pendingChanges: [Identifier: AnyWeak] = [:]
 
     init(queue: DispatchQueue? = nil) {
         self.queue = queue ?? DispatchQueue.main
@@ -17,7 +17,7 @@ class ObserverRegistry {
 
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
-    func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
+    func addObserver<T>(node: EntityNode<T>, identifier: Identifier, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
         let handler = Handler { onChange($0.ref.value) }
 
         if initial {
@@ -31,12 +31,12 @@ class ObserverRegistry {
           }
         }
 
-        return subscribeHandler(handler, for: node)
+        return subscribeHandler(handler, for: node, identifiedBy: identifier)
     }
 
     /// Add an observer handler to multiple nodes.
     /// Note that the same handler will be added to each nodes. But it should get notified only once per transaction
-    func addObserver<T>(nodes: [EntityNode<T>], initial: Bool = false, onChange: @escaping ([T]) -> Void) -> Subscription {
+    func addObserver<T>(nodes: [EntityNode<T>], identifier: Identifier, initial: Bool = false, onChange: @escaping ([T]) -> Void) -> Subscription {
         let handler = Handler { (_: EntityNode<T>) in
             // use last value from nodes
             onChange(nodes.map(\.ref.value))
@@ -53,7 +53,7 @@ class ObserverRegistry {
           }
         }
 
-        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node) }
+        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node, identifiedBy: identifier) }
 
         return Subscription {
             subscriptions.forEach { $0.unsubscribe() }
@@ -61,12 +61,12 @@ class ObserverRegistry {
     }
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
-    func enqueueChange<T>(for node: EntityNode<T>) {
-        pendingChanges[node.hashValue] = Weak(value: node)
+    func enqueueChange<T>(for node: EntityNode<T>, identifiedBy identifier: Identifier) {
+        pendingChanges[identifier] = Weak(value: node)
     }
 
-    func hasPendingChange<T>(for node: EntityNode<T>) -> Bool {
-        pendingChanges[node.hashValue] != nil
+    func hasPendingChange(for identifier: Identifier) -> Bool {
+        pendingChanges[identifier] != nil
     }
 
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
@@ -78,13 +78,13 @@ class ObserverRegistry {
         self.pendingChanges = [:]
 
         queue.async {
-            for (hashKey, weakNode) in changes {
+            for (identifier, weakNode) in changes {
                 // node was released: no one to notify
                 guard let node = weakNode.unwrap() else {
                     continue
                 }
 
-                for handler in handlers[hashKey] ?? [] {
+                for handler in handlers[identifier] ?? [] {
                     // if some handlers are used multiple times (like for collections), make sure we don't notify them multiple times
                     guard !executedHandlers.contains(handler) else {
                         continue
@@ -97,12 +97,14 @@ class ObserverRegistry {
         }
     }
 
-    private func subscribeHandler<T>(_ handler: Handler, for node: EntityNode<T>) -> Subscription {
-        handlers[node.hashValue, default: []].insert(handler)
+    private func subscribeHandler<T>(_ handler: Handler, for node: EntityNode<T>, identifiedBy identifier: Identifier) -> Subscription {
+        handlers[identifier, default: []].insert(handler)
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
         return Subscription { [node] in
-            self.handlers[node.hashValue]?.remove(handler)
+//          withExtendedLifetime(node) {
+            self.handlers[identifier]?.remove(handler)
+//          }
         }
     }
 }

@@ -44,6 +44,7 @@ public class EntityStore {
     ) -> EntityObserver<T> {
         transaction {
             var entity = entity
+            let identifier = EntityIdentifier(entity)
 
             if storage[entity] != nil {
                 update?(&entity)
@@ -55,7 +56,7 @@ public class EntityStore {
                 storeAlias(content: entity, key: key, modifiedAt: modifiedAt)
             }
 
-            return EntityObserver(node: node, registry: registry)
+            return EntityObserver(node: node, identifier: identifier, registry: registry)
         }
     }
 
@@ -75,6 +76,7 @@ public class EntityStore {
     ) -> EntityObserver<T> {
         transaction {
             var entity = entity
+            let identifier = EntityIdentifier(entity)
 
             if storage[entity] != nil {
                 update?(&entity)
@@ -86,7 +88,7 @@ public class EntityStore {
 
             let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
-            return EntityObserver(node: node, registry: registry)
+            return EntityObserver(node: node, identifier: identifier, registry: registry)
         }
     }
 
@@ -99,8 +101,9 @@ public class EntityStore {
             }
 
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
+            let identifier = EntityIdentifier(of: C.Element.self, id: entities.map(\.id))
 
-            return EntityObserver(nodes: nodes, registry: registry)
+            return EntityObserver(nodes: nodes, identifier: identifier, registry: registry)
         }
     }
 
@@ -113,9 +116,10 @@ public class EntityStore {
             }
 
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
+            let identifier = EntityIdentifier(of: C.Element.self, id: entities.map(\.id))
 
 
-            return EntityObserver(nodes: nodes, registry: registry)
+            return EntityObserver(nodes: nodes, identifier: identifier, registry: registry)
         }
     }
 
@@ -126,7 +130,8 @@ public class EntityStore {
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
         identityQueue.sync {
             if let node = storage[T.self, id: id] {
-                return EntityObserver(node: node, registry: registry)
+                let identifier = EntityIdentifier(of: type, id: id)
+                return EntityObserver(node: node, identifier: identifier, registry: registry)
             }
 
             return nil
@@ -137,7 +142,8 @@ public class EntityStore {
     /// - Parameter named: the alias to look for
     public func find<T: Identifiable>(named: AliasKey<T>) -> EntityObserver<T?> {
         identityQueue.sync {
-            let node = refAliases[safe: named, onChange: registry.enqueueChange(for:)]
+          let identifier = EntityIdentifier(<#T##entity: Identifiable##Identifiable#>)
+          let node = refAliases[safe: named, onChange: { registry.enqueueChange(for: $0, identifiedBy: <#T##ObserverRegistry.Identifier#>) }]
             return EntityObserver(alias: node, registry: registry)
         }
     }
