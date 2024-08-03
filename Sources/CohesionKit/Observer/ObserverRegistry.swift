@@ -41,7 +41,7 @@ class ObserverRegistry {
           }
         }
 
-        return subscribeHandler(handler, for: node)
+        return subscribeHandler(handler, for: node, key: node.hashValue)
     }
 
     /// Add an observer handler to multiple nodes.
@@ -63,7 +63,7 @@ class ObserverRegistry {
           }
         }
 
-        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node) }
+        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node, key: node.hashValue) }
 
         return Subscription {
             subscriptions.forEach { $0.unsubscribe() }
@@ -72,11 +72,19 @@ class ObserverRegistry {
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
     func enqueueChange<T>(for node: EntityNode<T>) {
-        pendingChanges[node.hashValue] = Weak(value: node)
+        enqueueChange(for: node, key: node.hashValue)
+    }
+
+    func enqueueChange<T>(for node: EntityNode<T>, key: ObjectKey) {
+        pendingChanges[key] = Weak(value: node)
     }
 
     func hasPendingChange<T>(for node: EntityNode<T>) -> Bool {
-        pendingChanges[node.hashValue] != nil
+        hasPendingChange(for: node.hashValue)
+    }
+
+    func hasPendingChange(for key: ObjectKey) -> Bool {
+        pendingChanges[key] != nil
     }
 
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
@@ -107,12 +115,14 @@ class ObserverRegistry {
         }
     }
 
-    private func subscribeHandler<T>(_ handler: Handler, for node: EntityNode<T>) -> Subscription {
-        handlers[node.hashValue, default: []].insert(handler)
+    private func subscribeHandler<T>(_ handler: Handler, for node: EntityNode<T>, key: ObjectKey) -> Subscription {
+        handlers[key, default: []].insert(handler)
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
         return Subscription { [node] in
-            self.handlers[node.hashValue]?.remove(handler)
+            withExtendedLifetime(node) { }
+
+            self.handlers[key]?.remove(handler)
         }
     }
 }
