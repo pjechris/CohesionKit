@@ -1,15 +1,25 @@
 import Foundation
 
+/// a unique hash identifying an object
+typealias ObjectKey = Int
+
+extension ObjectKey {
+    init<T>(of type: T.Type, id: Any) {
+        let key = "\(type)-\(id)"
+
+        self.init(key.hashValue)
+    }
+}
+
 /// Registers observers associated to an ``EntityNode``.
 /// The registry will handle notifying observers when a node is marked as changed
 class ObserverRegistry {
-    private typealias Hash = Int
 
     let queue: DispatchQueue
     /// registered observer handlers
-    private var handlers: [Hash: Set<Handler>] = [:]
+    private var handlers: [ObjectKey: Set<Handler>] = [:]
     /// nodes waiting for notifiying their observes about changes
-    private var pendingChanges: [Hash: AnyWeak] = [:]
+    private var pendingChanges: [ObjectKey: AnyWeak] = [:]
 
     init(queue: DispatchQueue? = nil) {
         self.queue = queue ?? DispatchQueue.main
