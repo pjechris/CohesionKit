@@ -29,9 +29,13 @@ class ObserverRegistry {
         self.queue = queue ?? DispatchQueue.main
     }
 
+    func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
+        addObserver(node: node, key: ObjectKey(node), initial: initial, onChange: onChange)
+    }
+
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
-    func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
+    func addObserver<T>(node: EntityNode<T>, key: ObjectKey, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
         let handler = Handler { onChange($0.ref.value) }
 
         if initial {
@@ -45,7 +49,7 @@ class ObserverRegistry {
           }
         }
 
-        return subscribeHandler(handler, for: node, key: ObjectKey(node))
+        return subscribeHandler(handler, for: node, key: key)
     }
 
     /// Add an observer handler to multiple nodes.
