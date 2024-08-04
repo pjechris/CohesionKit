@@ -9,6 +9,10 @@ extension ObjectKey {
 
         self.init(key.hashValue)
     }
+
+    init<T>(_ node: EntityNode<T>) {
+        self.init(of: T.self, id: node.hashValue)
+    }
 }
 
 /// Registers observers associated to an ``EntityNode``.
@@ -41,7 +45,7 @@ class ObserverRegistry {
           }
         }
 
-        return subscribeHandler(handler, for: node, key: node.hashValue)
+        return subscribeHandler(handler, for: node, key: ObjectKey(node))
     }
 
     /// Add an observer handler to multiple nodes.
@@ -63,7 +67,7 @@ class ObserverRegistry {
           }
         }
 
-        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node, key: node.hashValue) }
+        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node, key: ObjectKey(node)) }
 
         return Subscription {
             subscriptions.forEach { $0.unsubscribe() }
@@ -72,7 +76,7 @@ class ObserverRegistry {
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
     func enqueueChange<T>(for node: EntityNode<T>) {
-        enqueueChange(for: node, key: node.hashValue)
+        enqueueChange(for: node, key: ObjectKey(node))
     }
 
     func enqueueChange<T>(for node: EntityNode<T>, key: ObjectKey) {
@@ -80,7 +84,7 @@ class ObserverRegistry {
     }
 
     func hasPendingChange<T>(for node: EntityNode<T>) -> Bool {
-        hasPendingChange(for: node.hashValue)
+        hasPendingChange(for: ObjectKey(node))
     }
 
     func hasPendingChange(for key: ObjectKey) -> Bool {
