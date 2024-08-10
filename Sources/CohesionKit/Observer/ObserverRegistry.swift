@@ -1,23 +1,41 @@
 import Foundation
 
+/// a unique hash identifying an object
+typealias ObjectKey = Int
+
+extension ObjectKey {
+    init<T>(of type: T.Type, id: Any) {
+        let key = "\(type)-\(id)"
+
+        self.init(key.hashValue)
+    }
+
+    init<T>(_ node: EntityNode<T>) {
+        self.init(of: T.self, id: node.hashValue)
+    }
+}
+
 /// Registers observers associated to an ``EntityNode``.
 /// The registry will handle notifying observers when a node is marked as changed
 class ObserverRegistry {
-    private typealias Hash = Int
 
     let queue: DispatchQueue
     /// registered observer handlers
-    private var handlers: [Hash: Set<Handler>] = [:]
+    private var handlers: [ObjectKey: Set<Handler>] = [:]
     /// nodes waiting for notifiying their observes about changes
-    private var pendingChanges: [Hash: AnyWeak] = [:]
+    private var pendingChanges: [ObjectKey: AnyWeak] = [:]
 
     init(queue: DispatchQueue? = nil) {
         self.queue = queue ?? DispatchQueue.main
     }
 
+    func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
+        addObserver(node: node, key: ObjectKey(node), initial: initial, onChange: onChange)
+    }
+
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
-    func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
+    func addObserver<T>(node: EntityNode<T>, key: ObjectKey, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
         let handler = Handler { onChange($0.ref.value) }
 
         if initial {
@@ -31,7 +49,7 @@ class ObserverRegistry {
           }
         }
 
-        return subscribeHandler(handler, for: node)
+        return subscribeHandler(handler, for: node, key: key)
     }
 
     /// Add an observer handler to multiple nodes.
@@ -53,7 +71,7 @@ class ObserverRegistry {
           }
         }
 
-        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node) }
+        let subscriptions = nodes.map { node in subscribeHandler(handler, for: node, key: ObjectKey(node)) }
 
         return Subscription {
             subscriptions.forEach { $0.unsubscribe() }
@@ -62,11 +80,19 @@ class ObserverRegistry {
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
     func enqueueChange<T>(for node: EntityNode<T>) {
-        pendingChanges[node.hashValue] = Weak(value: node)
+        enqueueChange(for: node, key: ObjectKey(node))
+    }
+
+    func enqueueChange<T>(for node: EntityNode<T>, key: ObjectKey) {
+        pendingChanges[key] = Weak(value: node)
     }
 
     func hasPendingChange<T>(for node: EntityNode<T>) -> Bool {
-        pendingChanges[node.hashValue] != nil
+        hasPendingChange(for: ObjectKey(node))
+    }
+
+    func hasPendingChange(for key: ObjectKey) -> Bool {
+        pendingChanges[key] != nil
     }
 
     /// Notify observers of all queued changes. Once notified pending changes are cleared out.
@@ -97,12 +123,14 @@ class ObserverRegistry {
         }
     }
 
-    private func subscribeHandler<T>(_ handler: Handler, for node: EntityNode<T>) -> Subscription {
-        handlers[node.hashValue, default: []].insert(handler)
+    private func subscribeHandler<T>(_ handler: Handler, for node: EntityNode<T>, key: ObjectKey) -> Subscription {
+        handlers[key, default: []].insert(handler)
 
         // subscription keeps a strong ref to node, avoiding it from being released somehow while suscription is running
         return Subscription { [node] in
-            self.handlers[node.hashValue]?.remove(handler)
+            withExtendedLifetime(node) { }
+
+            self.handlers[key]?.remove(handler)
         }
     }
 }

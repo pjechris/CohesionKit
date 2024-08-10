@@ -28,7 +28,7 @@ platform :ios do
     scheme: "Example",
     configuration: "Debug",
     build: true,
-    destination: "platform=iOS Simulator,name=iPhone SE (2nd generation)"
+    destination: "platform=iOS Simulator,name=iPhone SE (3rd generation)"
   )
   end
 end
