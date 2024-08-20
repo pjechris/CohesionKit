@@ -4,6 +4,7 @@ import Combine
 public struct PartialIdentifiableKeyPath<Root> {
     let keyPath: PartialKeyPath<Root>
     let accept: (EntityNode<Root>, Root, Stamp?, NestedEntitiesVisitor) -> Void
+    let store: (Root, Stamp?, EntityStore) -> Set<ObjectKey>
 
     /// Creates an instance referencing an `Identifiable` keyPath
     public init<T: Identifiable>(_ keyPath: WritableKeyPath<Root, T>) {
@@ -13,6 +14,14 @@ public struct PartialIdentifiableKeyPath<Root> {
                 context: EntityContext(parent: parent, keyPath: keyPath, stamp: stamp),
                 entity: root[keyPath: keyPath]
             )
+        }
+        self.store = { root, stamp, store in
+            let entity = root[keyPath: keyPath]
+            let entityID = ObjectKey(of: T.self, id: entity.id)
+
+            store.store(entity, identifier: entityID, modifiedAt: stamp)
+
+            return [entityID]
         }
     }
 
@@ -25,6 +34,14 @@ public struct PartialIdentifiableKeyPath<Root> {
                 entity: root[keyPath: keyPath]
             )
         }
+        self.store = { root, stamp, store in
+            let entity = root[keyPath: keyPath]
+            let entityID = ObjectKey(of: T.self, id: entity.id)
+
+            store.store(entity, identifier: entityID, modifiedAt: stamp)
+
+            return [entityID]
+        }
     }
 
     /// Creates an instance referencing an optional `Identifiable` keyPath
@@ -36,6 +53,17 @@ public struct PartialIdentifiableKeyPath<Root> {
                 entity: root[keyPath: keyPath]
             )
         }
+        self.store = { root, stamp, store in
+            if let entity = root[keyPath: keyPath] {
+                let entityID = ObjectKey(of: T.self, id: entity.id)
+
+                store.store(entity, identifier: entityID, modifiedAt: stamp)
+
+                return [entityID]
+            }
+
+            return []
+        }
     }
 
     public init<T: Aggregate>(_ keyPath: WritableKeyPath<Root, T?>) {
@@ -46,6 +74,17 @@ public struct PartialIdentifiableKeyPath<Root> {
                 entity: root[keyPath: keyPath]
             )
         }
+        self.store = { root, stamp, store in
+            if let entity = root[keyPath: keyPath] {
+                let entityID = ObjectKey(of: T.self, id: entity.id)
+
+                store.store(entity, identifier: entityID, modifiedAt: stamp)
+
+                return [entityID]
+            }
+
+            return []
+        }
     }
 
     public init<C: MutableCollection>(_ keyPath: WritableKeyPath<Root, C>) where C.Element: Identifiable, C.Index: Hashable {
@@ -54,6 +93,17 @@ public struct PartialIdentifiableKeyPath<Root> {
             visitor.visit(
                 context: EntityContext(parent: parent, keyPath: keyPath, stamp: stamp),
                 entities: root[keyPath: keyPath]
+            )
+        }
+        self.store = { root, stamp, store in
+            Set(
+                root[keyPath: keyPath].map { entity in
+                    let entityID = ObjectKey(of: C.Element.self, id: entity.id)
+
+                    store.store(entity, identifier: entityID, modifiedAt: stamp)
+
+                    return entityID
+                }
             )
         }
     }
@@ -68,6 +118,21 @@ public struct PartialIdentifiableKeyPath<Root> {
                 )
             }
         }
+        self.store = { root, stamp, store in
+            if let entities = root[keyPath: keyPath] {
+                return Set(
+                    entities.map { entity in
+                        let entityID = ObjectKey(of: C.Element.self, id: entity.id)
+
+                        store.store(entity, identifier: entityID, modifiedAt: stamp)
+
+                        return entityID
+                    }
+                )
+            }
+
+            return []
+        }
     }
 
     public init<C: MutableCollection>(_ keyPath: WritableKeyPath<Root, C>) where C.Element: Aggregate, C.Index: Hashable {
@@ -76,6 +141,17 @@ public struct PartialIdentifiableKeyPath<Root> {
             visitor.visit(
                 context: EntityContext(parent: parent, keyPath: keyPath, stamp: stamp),
                 entities: root[keyPath: keyPath]
+            )
+        }
+        self.store = { root, stamp, store in
+            Set(
+                root[keyPath: keyPath].map { entity in
+                    let entityID = ObjectKey(of: C.Element.self, id: entity.id)
+
+                    store.store(entity, identifier: entityID, modifiedAt: stamp)
+
+                    return entityID
+                }
             )
         }
     }
@@ -90,6 +166,21 @@ public struct PartialIdentifiableKeyPath<Root> {
                 )
             }
         }
+        self.store = { root, stamp, store in
+            if let entities = root[keyPath: keyPath] {
+                return Set(
+                    entities.map { entity in
+                        let entityID = ObjectKey(of: C.Element.self, id: entity.id)
+
+                        store.store(entity, identifier: entityID, modifiedAt: stamp)
+
+                        return entityID
+                    }
+                )
+            }
+
+            return []
+        }
     }
 
     public init<W: EntityWrapper>(wrapper keyPath: WritableKeyPath<Root, W>) {
@@ -98,6 +189,15 @@ public struct PartialIdentifiableKeyPath<Root> {
             for wrappedKeyPath in root[keyPath: keyPath].wrappedEntitiesKeyPaths(relativeTo: keyPath) {
                 wrappedKeyPath.accept(parent, root, stamp, visitor)
             }
+        }
+        self.store = {  root, stamp, store in
+            var refs: [ObjectKey] = []
+
+            for wrappedKeyPath in root[keyPath: keyPath].wrappedEntitiesKeyPaths(relativeTo: keyPath) {
+                refs.append(contentsOf: wrappedKeyPath.store(root, stamp, store))
+            }
+
+            return Set(refs)
         }
     }
 
@@ -109,6 +209,17 @@ public struct PartialIdentifiableKeyPath<Root> {
                     wrappedKeyPath.accept(parent, root, stamp, visitor)
                 }
             }
+        }
+        self.store = {  root, stamp, store in
+            var refs: [ObjectKey] = []
+
+            if let wrapper = root[keyPath: keyPath] {
+                for wrappedKeyPath in wrapper.wrappedEntitiesKeyPaths(relativeTo: keyPath.unwrapped()) {
+                    refs.append(contentsOf: wrappedKeyPath.store(root, stamp, store))
+                }
+            }
+
+            return Set(refs)
         }
     }
 }

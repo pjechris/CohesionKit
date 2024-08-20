@@ -12,6 +12,7 @@ public class EntityStore {
     private let logger: Logger?
     private let registry: ObserverRegistry
 
+    private(set) var indexer: EntityIndexer = [:]
     private(set) var storage: EntitiesStorage = EntitiesStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = EntityStoreStoreVisitor(entityStore: self)
@@ -198,6 +199,46 @@ public class EntityStore {
         }
 
         return node
+    }
+
+    func store<E: Identifiable>(_ entity: E, identifier: ObjectKey, modifiedAt: Stamp?) {
+        var metadata = indexer[identifier]?.metadata ?? EntityMetadata()
+        var refs: Set<ObjectKey> = []
+        
+        if let aggregate = entity as? any Aggregate {
+            refs = storeChildren(of: aggregate, modifiedAt: modifiedAt)
+        }
+
+
+
+        let addedRefs = refs.subtracting(metadata.childrenRefs)
+        let removedRefs = metadata.childrenRefs.subtracting(refs)
+
+        for added in addedRefs {
+            indexer[added]?.metadata.parents.insert(identifier)
+        }
+
+        for removed in removedRefs {
+            let isRemoved = indexer[removed]?.metadata.parents.remove(identifier)
+            assert(isRemoved != nil)
+
+            if indexer[removed]?.metadata.parents.isEmpty ?? false {
+                // TODO
+            }
+        }
+
+        metadata.childrenRefs = refs
+        indexer[identifier] = IndexedEntity(entity: entity, metadata: metadata)
+    }
+
+    private func storeChildren(of entity: some Aggregate, modifiedAt: Stamp?) -> Set<ObjectKey> {
+        var refs: Set<ObjectKey> = []
+
+        for keyPathContainer in entity.nestedEntitiesKeyPaths {
+            refs = refs.union(keyPathContainer.store(entity, modifiedAt, self))
+        }
+
+        return refs
     }
 
     private func storeAlias<T>(content: T?, key: AliasKey<T>, modifiedAt: Stamp?) {

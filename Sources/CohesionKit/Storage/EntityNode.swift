@@ -1,6 +1,17 @@
 import Foundation
 import Combine
 
+struct EntityMetadata {
+    var childrenRefs: Set<ObjectKey> = []
+    /// the entity managed by this object
+    
+    /// parents referencing this entity
+    var parents: Set<ObjectKey> = []
+    /// alias referencing this entity
+    var aliases: Set<ObjectKey> = []
+    /// children references of this entity
+}
+
 /// Typed erased protocol
 protocol AnyEntityNode: AnyObject {
     var value: Any { get }

@@ -1,5 +1,12 @@
 import Foundation
 
+typealias EntityIndexer = [ObjectKey: IndexedEntity]
+
+struct IndexedEntity {
+    var entity: Any
+    var metadata: EntityMetadata
+}
+
 /// A storage keeping entities indexed by a unique key.
 ///
 /// Storage keeps weak references to objects.
