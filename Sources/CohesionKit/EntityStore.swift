@@ -203,33 +203,36 @@ public class EntityStore {
 
     func store<E: Identifiable>(_ entity: E, identifier: ObjectKey, modifiedAt: Stamp?) {
         var metadata = indexer[identifier]?.metadata ?? EntityMetadata()
-        var refs: Set<ObjectKey> = []
+
+        guard !registry.hasPendingChange(for: identifier) else {
+            return
+        }
 
         if let modifiedAt, indexer[identifier]?.modifiedAt ?? 0 >= modifiedAt {
             return
         }
 
         if let aggregate = entity as? any Aggregate {
-            refs = storeChildren(of: aggregate, modifiedAt: modifiedAt)
-        }
+            let refs = storeChildren(of: aggregate, modifiedAt: modifiedAt)
 
-        let addedRefs = refs.subtracting(metadata.childrenRefs)
-        let removedRefs = metadata.childrenRefs.subtracting(refs)
+            let addedRefs = refs.subtracting(metadata.childrenRefs)
+            let removedRefs = metadata.childrenRefs.subtracting(refs)
 
-        for added in addedRefs {
-            indexer[added]?.metadata.parents.insert(identifier)
-        }
-
-        for removed in removedRefs {
-            let isRemoved = indexer[removed]?.metadata.parents.remove(identifier)
-            assert(isRemoved != nil)
-
-            if indexer[removed]?.metadata.parents.isEmpty ?? false {
-                // TODO
+            for added in addedRefs {
+                indexer[added]?.metadata.parents.insert(identifier)
             }
-        }
 
-        metadata.childrenRefs = refs
+            for removed in removedRefs {
+                let isRemoved = indexer[removed]?.metadata.parents.remove(identifier)
+                assert(isRemoved != nil)
+
+                if indexer[removed]?.metadata.parents.isEmpty ?? false {
+                    // TODO
+                }
+            }
+
+            metadata.childrenRefs = refs
+        }
 
         let indexed = IndexedEntity(entity: entity, modifiedAt: modifiedAt, metadata: metadata)
 
