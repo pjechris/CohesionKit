@@ -204,12 +204,14 @@ public class EntityStore {
     func store<E: Identifiable>(_ entity: E, identifier: ObjectKey, modifiedAt: Stamp?) {
         var metadata = indexer[identifier]?.metadata ?? EntityMetadata()
         var refs: Set<ObjectKey> = []
-        
+
+        if let modifiedAt, indexer[identifier]?.modifiedAt ?? 0 >= modifiedAt {
+            return
+        }
+
         if let aggregate = entity as? any Aggregate {
             refs = storeChildren(of: aggregate, modifiedAt: modifiedAt)
         }
-
-
 
         let addedRefs = refs.subtracting(metadata.childrenRefs)
         let removedRefs = metadata.childrenRefs.subtracting(refs)
@@ -228,7 +230,12 @@ public class EntityStore {
         }
 
         metadata.childrenRefs = refs
-        indexer[identifier] = IndexedEntity(entity: entity, metadata: metadata)
+
+        let indexed = IndexedEntity(entity: entity, modifiedAt: modifiedAt, metadata: metadata)
+
+        indexer[identifier] = indexed
+
+        registry.enqueueChange(for: indexed, key: identifier)
     }
 
     private func storeChildren(of entity: some Aggregate, modifiedAt: Stamp?) -> Set<ObjectKey> {

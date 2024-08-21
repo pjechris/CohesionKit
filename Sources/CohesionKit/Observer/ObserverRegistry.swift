@@ -52,6 +52,23 @@ class ObserverRegistry {
         return subscribeHandler(handler, for: node, key: key)
     }
 
+    func addObserver<T>(entity: T, key: ObjectKey, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
+        let handler = Handler { onChange($0) }
+
+        if initial {
+          if queue == DispatchQueue.main && Thread.isMainThread {
+            onChange(entity)
+          }
+          else {
+            queue.sync {
+              onChange(entity)
+            }
+          }
+        }
+
+        return subscribeHandler(handler, key: key)
+    }
+
     /// Add an observer handler to multiple nodes.
     /// Note that the same handler will be added to each nodes. But it should get notified only once per transaction
     func addObserver<T>(nodes: [EntityNode<T>], initial: Bool = false, onChange: @escaping ([T]) -> Void) -> Subscription {
@@ -85,6 +102,10 @@ class ObserverRegistry {
 
     func enqueueChange<T>(for node: EntityNode<T>, key: ObjectKey) {
         pendingChanges[key] = Weak(value: node)
+    }
+
+    func enqueueChange(for indexed: IndexedEntity, key: ObjectKey) {
+        pendingChanges[key] = Weak(value: indexed)
     }
 
     func hasPendingChange<T>(for node: EntityNode<T>) -> Bool {
@@ -133,6 +154,14 @@ class ObserverRegistry {
             self.handlers[key]?.remove(handler)
         }
     }
+
+    private func subscribeHandler(_ handler: Handler, key: ObjectKey) -> Subscription {
+        handlers[key, default: []].insert(handler)
+
+        return Subscription {
+            self.handlers[key]?.remove(handler)
+        }
+    }
 }
 
 extension ObserverRegistry {
@@ -143,6 +172,16 @@ extension ObserverRegistry {
         init<T>(executor: @escaping (EntityNode<T>) -> Void) {
             self.executor = {
                 guard let entity = $0 as? EntityNode<T> else {
+                    return
+                }
+
+                executor(entity)
+            }
+        }
+
+        init<T>(executor: @escaping (T) -> Void) {
+            self.executor = {
+                guard let entity = $0 as? T else {
                     return
                 }
 

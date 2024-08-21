@@ -2,9 +2,16 @@ import Foundation
 
 typealias EntityIndexer = [ObjectKey: IndexedEntity]
 
-struct IndexedEntity {
+class IndexedEntity {
     var entity: Any
+    var modifiedAt: Stamp?
     var metadata: EntityMetadata
+
+    init(entity: Any, modifiedAt: Stamp?, metadata: EntityMetadata) {
+        self.entity = entity
+        self.modifiedAt = modifiedAt
+        self.metadata = metadata
+    }
 }
 
 /// A storage keeping entities indexed by a unique key.
