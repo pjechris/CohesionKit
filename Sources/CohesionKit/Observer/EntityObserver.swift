@@ -8,6 +8,13 @@ public struct EntityObserver<T> {
 
     let createObserver: (@escaping OnChange) -> Subscription
 
+    init(entity: T, key: ObjectKey, registry: ObserverRegistry) {
+        self.value = entity
+        self.createObserver = { onChange in
+            registry.addObserver(entity: entity, key: key, initial: true, onChange: onChange)
+        }
+    }
+
     init(node: EntityNode<T>, registry: ObserverRegistry) {
         self.value = node.ref.value
         self.createObserver = { onChange in

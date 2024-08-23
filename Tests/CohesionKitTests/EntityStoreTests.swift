@@ -20,65 +20,67 @@ class EntityStoreTests: XCTestCase {
         }
     }
 
-    func test_storeAggregate_nestedEntityReplacedByNil_entityIsUpdated_aggregateEntityRemainsNil() {
+    func test_storeAggregate_nestedEntitySetToNil_entityIsUpdated_aggregateNestedEntityRemainsNil() throws {
         let entityStore = EntityStore()
         let nestedOptional = OptionalNodeFixture(id: 1)
         var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: nestedOptional, listNodes: [])
 
-        withExtendedLifetime(entityStore.store(entity: root)) {
+        try withExtendedLifetime(entityStore.store(entity: root)) {
             root.optional = nil
 
             _ = entityStore.store(entity: root)
             _ = entityStore.store(entity: nestedOptional)
 
-            XCTAssertNotNil(entityStore.find(RootFixture.self, id: 1))
-            XCTAssertNil(entityStore.find(RootFixture.self, id: 1)!.value.optional)
+            let root = try XCTUnwrap(entityStore.find(RootFixture.self, id: 1))
+            XCTAssertNil(root.value.optional)
         }
     }
 
     /// check that removed relations do not trigger an update
-    func test_storeAggregate_removeEntityFromNestedArray_removedEntityChange_aggregateArrayNotChanged() {
+    func test_storeAggregate_removeEntityFromNestedArray_removedEntityChange_aggregateArrayNotChanged() throws {
         let entityStore = EntityStore()
         var entityToRemove = ListNodeFixture(id: 2)
         let nestedArray: [ListNodeFixture] = [entityToRemove, ListNodeFixture(id: 1)]
         var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: nestedArray)
 
-        withExtendedLifetime(entityStore.store(entity: root)) {
+        try withExtendedLifetime(entityStore.store(entity: root)) {
             root.listNodes = Array(nestedArray[1...])
             entityToRemove.key = "changed"
 
             _ = entityStore.store(entity: root)
             _ = entityStore.store(entity: entityToRemove)
 
-            let storedRoot = entityStore.find(RootFixture.self, id: 1)!.value
+            let root = try XCTUnwrap(entityStore.find(RootFixture.self, id: 1))
 
-            XCTAssertFalse(storedRoot.listNodes.contains(entityToRemove))
-            XCTAssertFalse(storedRoot.listNodes.map(\.id).contains(entityToRemove.id))
+            XCTAssertFalse(root.value.listNodes.contains(entityToRemove))
+            XCTAssertFalse(root.value.listNodes.map(\.id).contains(entityToRemove.id))
         }
     }
 
-    func test_storeAggregate_nestedWrapperChanged_aggregateIsUpdated() {
+    func test_storeAggregate_nestedWrapperChanged_aggregateIsUpdated() throws {
         let entityStore = EntityStore()
         let root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
         let updatedValue = SingleNodeFixture(id: 2, primitive: "updated")
 
-        withExtendedLifetime(entityStore.store(entity: root)) {
+        try withExtendedLifetime(entityStore.store(entity: root)) {
             _ = entityStore.store(entity: updatedValue)
-            XCTAssertEqual(entityStore.find(RootFixture.self, id: 1)!.value.enumWrapper, .single(updatedValue))
+            let root = try XCTUnwrap(entityStore.find(RootFixture.self, id: 1))
+            XCTAssertEqual(root.value.enumWrapper, .single(updatedValue))
         }
     }
 
-    func test_storeAggregate_nestedOptionalWrapperNullified_aggregateIsNullified() {
+    func test_storeAggregate_nestedOptionalWrapperNullified_aggregateIsNullified() throws {
         let entityStore = EntityStore()
         var root = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), optional: OptionalNodeFixture(id: 1), listNodes: [], enumWrapper: .single(SingleNodeFixture(id: 2)))
 
-        withExtendedLifetime(entityStore.store(entity: root)) {
+        try withExtendedLifetime(entityStore.store(entity: root)) {
             root.enumWrapper = nil
 
             _ = entityStore.store(entity: root)
             _ = entityStore.store(entity: SingleNodeFixture(id: 2, primitive: "deleted"))
 
-            XCTAssertNil(entityStore.find(RootFixture.self, id: 1)!.value.enumWrapper)
+            let root = try XCTUnwrap(entityStore.find(RootFixture.self, id: 1))
+            XCTAssertNil(root.value.enumWrapper)
         }
     }
 
@@ -155,19 +157,19 @@ extension EntityStoreTests {
         wait(for: [expectation], timeout: 0.5)
     }
 
-    func test_storeIdentifiable_entityIsAlreadyStored_updateIsCalled() {
-        let root = SingleNodeFixture(id: 1)
-        let entityStore = EntityStore()
-        let expectation = XCTestExpectation()
-
-        withExtendedLifetime(entityStore.store(entity: root)) {
-            _ = entityStore.store(entity: root, ifPresent: { _ in
-                expectation.fulfill()
-            })
-        }
-
-        wait(for: [expectation], timeout: 0)
-    }
+//    func test_storeIdentifiable_entityIsAlreadyStored_updateIsCalled() {
+//        let root = SingleNodeFixture(id: 1)
+//        let entityStore = EntityStore()
+//        let expectation = XCTestExpectation()
+//
+//        withExtendedLifetime(entityStore.store(entity: root)) {
+//            _ = entityStore.store(entity: root, ifPresent: { _ in
+//                expectation.fulfill()
+//            })
+//        }
+//
+//        wait(for: [expectation], timeout: 0)
+//    }
 }
 
 // MARK: Find

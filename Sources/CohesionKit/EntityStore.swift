@@ -45,6 +45,7 @@ public class EntityStore {
     ) -> EntityObserver<T> {
         transaction {
             var entity = entity
+            let entityKey = ObjectKey(of: T.self, id: entity.id)
 
             if storage[entity] != nil {
                 update?(&entity)
@@ -56,7 +57,9 @@ public class EntityStore {
                 storeAlias(content: entity, key: key, modifiedAt: modifiedAt)
             }
 
-            return EntityObserver(node: node, registry: registry)
+            store(entity, identifier: entityKey, modifiedAt: modifiedAt)
+
+            return EntityObserver(entity: entity, key: entityKey, registry: registry)
         }
     }
 
@@ -126,6 +129,12 @@ public class EntityStore {
     /// - Parameter id: the entity id
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
         identityQueue.sync {
+            let key = ObjectKey(of: T.self, id: id)
+
+            if let entity = indexer[key]?.entity as? T {
+                return EntityObserver(entity: entity, key: key, registry: registry)
+            }
+
             if let node = storage[T.self, id: id] {
                 return EntityObserver(node: node, registry: registry)
             }
