@@ -14,9 +14,9 @@ class EntityStoreTests: XCTestCase {
         let entityStore = EntityStore()
 
         withExtendedLifetime(entityStore.store(entity: entity)) { _ in
-            XCTAssertNotNil(entityStore.storage[SingleNodeFixture.self, id: 1])
-            XCTAssertNotNil(entityStore.storage[OptionalNodeFixture.self, id: 1])
-            XCTAssertNotNil(entityStore.storage[ListNodeFixture.self, id: 1])
+            XCTAssertNotNil(entityStore.find(SingleNodeFixture.self, id: 1))
+            XCTAssertNotNil(entityStore.find(OptionalNodeFixture.self, id: 1))
+            XCTAssertNotNil(entityStore.find(ListNodeFixture.self, id: 1))
         }
     }
 

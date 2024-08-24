@@ -12,8 +12,9 @@ public class EntityStore {
     private let logger: Logger?
     private let registry: ObserverRegistry
 
-    private(set) var indexer: EntityIndexer = [:]
-    private(set) var storage: EntitiesStorage = EntitiesStorage()
+    private var indexer: EntityIndexer = [:]
+    private var aliases: [String: ObjectKey] = [:]
+    private var storage: EntitiesStorage = EntitiesStorage()
     private(set) var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = EntityStoreStoreVisitor(entityStore: self)
 
@@ -40,26 +41,48 @@ public class EntityStore {
     public func store<T: Identifiable>(
         entity: T,
         named: AliasKey<T>? = nil,
-        modifiedAt: Stamp? = nil,
-        ifPresent update: Update<T>? = nil
+        modifiedAt: Stamp? = nil
     ) -> EntityObserver<T> {
         transaction {
-            var entity = entity
-            let entityKey = ObjectKey(of: T.self, id: entity.id)
+            let key = ObjectKey(of: T.self, id: entity.id)
 
-            if storage[entity] != nil {
-                update?(&entity)
+            store(entity, identifier: key, modifiedAt: modifiedAt)
+
+            if let alias = named {
+                registerAlias(alias, to: key)
             }
 
-            let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
+            indexer[key]?.metadata.observersCount += 1
 
-            if let key = named {
-                storeAlias(content: entity, key: key, modifiedAt: modifiedAt)
-            }
+            return EntityObserver(
+                entity: entity,
+                key: key,
+                registry: registry,
+                onUnsubscribed: {
+                    self.transaction {
+                        self.indexer[key]?.metadata.observersCount -= 1
+                        self.cleanup(identifier: key)
+                    }
+                }
+            )
+        }
+    }
 
-            store(entity, identifier: entityKey, modifiedAt: modifiedAt)
+    private func cleanup(identifier: ObjectKey) {
+        guard let metadata = indexer[identifier]?.metadata else {
+            return
+        }
 
-            return EntityObserver(entity: entity, key: entityKey, registry: registry)
+        if metadata.isActivelyUsed {
+            return
+        }
+
+        /// this entity is no longer used so free it
+        indexer.removeValue(forKey: identifier)
+
+        for childRef in metadata.childrenRefs {
+            indexer[childRef]?.metadata.parentsRefs.remove(identifier)
+            cleanup(identifier: childRef) // let's (potentially) clean the child either
         }
     }
 
@@ -132,7 +155,13 @@ public class EntityStore {
             let key = ObjectKey(of: T.self, id: id)
 
             if let entity = indexer[key]?.entity as? T {
-                return EntityObserver(entity: entity, key: key, registry: registry)
+                indexer[key]?.metadata.observersCount += 1
+                return EntityObserver(entity: entity, key: key, registry: registry, onUnsubscribed: {
+                    self.transaction {
+                        self.indexer[key]?.metadata.observersCount -= 1
+                        self.cleanup(identifier: key)
+                    }
+                })
             }
 
             if let node = storage[T.self, id: id] {
@@ -213,11 +242,11 @@ public class EntityStore {
     func store<E: Identifiable>(_ entity: E, identifier: ObjectKey, modifiedAt: Stamp?) {
         var metadata = indexer[identifier]?.metadata ?? EntityMetadata()
 
-        guard !registry.hasPendingChange(for: identifier) else {
+        if let modifiedAt, let oldModifiedAt = indexer[identifier]?.modifiedAt, oldModifiedAt >= modifiedAt {
             return
         }
 
-        if let modifiedAt, indexer[identifier]?.modifiedAt ?? 0 >= modifiedAt {
+        guard !registry.hasPendingChange(for: identifier) else {
             return
         }
 
@@ -228,14 +257,14 @@ public class EntityStore {
             let removedRefs = metadata.childrenRefs.subtracting(refs)
 
             for added in addedRefs {
-                indexer[added]?.metadata.parents.insert(identifier)
+                indexer[added]?.metadata.parentsRefs.insert(identifier)
             }
 
             for removed in removedRefs {
-                let isRemoved = indexer[removed]?.metadata.parents.remove(identifier)
+                let isRemoved = indexer[removed]?.metadata.parentsRefs.remove(identifier)
                 assert(isRemoved != nil)
 
-                if indexer[removed]?.metadata.parents.isEmpty ?? false {
+                if indexer[removed]?.metadata.parentsRefs.isEmpty ?? false {
                     // TODO
                 }
             }
@@ -248,6 +277,10 @@ public class EntityStore {
         indexer[identifier] = indexed
 
         registry.enqueueChange(for: indexed, key: identifier)
+
+        for parentsRef in metadata.parentsRefs {
+            // TODO: update parent
+        }
     }
 
     private func storeChildren(of entity: some Aggregate, modifiedAt: Stamp?) -> Set<ObjectKey> {
@@ -258,6 +291,19 @@ public class EntityStore {
         }
 
         return refs
+    }
+
+    private func registerAlias<T>(_ alias: AliasKey<T>, to entityKey: ObjectKey) {
+        let aliasKey = alias.key
+
+        // entity already registered for this alias
+        if let oldKey = aliases[aliasKey], oldKey != entityKey {
+            indexer[oldKey]?.metadata.aliasesRefs.remove(aliasKey)
+            cleanup(identifier: oldKey)
+        }
+
+        indexer[entityKey]?.metadata.aliasesRefs.insert(aliasKey)
+        aliases[aliasKey] = entityKey
     }
 
     private func storeAlias<T>(content: T?, key: AliasKey<T>, modifiedAt: Stamp?) {

@@ -8,10 +8,28 @@ public struct EntityObserver<T> {
 
     let createObserver: (@escaping OnChange) -> Subscription
 
-    init(entity: T, key: ObjectKey, registry: ObserverRegistry) {
+    init(
+        entity: T,
+        key: ObjectKey,
+        registry: ObserverRegistry,
+        onUnsubscribed: @escaping () -> Void
+    ) {
+        // Create a subscription variable so that onUnregistered get either called when:
+        // - struct is "deinit" wand no observation was done
+        // - observation was registered and released
+        let unregister = Subscription {
+            print(">> unregistered")
+            onUnsubscribed()
+        }
+
         self.value = entity
         self.createObserver = { onChange in
-            registry.addObserver(entity: entity, key: key, initial: true, onChange: onChange)
+            let observer = registry.addObserver(entity: entity, key: key, initial: true, onChange: onChange)
+
+            return Subscription {
+                observer.unsubscribe()
+                unregister.unsubscribe()
+            }
         }
     }
 

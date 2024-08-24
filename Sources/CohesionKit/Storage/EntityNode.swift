@@ -2,14 +2,20 @@ import Foundation
 import Combine
 
 struct EntityMetadata {
+    /// children this entity is referencing/using
     var childrenRefs: Set<ObjectKey> = []
-    /// the entity managed by this object
     
-    /// parents referencing this entity
-    var parents: Set<ObjectKey> = []
+    /// parents referencing this entity. This means this entity should be listed inside its parents `EntityMetadata.childrenRefs` attribute
+    var parentsRefs: Set<ObjectKey> = []
     /// alias referencing this entity
-    var aliases: Set<ObjectKey> = []
-    /// children references of this entity
+    var aliasesRefs: Set<String> = []
+
+    /// number of observers
+    var observersCount: Int = 0
+
+    var isActivelyUsed: Bool {
+        observersCount > 0 || !parentsRefs.isEmpty || !aliasesRefs.isEmpty
+    }
 }
 
 /// Typed erased protocol
