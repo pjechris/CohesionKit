@@ -44,45 +44,15 @@ public class EntityStore {
         modifiedAt: Stamp? = nil
     ) -> EntityObserver<T> {
         transaction {
-            let key = ObjectKey(of: T.self, id: entity.id)
+            var entity = entity
 
-            store(entity, identifier: key, modifiedAt: modifiedAt)
+            let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
-            if let alias = named {
-                registerAlias(alias, to: key)
+            if let key = named {
+                storeAlias(content: entity, key: key, modifiedAt: modifiedAt)
             }
 
-            indexer[key]?.metadata.observersCount += 1
-
-            return EntityObserver(
-                entity: entity,
-                key: key,
-                registry: registry,
-                onUnsubscribed: {
-                    self.transaction {
-                        self.indexer[key]?.metadata.observersCount -= 1
-                        self.cleanup(identifier: key)
-                    }
-                }
-            )
-        }
-    }
-
-    private func cleanup(identifier: ObjectKey) {
-        guard let metadata = indexer[identifier]?.metadata else {
-            return
-        }
-
-        if metadata.isActivelyUsed {
-            return
-        }
-
-        /// this entity is no longer used so free it
-        indexer.removeValue(forKey: identifier)
-
-        for (_, childRef) in metadata.childrenRefs {
-            indexer[childRef]?.metadata.parentsRefs.remove(identifier)
-            cleanup(identifier: childRef) // let's (potentially) clean the child either
+            return EntityObserver(node: node, registry: registry)
         }
     }
 
@@ -339,6 +309,24 @@ public class EntityStore {
             self.registry.postChanges()
 
             return returnValue
+        }
+    }
+
+    private func cleanup(identifier: ObjectKey) {
+        guard let metadata = indexer[identifier]?.metadata else {
+            return
+        }
+
+        if metadata.isActivelyUsed {
+            return
+        }
+
+        /// this entity is no longer used so free it
+        indexer.removeValue(forKey: identifier)
+
+        for (_, childRef) in metadata.childrenRefs {
+            indexer[childRef]?.metadata.parentsRefs.remove(identifier)
+            cleanup(identifier: childRef) // let's (potentially) clean the child either
         }
     }
 }
