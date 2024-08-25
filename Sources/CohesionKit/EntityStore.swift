@@ -12,8 +12,8 @@ public class EntityStore {
     private let logger: Logger?
     private let registry: ObserverRegistry
 
-    private(set) var storage: EntitiesStorage = EntitiesStorage()
-    private(set) var refAliases: AliasStorage = [:]
+    private var storage: EntitiesStorage = EntitiesStorage()
+    private var refAliases: AliasStorage = [:]
     private lazy var storeVisitor = EntityStoreStoreVisitor(entityStore: self)
 
     /// Create a new EntityStore instance optionally with a queue and a logger
