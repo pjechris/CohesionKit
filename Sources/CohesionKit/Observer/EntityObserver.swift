@@ -18,7 +18,6 @@ public struct EntityObserver<T> {
         // - struct is "deinit" wand no observation was done
         // - observation was registered and released
         let unregister = Subscription {
-            print(">> unregistered")
             onUnsubscribed()
         }
 

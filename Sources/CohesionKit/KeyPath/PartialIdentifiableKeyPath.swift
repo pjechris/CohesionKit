@@ -1,10 +1,29 @@
 import Combine
 
+protocol Writable {
+    func write<Value>(_ value: Value, on root: inout Any)
+}
+
+extension WritableKeyPath: Writable {
+    func write<V>(_ value: V, on root: inout Any) {
+        guard var rooted = root as? Root else {
+            return
+        }
+
+        guard let value = value as? Value else {
+            return
+        }
+
+        rooted[keyPath: self] = value
+        root = rooted
+    }
+}
+
 /// A `KeyPath` wrapper allowing only `Identifiable`/`Aggregate` keypaths
 public struct PartialIdentifiableKeyPath<Root> {
     let keyPath: PartialKeyPath<Root>
     let accept: (EntityNode<Root>, Root, Stamp?, NestedEntitiesVisitor) -> Void
-    let store: (Root, Stamp?, EntityStore) -> Set<ObjectKey>
+    let store: (Root, Stamp?, EntityStore) -> [PartialKeyPath<Root>: ObjectKey]
 
     /// Creates an instance referencing an `Identifiable` keyPath
     public init<T: Identifiable>(_ keyPath: WritableKeyPath<Root, T>) {
@@ -21,7 +40,7 @@ public struct PartialIdentifiableKeyPath<Root> {
 
             store.store(entity, identifier: entityID, modifiedAt: stamp)
 
-            return [entityID]
+            return [keyPath: entityID]
         }
     }
 
@@ -40,7 +59,7 @@ public struct PartialIdentifiableKeyPath<Root> {
 
             store.store(entity, identifier: entityID, modifiedAt: stamp)
 
-            return [entityID]
+            return [keyPath: entityID]
         }
     }
 
@@ -59,10 +78,10 @@ public struct PartialIdentifiableKeyPath<Root> {
 
                 store.store(entity, identifier: entityID, modifiedAt: stamp)
 
-                return [entityID]
+                return [keyPath.unwrapped(): entityID]
             }
 
-            return []
+            return [:]
         }
     }
 
@@ -80,10 +99,10 @@ public struct PartialIdentifiableKeyPath<Root> {
 
                 store.store(entity, identifier: entityID, modifiedAt: stamp)
 
-                return [entityID]
+                return [keyPath.unwrapped(): entityID]
             }
 
-            return []
+            return [:]
         }
     }
 
@@ -96,15 +115,19 @@ public struct PartialIdentifiableKeyPath<Root> {
             )
         }
         self.store = { root, stamp, store in
-            Set(
-                root[keyPath: keyPath].map { entity in
-                    let entityID = ObjectKey(of: C.Element.self, id: entity.id)
+            let keysAndValues = root[keyPath: keyPath].indices.map { index in
+                let entity = root[keyPath: keyPath][index]
+                let entityID = ObjectKey(of: C.Element.self, id: entity.id)
 
-                    store.store(entity, identifier: entityID, modifiedAt: stamp)
+                store.store(entity, identifier: entityID, modifiedAt: stamp)
 
-                    return entityID
-                }
-            )
+                return (keyPath.appending(path: \.[index]), entityID)
+            }
+
+            return Dictionary(keysAndValues) { first, second in
+                print("BUG: Got duplicate keypath for collection!")
+                return second
+            }
         }
     }
 
@@ -120,18 +143,22 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
         self.store = { root, stamp, store in
             if let entities = root[keyPath: keyPath] {
-                return Set(
-                    entities.map { entity in
-                        let entityID = ObjectKey(of: C.Element.self, id: entity.id)
+                let keysAndValues = entities.indices.map { index in
+                    let entity = entities[index]
+                    let entityID = ObjectKey(of: C.Element.self, id: entity.id)
 
-                        store.store(entity, identifier: entityID, modifiedAt: stamp)
+                    store.store(entity, identifier: entityID, modifiedAt: stamp)
 
-                        return entityID
-                    }
-                )
+                    return (keyPath.unwrapped().appending(path: \.[index]), entityID)
+                }
+
+                return Dictionary(keysAndValues) { first, second in
+                    print("BUG: Got duplicate keypath for collection!")
+                    return second
+                }
             }
 
-            return []
+            return [:]
         }
     }
 
@@ -144,15 +171,19 @@ public struct PartialIdentifiableKeyPath<Root> {
             )
         }
         self.store = { root, stamp, store in
-            Set(
-                root[keyPath: keyPath].map { entity in
-                    let entityID = ObjectKey(of: C.Element.self, id: entity.id)
+            let keysAndValues = root[keyPath: keyPath].indices.map { index in
+                let entity = root[keyPath: keyPath][index]
+                let entityID = ObjectKey(of: C.Element.self, id: entity.id)
 
-                    store.store(entity, identifier: entityID, modifiedAt: stamp)
+                store.store(entity, identifier: entityID, modifiedAt: stamp)
 
-                    return entityID
-                }
-            )
+                return (keyPath.appending(path: \.[index]), entityID)
+            }
+
+            return Dictionary(keysAndValues) { first, second in
+                print("BUG: Got duplicate keypath for collection!")
+                return second
+            }
         }
     }
 
@@ -168,18 +199,22 @@ public struct PartialIdentifiableKeyPath<Root> {
         }
         self.store = { root, stamp, store in
             if let entities = root[keyPath: keyPath] {
-                return Set(
-                    entities.map { entity in
-                        let entityID = ObjectKey(of: C.Element.self, id: entity.id)
+                let keysAndValues = entities.indices.map { index in
+                    let entity = entities[index]
+                    let entityID = ObjectKey(of: C.Element.self, id: entity.id)
 
-                        store.store(entity, identifier: entityID, modifiedAt: stamp)
+                    store.store(entity, identifier: entityID, modifiedAt: stamp)
 
-                        return entityID
-                    }
-                )
+                    return (keyPath.unwrapped().appending(path: \.[index]), entityID)
+                }
+
+                return Dictionary(keysAndValues) { first, second in
+                    print("BUG: Got duplicate keypath for collection!")
+                    return second
+                }
             }
 
-            return []
+            return [:]
         }
     }
 
@@ -191,13 +226,16 @@ public struct PartialIdentifiableKeyPath<Root> {
             }
         }
         self.store = {  root, stamp, store in
-            var refs: [ObjectKey] = []
+            var refs: [PartialKeyPath<Root>: ObjectKey] = [:]
 
             for wrappedKeyPath in root[keyPath: keyPath].wrappedEntitiesKeyPaths(relativeTo: keyPath) {
-                refs.append(contentsOf: wrappedKeyPath.store(root, stamp, store))
+                refs.merge(wrappedKeyPath.store(root, stamp, store)) { first, second in
+                    print("BUG: duplicate keyPath in EntityWrapper!")
+                    return second
+                }
             }
 
-            return Set(refs)
+            return refs
         }
     }
 
@@ -211,15 +249,18 @@ public struct PartialIdentifiableKeyPath<Root> {
             }
         }
         self.store = {  root, stamp, store in
-            var refs: [ObjectKey] = []
+            var refs: [PartialKeyPath<Root>: ObjectKey] = [:]
 
             if let wrapper = root[keyPath: keyPath] {
                 for wrappedKeyPath in wrapper.wrappedEntitiesKeyPaths(relativeTo: keyPath.unwrapped()) {
-                    refs.append(contentsOf: wrappedKeyPath.store(root, stamp, store))
+                    refs.merge(wrappedKeyPath.store(root, stamp, store)) { first, second in
+                        print("BUG: duplicate keyPath in EntityWrapper!")
+                        return second
+                    }
                 }
             }
 
-            return Set(refs)
+            return refs
         }
     }
 }

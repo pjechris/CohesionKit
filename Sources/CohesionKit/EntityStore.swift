@@ -80,7 +80,7 @@ public class EntityStore {
         /// this entity is no longer used so free it
         indexer.removeValue(forKey: identifier)
 
-        for childRef in metadata.childrenRefs {
+        for (_, childRef) in metadata.childrenRefs {
             indexer[childRef]?.metadata.parentsRefs.remove(identifier)
             cleanup(identifier: childRef) // let's (potentially) clean the child either
         }
@@ -252,9 +252,11 @@ public class EntityStore {
 
         if let aggregate = entity as? any Aggregate {
             let refs = storeChildren(of: aggregate, modifiedAt: modifiedAt)
+            let refKeys = Set(refs.values)
+            let oldKeys = Set(metadata.childrenRefs.values)
 
-            let addedRefs = refs.subtracting(metadata.childrenRefs)
-            let removedRefs = metadata.childrenRefs.subtracting(refs)
+            let addedRefs = refKeys.subtracting(oldKeys)
+            let removedRefs = oldKeys.subtracting(refKeys)
 
             for added in addedRefs {
                 indexer[added]?.metadata.parentsRefs.insert(identifier)
@@ -264,8 +266,8 @@ public class EntityStore {
                 let isRemoved = indexer[removed]?.metadata.parentsRefs.remove(identifier)
                 assert(isRemoved != nil)
 
-                if indexer[removed]?.metadata.parentsRefs.isEmpty ?? false {
-                    // TODO
+                if !(indexer[removed]?.metadata.isActivelyUsed ?? true) {
+                    cleanup(identifier: removed)
                 }
             }
 
@@ -278,16 +280,31 @@ public class EntityStore {
 
         registry.enqueueChange(for: indexed, key: identifier)
 
-        for parentsRef in metadata.parentsRefs {
-            // TODO: update parent
+        for parentRef in metadata.parentsRefs {
+            guard let parentEntity = indexer[parentRef] else {
+                continue
+            }
+
+            guard let child = parentEntity.metadata.childrenRefs.first(where: { $0.value == identifier }) else {
+                continue
+            }
+
+            let writable = child.key as? Writable
+
+            writable?.write(entity, on: &parentEntity.entity)
+
+            registry.enqueueChange(for: parentEntity, key: parentRef)
         }
     }
 
-    private func storeChildren(of entity: some Aggregate, modifiedAt: Stamp?) -> Set<ObjectKey> {
-        var refs: Set<ObjectKey> = []
+    private func storeChildren(of entity: some Aggregate, modifiedAt: Stamp?) -> [AnyKeyPath: ObjectKey] {
+        var refs: [AnyKeyPath: ObjectKey] = [:]
 
         for keyPathContainer in entity.nestedEntitiesKeyPaths {
-            refs = refs.union(keyPathContainer.store(entity, modifiedAt, self))
+            refs.merge(keyPathContainer.store(entity, modifiedAt, self)) { first, second in
+                print("BUG: duplicated keyPath while merging children keyPaths")
+                return second
+            }
         }
 
         return refs

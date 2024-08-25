@@ -3,8 +3,8 @@ import Combine
 
 struct EntityMetadata {
     /// children this entity is referencing/using
-    var childrenRefs: Set<ObjectKey> = []
-    
+    var childrenRefs: [AnyKeyPath: ObjectKey] = [:]
+
     /// parents referencing this entity. This means this entity should be listed inside its parents `EntityMetadata.childrenRefs` attribute
     var parentsRefs: Set<ObjectKey> = []
     /// alias referencing this entity
