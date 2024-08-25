@@ -36,11 +36,15 @@ class EntityNode<T>: AnyEntityNode {
         let node: AnyEntityNode
     }
 
+    var metadata = EntityMetadata()
+
     var value: Any { ref.value }
 
     var applyChildrenChanges = true
     /// An observable entity reference
     let ref: Observable<T>
+
+    let key: ObjectKey
 
     private let onChange: ((EntityNode<T>) -> Void)?
     /// last time the ref.value was changed. Any subsequent change must have a higher value to be applied
@@ -49,14 +53,19 @@ class EntityNode<T>: AnyEntityNode {
     /// entity children
     private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
 
-    init(ref: Observable<T>, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
+    init(ref: Observable<T>, key: ObjectKey, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
         self.ref = ref
         self.modifiedAt = modifiedAt
         self.onChange = onChange
+        self.key = key
     }
 
-    convenience init(_ entity: T, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
-        self.init(ref: Observable(value: entity), modifiedAt: modifiedAt, onChange: onChange)
+    convenience init(_ entity: T, key: ObjectKey, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
+        self.init(ref: Observable(value: entity), key: key, modifiedAt: modifiedAt, onChange: onChange)
+    }
+
+    convenience init(_ entity: T, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) where T: Identifiable {
+        self.init(ref: Observable(value: entity), key: ObjectKey(of: T.self, id: entity.id), modifiedAt: modifiedAt, onChange: onChange)
     }
 
     /// change the entity to a new value. If modifiedAt is nil or > to previous date update the value will be changed
@@ -108,6 +117,9 @@ class EntityNode<T>: AnyEntityNode {
         if let subscribedChild = children[keyPath]?.node as? EntityNode<Element>, subscribedChild == childNode {
             return
         }
+
+        childNode.metadata.parentsRefs.insert(key)
+        metadata.childrenRefs[keyPath] = childNode.key
 
         let subscription = childNode.ref.addObserver { [unowned self] newValue in
             guard self.applyChildrenChanges else {

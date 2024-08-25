@@ -89,7 +89,7 @@ class EntityNodeTests: XCTestCase {
             observerCalled = true
         }
 
-        node = EntityNode(ref: entityRef, modifiedAt: startTimestamp)
+        node = EntityNode(ref: entityRef, key: ObjectKey(of: SingleNodeFixture.self, id: 1), modifiedAt: startTimestamp)
         node.observeChild(childNode, for: \.singleNode)
 
         try childNode.updateEntity(newChild, modifiedAt: nil)
