@@ -1,11 +1,31 @@
 import Foundation
 import Combine
 
+struct EntityMetadata {
+    /// children this entity is referencing/using
+    /// key: the children keypath in the parent, value: the key in EntitieStorage
+    // TODO: change value to a ObjectKey
+    var childrenRefs: [AnyKeyPath: String] = [:]
+
+    /// parents referencing this entity. This means this entity should be listed inside its parents `EntityMetadata.childrenRefs` attribute
+    var parentsRefs: Set<ObjectKey> = []
+    /// alias referencing this entity
+    var aliasesRefs: Set<String> = []
+
+    /// number of observers
+    var observersCount: Int = 0
+
+    var isActivelyUsed: Bool {
+        observersCount > 0 || !parentsRefs.isEmpty || !aliasesRefs.isEmpty
+    }
+}
+
 /// Typed erased protocol
 protocol AnyEntityNode: AnyObject {
     var value: Any { get }
+    var metadata: EntityMetadata { get }
 
-  func nullify()
+    func nullify()
 }
 
 /// A graph node representing a entity of type `T` and its children. Anytime one of its children is updated the node
