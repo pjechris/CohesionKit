@@ -41,9 +41,13 @@ class EntityNode<T>: AnyEntityNode {
 
     var value: Any { ref.value }
 
+    var metadata = EntityMetadata()
+
     var applyChildrenChanges = true
     /// An observable entity reference
     let ref: Observable<T>
+
+    let storageKey: String
 
     private let onChange: ((EntityNode<T>) -> Void)?
     /// last time the ref.value was changed. Any subsequent change must have a higher value to be applied
@@ -52,14 +56,20 @@ class EntityNode<T>: AnyEntityNode {
     /// entity children
     private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
 
-    init(ref: Observable<T>, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
+    init(ref: Observable<T>, key: String, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
         self.ref = ref
         self.modifiedAt = modifiedAt
         self.onChange = onChange
+        self.storageKey = key
     }
 
-    convenience init(_ entity: T, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
-        self.init(ref: Observable(value: entity), modifiedAt: modifiedAt, onChange: onChange)
+    convenience init(_ entity: T, key: String, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
+        self.init(ref: Observable(value: entity), key: key, modifiedAt: modifiedAt, onChange: onChange)
+    }
+
+    convenience init(_ entity: T, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) where T: Identifiable {
+        let key = "\(T.self)-\(entity.id)"
+        self.init(entity, key: key, modifiedAt: modifiedAt, onChange: onChange)
     }
 
     /// change the entity to a new value. If modifiedAt is nil or > to previous date update the value will be changed
