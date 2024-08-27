@@ -46,6 +46,8 @@ class EntityNode<T>: AnyEntityNode {
     var value: Any { ref.value }
 
     var metadata = EntityMetadata()
+    // FIXME: to delete, it's "just" to have a strong ref and avoid nodes to be deleted. Need a better memory management
+    private var childrenNodes: [AnyEntityNode] = []
 
     var applyChildrenChanges = true
     /// An observable entity reference
@@ -86,7 +88,6 @@ class EntityNode<T>: AnyEntityNode {
 
         modifiedAt = newModifiedAt ?? modifiedAt
         ref.value = newEntity
-//        onChange?(self)
     }
 
     func nullify() -> Bool {
@@ -106,6 +107,7 @@ class EntityNode<T>: AnyEntityNode {
     func removeAllChildren() {
         children = [:]
         metadata.childrenRefs = [:]
+        childrenNodes = []
     }
 
     func removeParent(_ node: AnyEntityNode) {
@@ -153,21 +155,7 @@ class EntityNode<T>: AnyEntityNode {
     ) {
         metadata.childrenRefs[childNode.storageKey] = keyPath
         childNode.metadata.parentsRefs.insert(storageKey)
-
-        if let subscribedChild = children[keyPath]?.node as? EntityNode<Element>, subscribedChild == childNode {
-            return
-        }
-
-        let subscription = childNode.ref.addObserver { [unowned self] newValue in
-            guard self.applyChildrenChanges else {
-                return
-            }
-
-            update(&self.ref.value, newValue)
-            self.onChange?(self)
-        }
-
-        children[keyPath] = SubscribedChild(subscription: subscription, node: childNode)
+        childrenNodes.append(childNode)
     }
 }
 
