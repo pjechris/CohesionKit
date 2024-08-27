@@ -19,6 +19,11 @@ struct EntitiesStorage {
         set { indexes[key(for: T.self, id: id)] = Weak(value: newValue) }
     }
 
+    subscript(_ key: String) -> AnyWeak? {
+        get { indexes[key] }
+        set { indexes[key] = newValue }
+    }
+
     private func key<T>(for type: T.Type, id: Any) -> String {
         "\(type)-\(id)"
     }

@@ -3,12 +3,12 @@ import Combine
 
 struct EntityMetadata {
     /// children this entity is referencing/using
-    /// key: the children keypath in the parent, value: the key in EntitieStorage
-    // TODO: change value to a ObjectKey
-    var childrenRefs: [AnyKeyPath: String] = [:]
+    // TODO: change key to a ObjectKey
+    var childrenRefs: [String: AnyKeyPath] = [:]
 
     /// parents referencing this entity. This means this entity should be listed inside its parents `EntityMetadata.childrenRefs` attribute
-    var parentsRefs: Set<ObjectKey> = []
+    // TODO: Change value to ObjectKey
+    var parentsRefs: Set<String> = []
     /// alias referencing this entity
     var aliasesRefs: Set<String> = []
 
@@ -24,8 +24,11 @@ struct EntityMetadata {
 protocol AnyEntityNode: AnyObject {
     var value: Any { get }
     var metadata: EntityMetadata { get }
+    var storageKey: String { get }
 
     func nullify()
+    func removeParent(_ node: AnyEntityNode)
+    func updateEntityRelationship<T>(_ node: EntityNode<T>)
 }
 
 /// A graph node representing a entity of type `T` and its children. Anytime one of its children is updated the node
@@ -93,10 +96,30 @@ class EntityNode<T>: AnyEntityNode {
 
     func removeAllChildren() {
         children = [:]
+        metadata.childrenRefs = [:]
+    }
+
+    func removeParent(_ node: AnyEntityNode) {
+        metadata.parentsRefs.remove(node.storageKey)
+    }
+
+    func updateEntityRelationship<U>(_ node: EntityNode<U>) {
+        guard let keyPath = metadata.childrenRefs[node.storageKey] else {
+            return
+        }
+
+        guard let writableKeyPath = keyPath as? WritableKeyPath<T, U> else {
+            return
+        }
+
+        ref.value[keyPath: writableKeyPath] = node.ref.value
     }
 
     /// observe one of the node child
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C>) {
+        metadata.childrenRefs[childNode.storageKey] = keyPath
+        childNode.metadata.parentsRefs.insert(storageKey)
+
         observeChild(childNode, identity: keyPath) { root, newValue in
             root[keyPath: keyPath] = newValue
         }

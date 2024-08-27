@@ -180,6 +180,14 @@ public class EntityStore {
             return node
         }
 
+        for (childRef, _) in node.metadata.childrenRefs {
+            guard let childNode = storage[childRef]?.unwrap() as? AnyEntityNode else {
+                continue
+            }
+
+            childNode.removeParent(node)
+        }
+
         // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()
 
@@ -195,6 +203,14 @@ public class EntityStore {
         }
         catch {
             logger?.didFailedToStore(T.self, id: entity.id, error: error)
+        }
+
+        for parentRef in node.metadata.parentsRefs {
+            guard let parentNode = storage[parentRef]?.unwrap() as? AnyEntityNode else {
+                continue
+            }
+
+            parentNode.updateEntityRelationship(node)
         }
 
         return node
