@@ -26,9 +26,10 @@ protocol AnyEntityNode: AnyObject {
     var metadata: EntityMetadata { get }
     var storageKey: String { get }
 
-    func nullify()
+    func nullify() -> Bool
     func removeParent(_ node: AnyEntityNode)
     func updateEntityRelationship<T>(_ node: EntityNode<T>)
+    func enqueue(in: ObserverRegistry)
 }
 
 /// A graph node representing a entity of type `T` and its children. Anytime one of its children is updated the node
@@ -85,13 +86,21 @@ class EntityNode<T>: AnyEntityNode {
 
         modifiedAt = newModifiedAt ?? modifiedAt
         ref.value = newEntity
-        onChange?(self)
+//        onChange?(self)
     }
 
-    func nullify() {
+    func nullify() -> Bool {
         if let value = ref.value as? Nullable {
-            try? updateEntity(value.nullified() as! T, modifiedAt: nil)
+            do {
+                try updateEntity(value.nullified() as! T, modifiedAt: nil)
+                return true
+            }
+            catch {
+                return false
+            }
         }
+
+        return false
     }
 
     func removeAllChildren() {
@@ -113,6 +122,10 @@ class EntityNode<T>: AnyEntityNode {
         }
 
         ref.value[keyPath: writableKeyPath] = node.ref.value
+    }
+
+    func enqueue(in registry: ObserverRegistry) {
+        registry.enqueueChange(for: self)
     }
 
     /// observe one of the node child

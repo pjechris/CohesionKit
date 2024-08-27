@@ -162,6 +162,7 @@ public class EntityStore {
 
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
+            registry.enqueueChange(for: node)
             logger?.didStore(T.self, id: entity.id)
         }
         catch {
@@ -199,6 +200,7 @@ public class EntityStore {
 
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
+            registry.enqueueChange(for: node)
             logger?.didStore(T.self, id: entity.id)
         }
         catch {
@@ -211,6 +213,7 @@ public class EntityStore {
             }
 
             parentNode.updateEntityRelationship(node)
+            parentNode.enqueue(in: registry)
         }
 
         return node
@@ -402,7 +405,9 @@ extension EntityStore {
 
     private func removeAliases() {
         for (_, node) in refAliases {
-                node.nullify()
+            if node.nullify() {
+                node.enqueue(in: registry)
+            }
         }
     }
 }
