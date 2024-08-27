@@ -130,9 +130,6 @@ class EntityNode<T>: AnyEntityNode {
 
     /// observe one of the node child
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C>) {
-        metadata.childrenRefs[childNode.storageKey] = keyPath
-        childNode.metadata.parentsRefs.insert(storageKey)
-
         observeChild(childNode, identity: keyPath) { root, newValue in
             root[keyPath: keyPath] = newValue
         }
@@ -154,6 +151,9 @@ class EntityNode<T>: AnyEntityNode {
         identity keyPath: KeyPath<T, C>,
         update: @escaping (inout T, Element) -> Void
     ) {
+        metadata.childrenRefs[childNode.storageKey] = keyPath
+        childNode.metadata.parentsRefs.insert(storageKey)
+
         if let subscribedChild = children[keyPath]?.node as? EntityNode<Element>, subscribedChild == childNode {
             return
         }

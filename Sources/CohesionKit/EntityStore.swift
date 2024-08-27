@@ -169,6 +169,15 @@ public class EntityStore {
             logger?.didFailedToStore(T.self, id: entity.id, error: error)
         }
 
+        for parentRef in node.metadata.parentsRefs {
+            guard let parentNode = storage[parentRef]?.unwrap() as? AnyEntityNode else {
+                continue
+            }
+
+            parentNode.updateEntityRelationship(node)
+            parentNode.enqueue(in: registry)
+        }
+
         return node
     }
 
