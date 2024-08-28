@@ -411,7 +411,7 @@ extension EntityStoreTests {
         XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<RootFixture>.self))
     }
 
-    func test_update_entityIsIndirectlyUsedByAlias_itEnqueuesAliasInRegistry() {
+    func test_update_entityIsInsideAggregagte_aggreateIsAliased_itEnqueuesAliasInRegistry() {
         let aggregate = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), listNodes: [])
         let registry = ObserverRegistryStub()
         let entityStore = EntityStore(registry: registry)

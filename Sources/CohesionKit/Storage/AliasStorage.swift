@@ -1,5 +1,5 @@
 /// Keep a strong reference on each aliased node
-typealias AliasStorage = [String: AnyEntityNode]
+typealias AliasStorage = [String: any AnyEntityNode]
 
 extension AliasStorage {
     subscript<T>(_ aliasKey: AliasKey<T>) -> EntityNode<AliasContainer<T>>? {
@@ -9,7 +9,8 @@ extension AliasStorage {
 
     subscript<T>(safe key: AliasKey<T>, onChange onChange: ((EntityNode<AliasContainer<T>>) -> Void)? = nil) -> EntityNode<AliasContainer<T>> {
         mutating get {
-            self[key: key, default: EntityNode(AliasContainer(key: key), modifiedAt: nil, onChange: onChange)]
+            let storeKey = buildKey(for: T.self, key: key)
+            return self[key: key, default: EntityNode(AliasContainer(key: key), key: storeKey, modifiedAt: nil, onChange: onChange)]
         }
     }
 

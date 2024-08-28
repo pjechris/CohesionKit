@@ -59,8 +59,8 @@ class EntityStoreStoreVisitorTests: XCTestCase {
 }
 
 private class EntityNodeStub<T>: EntityNode<T> {
-    var observeChildKeyPathCalled: (AnyEntityNode, PartialKeyPath<T>) -> Void = { _, _ in }
-    var observeChildKeyPathOptionalCalled: (AnyEntityNode, PartialKeyPath<T>) -> Void = { _, _ in }
+    var observeChildKeyPathCalled: (any AnyEntityNode, PartialKeyPath<T>) -> Void = { _, _ in }
+    var observeChildKeyPathOptionalCalled: (any AnyEntityNode, PartialKeyPath<T>) -> Void = { _, _ in }
 
     override func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C>) {
         observeChildKeyPathCalled(childNode, keyPath)

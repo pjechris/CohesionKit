@@ -169,14 +169,7 @@ public class EntityStore {
             logger?.didFailedToStore(T.self, id: entity.id, error: error)
         }
 
-        for parentRef in node.metadata.parentsRefs {
-            guard let parentNode = storage[parentRef]?.unwrap() as? AnyEntityNode else {
-                continue
-            }
-
-            parentNode.updateEntityRelationship(node)
-            parentNode.enqueue(in: registry)
-        }
+        updateParents(of: node)
 
         return node
     }
@@ -191,7 +184,7 @@ public class EntityStore {
         }
 
         for (childRef, _) in node.metadata.childrenRefs {
-            guard let childNode = storage[childRef]?.unwrap() as? AnyEntityNode else {
+            guard let childNode = storage[childRef]?.unwrap() as? any AnyEntityNode else {
                 continue
             }
 
@@ -216,16 +209,21 @@ public class EntityStore {
             logger?.didFailedToStore(T.self, id: entity.id, error: error)
         }
 
+        updateParents(of: node)
+
+        return node
+    }
+
+    func updateParents(of node: some AnyEntityNode) {
         for parentRef in node.metadata.parentsRefs {
-            guard let parentNode = storage[parentRef]?.unwrap() as? AnyEntityNode else {
+            guard let parentNode = storage[parentRef]?.unwrap() as? any AnyEntityNode ?? refAliases[parentRef] else {
                 continue
             }
 
             parentNode.updateEntityRelationship(node)
             parentNode.enqueue(in: registry)
+            updateParents(of: parentNode)
         }
-
-        return node
     }
 
     private func storeAlias<T>(content: T?, key: AliasKey<T>, modifiedAt: Stamp?) {

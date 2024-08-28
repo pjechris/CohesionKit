@@ -22,32 +22,36 @@ struct EntityMetadata {
 
 /// Typed erased protocol
 protocol AnyEntityNode: AnyObject {
+    associatedtype Value
+
+    var ref: Observable<Value> { get }
     var value: Any { get }
     var metadata: EntityMetadata { get }
     var storageKey: String { get }
 
     func nullify() -> Bool
-    func removeParent(_ node: AnyEntityNode)
-    func updateEntityRelationship<T>(_ node: EntityNode<T>)
+    func removeParent(_ node: any AnyEntityNode)
+    func updateEntityRelationship(_ node: some AnyEntityNode)
     func enqueue(in: ObserverRegistry)
 }
 
 /// A graph node representing a entity of type `T` and its children. Anytime one of its children is updated the node
 /// will reflect the change on its own value.
 class EntityNode<T>: AnyEntityNode {
+    typealias Value = T
     /// A child subscription used by its EntityNode parent
     struct SubscribedChild {
         /// the child subscription. Use it to unsubscribe to child upates
         let subscription: Subscription
         /// the child node value
-        let node: AnyEntityNode
+        let node: any AnyEntityNode
     }
 
     var value: Any { ref.value }
 
     var metadata = EntityMetadata()
     // FIXME: to delete, it's "just" to have a strong ref and avoid nodes to be deleted. Need a better memory management
-    private var childrenNodes: [AnyEntityNode] = []
+    private var childrenNodes: [any AnyEntityNode] = []
 
     var applyChildrenChanges = true
     /// An observable entity reference
@@ -110,20 +114,26 @@ class EntityNode<T>: AnyEntityNode {
         childrenNodes = []
     }
 
-    func removeParent(_ node: AnyEntityNode) {
+    func removeParent(_ node: any AnyEntityNode) {
         metadata.parentsRefs.remove(node.storageKey)
     }
 
-    func updateEntityRelationship<U>(_ node: EntityNode<U>) {
+    func updateEntityRelationship<U: AnyEntityNode>(_ node: U) {
         guard let keyPath = metadata.childrenRefs[node.storageKey] else {
             return
         }
 
-        guard let writableKeyPath = keyPath as? WritableKeyPath<T, U> else {
+        if let writableKeyPath = keyPath as? WritableKeyPath<T, U.Value> {
+            ref.value[keyPath: writableKeyPath] = node.ref.value
             return
         }
 
-        ref.value[keyPath: writableKeyPath] = node.ref.value
+        if let optionalWritableKeyPath = keyPath as? WritableKeyPath<T, U.Value?> {
+            ref.value[keyPath: optionalWritableKeyPath] = node.ref.value
+            return
+        }
+
+        print("CohesionKit: cannot convert \(type(of: keyPath)) to WritableKeyPath<\(T.self), \(U.Value.self)>")
     }
 
     func enqueue(in registry: ObserverRegistry) {
