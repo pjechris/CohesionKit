@@ -31,7 +31,7 @@ protocol AnyEntityNode: AnyObject {
 
     func nullify() -> Bool
     func removeParent(_ node: any AnyEntityNode)
-    func updateEntityRelationship(_ node: some AnyEntityNode)
+    func updateEntityRelationship(_ child: some AnyEntityNode)
     func enqueue(in: ObserverRegistry)
 }
 
@@ -118,18 +118,22 @@ class EntityNode<T>: AnyEntityNode {
         metadata.parentsRefs.remove(node.storageKey)
     }
 
-    func updateEntityRelationship<U: AnyEntityNode>(_ node: U) {
-        guard let keyPath = metadata.childrenRefs[node.storageKey] else {
+    func updateEntityRelationship<U: AnyEntityNode>(_ child: U) {
+        guard applyChildrenChanges else {
+            return
+        }
+
+        guard let keyPath = metadata.childrenRefs[child.storageKey] else {
             return
         }
 
         if let writableKeyPath = keyPath as? WritableKeyPath<T, U.Value> {
-            ref.value[keyPath: writableKeyPath] = node.ref.value
+            ref.value[keyPath: writableKeyPath] = child.ref.value
             return
         }
 
         if let optionalWritableKeyPath = keyPath as? WritableKeyPath<T, U.Value?> {
-            ref.value[keyPath: optionalWritableKeyPath] = node.ref.value
+            ref.value[keyPath: optionalWritableKeyPath] = child.ref.value
             return
         }
 
