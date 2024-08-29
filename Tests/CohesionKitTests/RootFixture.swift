@@ -1,6 +1,24 @@
 import Foundation
 import CohesionKit
 
+struct AFixture: Aggregate {
+    var id: BFixture.ID { b.id }
+    var b: BFixture
+
+    var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] {
+        [.init(\.b)]
+    }
+}
+
+struct BFixture: Aggregate {
+    var id: SingleNodeFixture.ID { c.id }
+    var c: SingleNodeFixture
+
+    var nestedEntitiesKeyPaths: [PartialIdentifiableKeyPath<Self>] {
+        [.init(\.c)]
+    }
+}
+
 struct RootFixture: Aggregate, Equatable {
     let id: Int
     let primitive: String

@@ -411,6 +411,22 @@ extension EntityStoreTests {
         XCTAssertTrue(registry.hasPendingChange(for: AliasContainer<RootFixture>.self))
     }
 
+    // make sure that when we have A -> B -> C and update C, we enqueue parents B AND A.
+    func test_update_entityIsNested_itEnqueuesAllParents() {
+        let a = AFixture(b: BFixture(c: SingleNodeFixture(id: 1)))
+        let registry = ObserverRegistryStub()
+        let entityStore = EntityStore(registry: registry)
+
+        withExtendedLifetime(entityStore.store(entity: a)) {
+            registry.clearPendingChangesStub()
+
+            _ = entityStore.nodeStore(entity: SingleNodeFixture(id: 1, primitive: "updated"), modifiedAt: nil)
+        }
+
+        XCTAssertTrue(registry.hasPendingChange(for: BFixture.self))
+        XCTAssertTrue(registry.hasPendingChange(for: AFixture.self))
+    }
+
     func test_update_entityIsInsideAggregagte_aggreateIsAliased_itEnqueuesAliasInRegistry() {
         let aggregate = RootFixture(id: 1, primitive: "", singleNode: SingleNodeFixture(id: 1), listNodes: [])
         let registry = ObserverRegistryStub()
