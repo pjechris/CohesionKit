@@ -162,11 +162,14 @@ public class EntityStore {
 
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
+            registry.enqueueChange(for: node)
             logger?.didStore(T.self, id: entity.id)
         }
         catch {
             logger?.didFailedToStore(T.self, id: entity.id, error: error)
         }
+
+        updateParents(of: node)
 
         return node
     }
@@ -180,6 +183,14 @@ public class EntityStore {
             return node
         }
 
+        for (childRef, _) in node.metadata.childrenRefs {
+            guard let childNode = storage[childRef]?.unwrap() as? any AnyEntityNode else {
+                continue
+            }
+
+            childNode.removeParent(node)
+        }
+
         // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()
 
@@ -191,13 +202,28 @@ public class EntityStore {
 
         do {
             try node.updateEntity(entity, modifiedAt: modifiedAt)
+            registry.enqueueChange(for: node)
             logger?.didStore(T.self, id: entity.id)
         }
         catch {
             logger?.didFailedToStore(T.self, id: entity.id, error: error)
         }
 
+        updateParents(of: node)
+
         return node
+    }
+
+    func updateParents(of node: some AnyEntityNode) {
+        for parentRef in node.metadata.parentsRefs {
+            guard let parentNode = storage[parentRef]?.unwrap() as? any AnyEntityNode ?? refAliases[parentRef] else {
+                continue
+            }
+
+            parentNode.updateEntityRelationship(node)
+            parentNode.enqueue(in: registry)
+            updateParents(of: parentNode)
+        }
     }
 
     private func storeAlias<T>(content: T?, key: AliasKey<T>, modifiedAt: Stamp?) {
@@ -386,7 +412,9 @@ extension EntityStore {
 
     private func removeAliases() {
         for (_, node) in refAliases {
-                node.nullify()
+            if node.nullify() {
+                node.enqueue(in: registry)
+            }
         }
     }
 }

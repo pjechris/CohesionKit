@@ -68,35 +68,33 @@ class EntityNodeTests: XCTestCase {
         }
     }
 
-    func test_observeChild_childChange_entityIsUpdated() throws {
+    func test_observeChild_nodeIsAddedAsParentMetadata() {
         let childNode = EntityNode(startEntity.singleNode, modifiedAt: nil)
-        let newChild = SingleNodeFixture(id: 1, primitive: "updated")
 
         node.observeChild(childNode, for: \.singleNode)
 
-        try childNode.updateEntity(newChild, modifiedAt: nil)
-
-        XCTAssertEqual((node.value as? RootFixture)?.singleNode, newChild)
+        XCTAssertTrue(childNode.metadata.parentsRefs.contains(node.storageKey))
     }
 
-    func test_observeChild_childChange_entityObserversAreCalled() throws {
+    func test_observeChild_childrenMetadataIsUpdated() {
+        let childNode = EntityNode(startEntity.singleNode, modifiedAt: nil)
+
+        node.observeChild(childNode, for: \.singleNode)
+
+        XCTAssertTrue(node.metadata.childrenRefs.keys.contains(childNode.storageKey))
+    }
+
+    func test_updateEntityRelationship_childIsUpdated() throws {
         let childNode = EntityNode(startEntity.singleNode, modifiedAt: startTimestamp)
         let newChild = SingleNodeFixture(id: 1, primitive: "updated")
-        let entityRef = Observable(value: startEntity)
-        var observerCalled = false
 
-        let subscription = entityRef.addObserver { _ in
-            observerCalled = true
-        }
-
-        node = EntityNode(ref: entityRef, modifiedAt: startTimestamp)
         node.observeChild(childNode, for: \.singleNode)
 
         try childNode.updateEntity(newChild, modifiedAt: nil)
 
-        subscription.unsubscribe()
+        node.updateEntityRelationship(childNode)
 
-        XCTAssertTrue(observerCalled)
+        XCTAssertEqual(node.ref.value.singleNode, newChild)
     }
 
     func test_observeChild_childIsCollection_eachChildIsAdded() {
@@ -104,11 +102,11 @@ class EntityNodeTests: XCTestCase {
         let child2 = EntityNode(ListNodeFixture(id: 2), modifiedAt: startTimestamp)
         let node = EntityNode(startEntity, modifiedAt: startTimestamp)
 
-        XCTAssertEqual(node.children.count, 0)
+        XCTAssertEqual(node.metadata.childrenRefs.count, 0)
 
         node.observeChild(child1, for: \.listNodes[0])
         node.observeChild(child2, for: \.listNodes[1])
 
-        XCTAssertEqual(node.children.count, 2)
+        XCTAssertEqual(node.metadata.childrenRefs.count, 2)
     }
 }
