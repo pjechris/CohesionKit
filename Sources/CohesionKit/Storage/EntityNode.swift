@@ -59,27 +59,25 @@ class EntityNode<T>: AnyEntityNode {
 
     let storageKey: String
 
-    private let onChange: ((EntityNode<T>) -> Void)?
     /// last time the ref.value was changed. Any subsequent change must have a higher value to be applied
     /// if nil ref has no stamp and any change will be accepted
     private var modifiedAt: Stamp?
     /// entity children
     private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
 
-    init(ref: Observable<T>, key: String, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
+    init(ref: Observable<T>, key: String, modifiedAt: Stamp?) {
         self.ref = ref
         self.modifiedAt = modifiedAt
-        self.onChange = onChange
         self.storageKey = key
     }
 
-    convenience init(_ entity: T, key: String, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) {
-        self.init(ref: Observable(value: entity), key: key, modifiedAt: modifiedAt, onChange: onChange)
+    convenience init(_ entity: T, key: String, modifiedAt: Stamp?) {
+        self.init(ref: Observable(value: entity), key: key, modifiedAt: modifiedAt)
     }
 
-    convenience init(_ entity: T, modifiedAt: Stamp?, onChange: ((EntityNode<T>) -> Void)? = nil) where T: Identifiable {
+    convenience init(_ entity: T, modifiedAt: Stamp?) where T: Identifiable {
         let key = "\(T.self)-\(entity.id)"
-        self.init(entity, key: key, modifiedAt: modifiedAt, onChange: onChange)
+        self.init(entity, key: key, modifiedAt: modifiedAt)
     }
 
     /// change the entity to a new value. If modifiedAt is nil or > to previous date update the value will be changed
