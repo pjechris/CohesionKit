@@ -137,7 +137,7 @@ public class EntityStore {
     /// - Parameter named: the alias to look for
     public func find<T: Identifiable>(named: AliasKey<T>) -> EntityObserver<T?> {
         identityQueue.sync {
-            let node = refAliases[safe: named, onChange: registry.enqueueChange(for:)]
+            let node = refAliases[safe: named]
             return EntityObserver(alias: node, registry: registry)
         }
     }
@@ -146,15 +146,13 @@ public class EntityStore {
     /// - Returns: an observer returning the alias value. Note that the value will be an Array
     public func find<C: Collection>(named: AliasKey<C>) -> EntityObserver<C?> {
         identityQueue.sync {
-            let node = refAliases[safe: named, onChange: registry.enqueueChange(for:)]
+            let node = refAliases[safe: named]
             return EntityObserver(alias: node, registry: registry)
         }
     }
 
     func nodeStore<T: Identifiable>(in node: EntityNode<T>? = nil, entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
-        let node = node ?? storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
-            registry.enqueueChange(for: $0)
-        }]
+        let node = node ?? storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
         guard !registry.hasPendingChange(for: node) else {
             return node
@@ -175,9 +173,7 @@ public class EntityStore {
     }
 
     func nodeStore<T: Aggregate>(in node: EntityNode<T>? = nil, entity: T, modifiedAt: Stamp?) -> EntityNode<T> {
-        let node = node ?? storage[entity, new: EntityNode(entity, modifiedAt: nil) { [registry] in
-            registry.enqueueChange(for: $0)
-        }]
+        let node = node ?? storage[entity, new: EntityNode(entity, modifiedAt: nil)]
 
         guard !registry.hasPendingChange(for: node) else {
             return node
@@ -227,7 +223,7 @@ public class EntityStore {
     }
 
     private func storeAlias<T>(content: T?, key: AliasKey<T>, modifiedAt: Stamp?) {
-        let aliasNode = refAliases[safe: key, onChange: registry.enqueueChange(for:)]
+        let aliasNode = refAliases[safe: key]
         let aliasContainer = AliasContainer(key: key, content: content)
 
         _ = nodeStore(in: aliasNode, entity: aliasContainer, modifiedAt: modifiedAt)
