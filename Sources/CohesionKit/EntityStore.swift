@@ -119,6 +119,30 @@ public class EntityStore {
         }
     }
 
+    @discardableResult
+    public func delete<T: Identifiable>(_ type: T.Type, id: T.ID) -> Bool {
+        transaction {
+            guard let node = storage[T.self, id: id] else {
+                return false
+            }
+
+            guard !node.metadata.isUsed else {
+                return false
+            }
+
+            for (childRef, _) in node.metadata.childrenRefs {
+                guard let childNode = storage[childRef]?.unwrap() as? any AnyEntityNode else {
+                    continue
+                }
+
+                childNode.removeParent(node)
+            }
+
+            storage[T.self, id: id] = nil
+            return true
+        }
+    }
+
     /// Try to find an entity/aggregate in the storage.
     /// - Returns: nil if not found, an `EntityObserver`` otherwise
     /// - Parameter type: the entity type

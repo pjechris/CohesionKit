@@ -15,7 +15,7 @@ struct EntityMetadata {
     /// number of observers
     var observersCount: Int = 0
 
-    var isActivelyUsed: Bool {
+    var isUsed: Bool {
         observersCount > 0 || !parentsRefs.isEmpty || !aliasesRefs.isEmpty
     }
 }
