@@ -24,8 +24,7 @@ struct EntityMetadata {
 protocol AnyEntityNode: AnyObject {
     associatedtype Value
 
-    var ref: Observable<Value> { get }
-    var value: Any { get }
+    var value: Value { get }
     var metadata: EntityMetadata { get }
     var storageKey: String { get }
 
@@ -47,32 +46,26 @@ class EntityNode<T>: AnyEntityNode {
         let node: any AnyEntityNode
     }
 
-    var value: Any { ref.value }
+    private(set) var value: Value
 
     var metadata = EntityMetadata()
     // FIXME: to delete, it's "just" to have a strong ref and avoid nodes to be deleted. Need a better memory management
     private var childrenNodes: [any AnyEntityNode] = []
 
     var applyChildrenChanges = true
-    /// An observable entity reference
-    let ref: Observable<T>
 
     let storageKey: String
 
-    /// last time the ref.value was changed. Any subsequent change must have a higher value to be applied
+    /// last time `value` was changed. Any subsequent change must have a higher value to be applied
     /// if nil ref has no stamp and any change will be accepted
     private var modifiedAt: Stamp?
     /// entity children
     private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
 
-    init(ref: Observable<T>, key: String, modifiedAt: Stamp?) {
-        self.ref = ref
+    init(_ entity: T, key: String, modifiedAt: Stamp?) {
+        self.value = entity
         self.modifiedAt = modifiedAt
         self.storageKey = key
-    }
-
-    convenience init(_ entity: T, key: String, modifiedAt: Stamp?) {
-        self.init(ref: Observable(value: entity), key: key, modifiedAt: modifiedAt)
     }
 
     convenience init(_ entity: T, modifiedAt: Stamp?) where T: Identifiable {
@@ -89,11 +82,11 @@ class EntityNode<T>: AnyEntityNode {
         }
 
         modifiedAt = newModifiedAt ?? modifiedAt
-        ref.value = newEntity
+        value = newEntity
     }
 
     func nullify() -> Bool {
-        if let value = ref.value as? Nullable {
+        if let value = value as? Nullable {
             do {
                 try updateEntity(value.nullified() as! T, modifiedAt: nil)
                 return true
@@ -126,12 +119,12 @@ class EntityNode<T>: AnyEntityNode {
         }
 
         if let writableKeyPath = keyPath as? WritableKeyPath<T, U.Value> {
-            ref.value[keyPath: writableKeyPath] = child.ref.value
+            value[keyPath: writableKeyPath] = child.value
             return
         }
 
         if let optionalWritableKeyPath = keyPath as? WritableKeyPath<T, U.Value?> {
-            ref.value[keyPath: optionalWritableKeyPath] = child.ref.value
+            value[keyPath: optionalWritableKeyPath] = child.value
             return
         }
 

@@ -254,7 +254,7 @@ extension EntityStore {
     @discardableResult
     public func update<T: Identifiable>(_ type: T.Type, id: T.ID, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
         transaction {
-            guard var entity = storage[T.self, id: id]?.ref.value else {
+            guard var entity = storage[T.self, id: id]?.value else {
                 return false
             }
 
@@ -275,7 +275,7 @@ extension EntityStore {
     @discardableResult
     public func update<T: Aggregate>(_ type: T.Type, id: T.ID, modifiedAt: Stamp? = nil, _ update: Update<T>) -> Bool {
         transaction {
-            guard var entity = storage[T.self, id: id]?.ref.value else {
+            guard var entity = storage[T.self, id: id]?.value else {
                 return false
             }
 
@@ -294,7 +294,7 @@ extension EntityStore {
     @discardableResult
     public func update<T: Identifiable>(named: AliasKey<T>, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
         transaction {
-            guard let aliasNode = refAliases[named], var content = aliasNode.ref.value.content else {
+            guard let aliasNode = refAliases[named], var content = aliasNode.value.content else {
                 return false
             }
 
@@ -313,7 +313,7 @@ extension EntityStore {
     @discardableResult
     public func update<T: Aggregate>(named: AliasKey<T>, modifiedAt: Stamp? = nil, update: Update<T>) -> Bool {
         transaction {
-            guard let aliasNode = refAliases[named], var content = aliasNode.ref.value.content else {
+            guard let aliasNode = refAliases[named], var content = aliasNode.value.content else {
                 return false
             }
 
@@ -333,7 +333,7 @@ extension EntityStore {
     public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<C>)
     -> Bool where C.Element: Identifiable {
         transaction {
-            guard let aliasNode = refAliases[named], var content = aliasNode.ref.value.content else {
+            guard let aliasNode = refAliases[named], var content = aliasNode.value.content else {
                 return false
             }
 
@@ -353,7 +353,7 @@ extension EntityStore {
     public func update<C: Collection>(named: AliasKey<C>, modifiedAt: Stamp? = nil, update: Update<C>)
     -> Bool where C.Element: Aggregate {
         transaction {
-            guard let aliasNode = refAliases[named], var content = aliasNode.ref.value.content else {
+            guard let aliasNode = refAliases[named], var content = aliasNode.value.content else {
                 return false
             }
 
