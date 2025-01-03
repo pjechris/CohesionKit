@@ -6,7 +6,7 @@ class AliasStorageTests: XCTestCase {
         var storage: AliasStorage = [:]
 
         XCTAssertNotNil(storage[safe: .testCollection])
-        XCTAssertNil(storage[safe: .testCollection].ref.value.content)
+        XCTAssertNil(storage[safe: .testCollection].value.content)
     }
 
     func test_subscriptGet_aliasHasSameNameThanAnotherType_itReturnsAliasContainer() {

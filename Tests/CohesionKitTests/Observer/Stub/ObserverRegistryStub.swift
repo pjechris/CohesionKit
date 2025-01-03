@@ -13,7 +13,7 @@ class ObserverRegistryStub: ObserverRegistry {
     }
 
     func hasPendingChange<T: Equatable>(for entity: T) -> Bool {
-        pendingChangesStub.contains { ($0 as? EntityNode<T>)?.ref.value == entity }
+        pendingChangesStub.contains { ($0 as? EntityNode<T>)?.value == entity }
     }
 
     func hasPendingChange<T>(for _: T.Type) -> Bool {
@@ -22,7 +22,7 @@ class ObserverRegistryStub: ObserverRegistry {
 
     /// number of times change has been inserted for this entity
     func pendingChangeCount<T: Equatable>(for entity: T) -> Int {
-        pendingChangesStub.filter { ($0 as? EntityNode<T>)?.ref.value == entity }.count
+        pendingChangesStub.filter { ($0 as? EntityNode<T>)?.value == entity }.count
     }
 
     func clearPendingChangesStub() {

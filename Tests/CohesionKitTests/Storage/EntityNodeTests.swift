@@ -30,13 +30,13 @@ class EntityNodeTests: XCTestCase {
             try node.updateEntity(newEntity, modifiedAt: startTimestamp)
         )
 
-        XCTAssertEqual(node.value as? RootFixture, startEntity)
+        XCTAssertEqual(node.value, startEntity)
     }
 
     func test_updateEntity_stampIsSup_entityIsUpdated() throws {
         try node.updateEntity(newEntity, modifiedAt: startTimestamp + 1)
 
-        XCTAssertEqual(node.value as? RootFixture, newEntity)
+        XCTAssertEqual(node.value, newEntity)
     }
 
     func test_updateEntity_stampIsInf_entityIsNotUpdated() throws {
@@ -44,13 +44,13 @@ class EntityNodeTests: XCTestCase {
             try node.updateEntity(newEntity, modifiedAt: startTimestamp - 1)
         )
 
-        XCTAssertEqual(node.value as? RootFixture, startEntity)
+        XCTAssertEqual(node.value, startEntity)
     }
 
     func test_updateEntity_stampIsNil_entityIsUpdated() throws {
         try node.updateEntity(newEntity, modifiedAt: nil)
 
-        XCTAssertEqual(node.value as? RootFixture, newEntity)
+        XCTAssertEqual(node.value, newEntity)
     }
 
     func test_updateEntity_stampIsNil_stampIsNotUpdated() throws {
@@ -94,7 +94,7 @@ class EntityNodeTests: XCTestCase {
 
         node.updateEntityRelationship(childNode)
 
-        XCTAssertEqual(node.ref.value.singleNode, newChild)
+        XCTAssertEqual(node.value.singleNode, newChild)
     }
 
     func test_observeChild_childIsCollection_eachChildIsAdded() {
