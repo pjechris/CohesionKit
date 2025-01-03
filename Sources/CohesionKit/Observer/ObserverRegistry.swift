@@ -36,15 +36,15 @@ class ObserverRegistry {
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
     /// to this node `onChange` will be called.
     func addObserver<T>(node: EntityNode<T>, key: ObjectKey, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
-        let handler = Handler { onChange($0.ref.value) }
+        let handler = Handler { onChange($0.value) }
 
         if initial {
           if queue == DispatchQueue.main && Thread.isMainThread {
-            onChange(node.ref.value)
+            onChange(node.value)
           }
           else {
             queue.sync {
-              onChange(node.ref.value)
+              onChange(node.value)
             }
           }
         }
@@ -57,16 +57,16 @@ class ObserverRegistry {
     func addObserver<T>(nodes: [EntityNode<T>], initial: Bool = false, onChange: @escaping ([T]) -> Void) -> Subscription {
         let handler = Handler { (_: EntityNode<T>) in
             // use last value from nodes
-            onChange(nodes.map(\.ref.value))
+            onChange(nodes.map(\.value))
         }
 
         if initial {
           if queue == DispatchQueue.main && Thread.isMainThread {
-            onChange(nodes.map(\.ref.value))
+            onChange(nodes.map(\.value))
           }
           else {
             queue.sync {
-              onChange(nodes.map(\.ref.value))
+              onChange(nodes.map(\.value))
             }
           }
         }
