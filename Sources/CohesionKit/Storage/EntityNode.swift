@@ -30,6 +30,7 @@ protocol AnyEntityNode: AnyObject {
 
     func nullify() -> Bool
     func removeParent(_ node: any AnyEntityNode)
+    /// Update node with child if its matches any node children
     func updateEntityRelationship(_ child: some AnyEntityNode)
     func enqueue(in: ObserverRegistry)
 }
@@ -59,8 +60,6 @@ class EntityNode<T>: AnyEntityNode {
     /// last time `value` was changed. Any subsequent change must have a higher value to be applied
     /// if nil ref has no stamp and any change will be accepted
     private var modifiedAt: Stamp?
-    /// entity children
-    private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
 
     init(_ entity: T, key: String, modifiedAt: Stamp?) {
         self.value = entity
@@ -100,7 +99,6 @@ class EntityNode<T>: AnyEntityNode {
     }
 
     func removeAllChildren() {
-        children = [:]
         metadata.childrenRefs = [:]
         childrenNodes = []
     }
@@ -109,7 +107,6 @@ class EntityNode<T>: AnyEntityNode {
         metadata.parentsRefs.remove(node.storageKey)
     }
 
-    /// Update node with child if its matches any node children
     func updateEntityRelationship<U: AnyEntityNode>(_ child: U) {
         guard applyChildrenChanges else {
             return
@@ -150,10 +147,7 @@ class EntityNode<T>: AnyEntityNode {
     /// - Parameter childNode: the child to observe
     /// - Parameter keyPath: a **unique** keypath associated to the child. Should have similar type but maybe a little different (optional)
     /// - Parameter assign: to assign childNode value to current node ref value
-    private func observeChild<C, Element>(
-        _ childNode: EntityNode<Element>,
-        identity keyPath: KeyPath<T, C>
-    ) {
+    private func observeChild<C, Element>(_ childNode: EntityNode<Element>, identity keyPath: KeyPath<T, C>) {
         metadata.childrenRefs[childNode.storageKey] = keyPath
         childNode.metadata.parentsRefs.insert(storageKey)
         childrenNodes.append(childNode)
