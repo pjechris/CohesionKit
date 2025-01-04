@@ -109,6 +109,7 @@ class EntityNode<T>: AnyEntityNode {
         metadata.parentsRefs.remove(node.storageKey)
     }
 
+    /// Update node with child if its matches any node children
     func updateEntityRelationship<U: AnyEntityNode>(_ child: U) {
         guard applyChildrenChanges else {
             return
@@ -137,16 +138,12 @@ class EntityNode<T>: AnyEntityNode {
 
     /// observe one of the node child
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C>) {
-        observeChild(childNode, identity: keyPath) { root, newValue in
-            root[keyPath: keyPath] = newValue
-        }
+        observeChild(childNode, identity: keyPath)
     }
 
     /// observe a non nil child but whose keypath is represented by an Optional
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C?>) {
-        observeChild(childNode, identity: keyPath) { root, newValue in
-            root[keyPath: keyPath] = .some(newValue)
-        }
+        observeChild(childNode, identity: keyPath)
     }
 
     /// Observe a node child
@@ -155,8 +152,7 @@ class EntityNode<T>: AnyEntityNode {
     /// - Parameter assign: to assign childNode value to current node ref value
     private func observeChild<C, Element>(
         _ childNode: EntityNode<Element>,
-        identity keyPath: KeyPath<T, C>,
-        update: @escaping (inout T, Element) -> Void
+        identity keyPath: KeyPath<T, C>
     ) {
         metadata.childrenRefs[childNode.storageKey] = keyPath
         childNode.metadata.parentsRefs.insert(storageKey)

@@ -100,9 +100,7 @@ public class EntityStore {
 
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
-            return EntityObserver(nodes: nodes, registry: registry, onUnobserved: Subscription {
-//                self.delete(node)
-            })
+            return EntityObserver(nodes: nodes, registry: registry, onUnobserved: .empty)
         }
     }
 
@@ -117,9 +115,7 @@ public class EntityStore {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
 
-            return EntityObserver(nodes: nodes, registry: registry, onUnobserved: Subscription {
-//                self.delete(node)
-            })
+            return EntityObserver(nodes: nodes, registry: registry, onUnobserved: .empty)
         }
     }
 
@@ -130,9 +126,7 @@ public class EntityStore {
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
         identityQueue.sync {
             if let node = storage[T.self, id: id] {
-                return EntityObserver(node: node, registry: registry, onUnobserved: Subscription {
-//                    self.delete(node)
-                })
+                return EntityObserver(node: node, registry: registry, onUnobserved: .empty)
             }
 
             return nil
@@ -144,9 +138,7 @@ public class EntityStore {
     public func find<T: Identifiable>(named: AliasKey<T>) -> EntityObserver<T?> {
         identityQueue.sync {
             let node = refAliases[safe: named]
-            return EntityObserver(alias: node, registry: registry, onUnobserved: Subscription {
-//                self.delete(node)
-            })
+            return EntityObserver(alias: node, registry: registry, onUnobserved: .empty)
         }
     }
 
@@ -155,9 +147,7 @@ public class EntityStore {
     public func find<C: Collection>(named: AliasKey<C>) -> EntityObserver<C?> {
         identityQueue.sync {
             let node = refAliases[safe: named]
-            return EntityObserver(alias: node, registry: registry, onUnobserved: Subscription {
-//                self.delete(node)
-            })
+            return EntityObserver(alias: node, registry: registry, onUnobserved: .empty)
         }
     }
 
