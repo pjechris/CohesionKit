@@ -55,7 +55,7 @@ public class EntityStore {
                 storeAlias(content: entity, key: key, modifiedAt: modifiedAt)
             }
 
-            return EntityObserver(node: node, registry: registry)
+            return EntityObserver(node: node, registry: registry, onUnobserved: makeUnobservedSubscription(for: node))
         }
     }
 
@@ -86,7 +86,7 @@ public class EntityStore {
 
             let node = nodeStore(entity: entity, modifiedAt: modifiedAt)
 
-            return EntityObserver(node: node, registry: registry)
+            return EntityObserver(node: node, registry: registry, onUnobserved: makeUnobservedSubscription(for: node))
         }
     }
 
@@ -100,7 +100,9 @@ public class EntityStore {
 
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
-            return EntityObserver(nodes: nodes, registry: registry)
+            return EntityObserver(nodes: nodes, registry: registry, onUnobserved: Subscription {
+//                self.delete(node)
+            })
         }
     }
 
@@ -115,31 +117,9 @@ public class EntityStore {
             let nodes = entities.map { nodeStore(entity: $0, modifiedAt: modifiedAt) }
 
 
-            return EntityObserver(nodes: nodes, registry: registry)
-        }
-    }
-
-    @discardableResult
-    public func delete<T: Identifiable>(_ type: T.Type, id: T.ID) -> Bool {
-        transaction {
-            guard let node = storage[T.self, id: id] else {
-                return false
-            }
-
-            guard !node.metadata.isUsed else {
-                return false
-            }
-
-            for (childRef, _) in node.metadata.childrenRefs {
-                guard let childNode = storage[childRef]?.unwrap() as? any AnyEntityNode else {
-                    continue
-                }
-
-                childNode.removeParent(node)
-            }
-
-            storage[T.self, id: id] = nil
-            return true
+            return EntityObserver(nodes: nodes, registry: registry, onUnobserved: Subscription {
+//                self.delete(node)
+            })
         }
     }
 
@@ -150,7 +130,9 @@ public class EntityStore {
     public func find<T: Identifiable>(_ type: T.Type, id: T.ID) -> EntityObserver<T>? {
         identityQueue.sync {
             if let node = storage[T.self, id: id] {
-                return EntityObserver(node: node, registry: registry)
+                return EntityObserver(node: node, registry: registry, onUnobserved: Subscription {
+//                    self.delete(node)
+                })
             }
 
             return nil
@@ -162,7 +144,9 @@ public class EntityStore {
     public func find<T: Identifiable>(named: AliasKey<T>) -> EntityObserver<T?> {
         identityQueue.sync {
             let node = refAliases[safe: named]
-            return EntityObserver(alias: node, registry: registry)
+            return EntityObserver(alias: node, registry: registry, onUnobserved: Subscription {
+//                self.delete(node)
+            })
         }
     }
 
@@ -171,7 +155,21 @@ public class EntityStore {
     public func find<C: Collection>(named: AliasKey<C>) -> EntityObserver<C?> {
         identityQueue.sync {
             let node = refAliases[safe: named]
-            return EntityObserver(alias: node, registry: registry)
+            return EntityObserver(alias: node, registry: registry, onUnobserved: Subscription {
+//                self.delete(node)
+            })
+        }
+    }
+
+    private func makeUnobservedSubscription(for node: EntityNode<some Identifiable>) -> Subscription {
+        node.metadata.observersCount += 1
+
+        return Subscription { [weak self] in
+            node.metadata.observersCount -= 1
+
+            if node.metadata.isUsed {
+                self?.delete(node)
+            }
         }
     }
 
@@ -435,6 +433,26 @@ extension EntityStore {
             if node.nullify() {
                 node.enqueue(in: registry)
             }
+        }
+    }
+
+    @discardableResult
+    private func delete<T: Identifiable>(_ node: EntityNode<T>) -> Bool {
+        transaction {
+            guard !node.metadata.isUsed else {
+                return false
+            }
+
+            for (childRef, _) in node.metadata.childrenRefs {
+                guard let childNode = storage[childRef]?.unwrap() as? any AnyEntityNode else {
+                    continue
+                }
+
+                childNode.removeParent(node)
+            }
+
+            storage[T.self, id: node.value.id] = nil
+            return true
         }
     }
 }

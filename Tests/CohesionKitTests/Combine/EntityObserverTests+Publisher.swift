@@ -14,7 +14,7 @@ class EntityObserverPublisherTests: XCTestCase {
   func test_asPublisher_itSinksOnce() {
     let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
     let registry = ObserverRegistry(queue: .main)
-    let observer = EntityObserver(node: node, registry: registry)
+    let observer = EntityObserver(node: node, registry: registry, onUnobserved: .empty)
     var sinkCount = 0
 
     observer
@@ -29,7 +29,7 @@ class EntityObserverPublisherTests: XCTestCase {
     let expected = SingleNodeFixture(id: 1, primitive: "expected")
     let node = EntityNode(SingleNodeFixture(id: 1, primitive: "init"), modifiedAt: 0)
     let registry = ObserverRegistry(queue: .main)
-    let observer = EntityObserver(node: node, registry: registry)
+    let observer = EntityObserver(node: node, registry: registry, onUnobserved: .empty)
     let expectation = XCTestExpectation()
 
     observer
@@ -53,7 +53,7 @@ class EntityObserverPublisherTests: XCTestCase {
   func test_publisher_streamIsCancelled_valueChange_receiveNothing() {
     let node = EntityNode(SingleNodeFixture(id: 1), modifiedAt: 0)
     let registry = ObserverRegistry(queue: .main)
-    let observer = EntityObserver(node: node, registry: registry)
+    let observer = EntityObserver(node: node, registry: registry, onUnobserved: .empty)
     let expectation = XCTestExpectation()
 
     expectation.isInverted = true

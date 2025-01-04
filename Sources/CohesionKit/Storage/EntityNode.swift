@@ -6,7 +6,7 @@ struct EntityMetadata {
     // TODO: change key to a ObjectKey
     var childrenRefs: [String: AnyKeyPath] = [:]
 
-    /// parents referencing this entity. This means this entity should be listed inside its parents `EntityMetadata.childrenRefs` attribute
+    /// parents having this entity as child. This means this entity should be listed inside its parents `childrenRefs` attribute
     // TODO: Change value to ObjectKey
     var parentsRefs: Set<String> = []
     /// alias referencing this entity

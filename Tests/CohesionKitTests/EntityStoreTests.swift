@@ -31,8 +31,6 @@ class EntityStoreTests: XCTestCase {
             _ = entityStore.store(entity: root)
             _ = entityStore.store(entity: nestedOptional)
 
-            XCTAssertNotNil(entityStore.find(RootFixture.self, id: 1))
-            XCTAssertNil(entityStore.find(RootFixture.self, id: 1)!.value.optional)
             let root = try XCTUnwrap(entityStore.find(RootFixture.self, id: 1))
             XCTAssertNil(root.value.optional)
         }
