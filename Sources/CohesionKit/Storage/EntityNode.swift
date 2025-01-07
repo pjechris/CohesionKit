@@ -51,7 +51,7 @@ class EntityNode<T>: AnyEntityNode {
 
     var metadata = EntityMetadata()
     // FIXME: to delete, it's "just" to have a strong ref and avoid nodes to be deleted. Need a better memory management
-    private var childrenNodes: [any AnyEntityNode] = []
+//    private var childrenNodes: [any AnyEntityNode] = []
 
     var applyChildrenChanges = true
 
@@ -100,7 +100,7 @@ class EntityNode<T>: AnyEntityNode {
 
     func removeAllChildren() {
         metadata.childrenRefs = [:]
-        childrenNodes = []
+//        childrenNodes = []
     }
 
     func removeParent(_ node: any AnyEntityNode) {
@@ -150,7 +150,7 @@ class EntityNode<T>: AnyEntityNode {
     private func observeChild<C, Element>(_ childNode: EntityNode<Element>, identity keyPath: KeyPath<T, C>) {
         metadata.childrenRefs[childNode.storageKey] = keyPath
         childNode.metadata.parentsRefs.insert(storageKey)
-        childrenNodes.append(childNode)
+//        childrenNodes.append(childNode)
     }
 }
 

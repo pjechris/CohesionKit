@@ -6,7 +6,7 @@ import Foundation
 //// This allows to release entities automatically if no one is using them anymore (freeing memory space)
 struct EntitiesStorage {
     /// the storage indexer. Stored content is [String: Weak<EntityNode<Object>>]
-    private typealias Storage = [String: AnyWeak]
+    private typealias Storage = [String: any AnyEntityNode]
 
     private var indexes: Storage = [:]
 
@@ -15,11 +15,11 @@ struct EntitiesStorage {
     }
 
     subscript<T: Identifiable>(_ type: T.Type, id id: T.ID) -> EntityNode<T>? {
-        get { (indexes[key(for: T.self, id: id)] as? Weak<EntityNode<T>>)?.value }
-        set { indexes[key(for: T.self, id: id)] = Weak(value: newValue) }
+        get { indexes[key(for: T.self, id: id)] as? EntityNode<T> }
+        set { indexes[key(for: T.self, id: id)] = newValue }
     }
 
-    subscript(_ key: String) -> AnyWeak? {
+    subscript(_ key: String) -> (any AnyEntityNode)? {
         get { indexes[key] }
         set { indexes[key] = newValue }
     }
