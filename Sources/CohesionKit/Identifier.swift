@@ -2,16 +2,24 @@
 struct Identifier: Hashable, Sendable, ExpressibleByStringLiteral {
   let identifier: String
 
-  init(identifier: String) {
+  init(_ identifier: String) {
     self.identifier = identifier
   }
 
   init(stringLiteral value: StringLiteralType) {
-    self.init(identifier: value)
+    self.init(value)
   }
 
-  /// Generates an identifier for a node
-  init<T>(node: EntityNode<T>) {
-    self.init(identifier: "\(T.self)-\(node.hashValue)")
+  /// Generates an identifier for type T with key as key
+  init<T>(for type: T.Type, key: Any) {
+    self.init("\(T.self):\(key)")
+  }
+
+  init<T: Identifiable>(for object: T) {
+    self.init(for: T.self, key: object.id)
+  }
+
+  init<T>(for type: T.Type, key: AliasKey<T>) {
+    self.init("alias:\(T.self):\(key.name)")
   }
 }

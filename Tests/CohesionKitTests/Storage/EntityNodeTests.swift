@@ -73,7 +73,7 @@ class EntityNodeTests: XCTestCase {
 
         node.observeChild(childNode, for: \.singleNode)
 
-        XCTAssertTrue(childNode.metadata.parentsRefs.contains(node.storageKey))
+        XCTAssertTrue(childNode.metadata.parentsRefs.contains(node.id))
     }
 
     func test_observeChild_childrenMetadataIsUpdated() {
@@ -81,7 +81,7 @@ class EntityNodeTests: XCTestCase {
 
         node.observeChild(childNode, for: \.singleNode)
 
-        XCTAssertTrue(node.metadata.childrenRefs.keys.contains(childNode.storageKey))
+        XCTAssertTrue(node.metadata.childrenRefs.keys.contains(childNode.id))
     }
 
     func test_updateEntityRelationship_childIsUpdated() throws {

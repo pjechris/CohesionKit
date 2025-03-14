@@ -15,7 +15,7 @@ class ObserverRegistry {
     }
 
     func addObserver<T>(node: EntityNode<T>, initial: Bool = false, onChange: @escaping (T) -> Void) -> Subscription {
-      addObserver(node: node, identifier: Identifier(node: node), initial: initial, onChange: onChange)
+      addObserver(node: node, identifier: node.id, initial: initial, onChange: onChange)
     }
 
     /// register an observer to observe changes on an entity node. Everytime `ObserverRegistry` is notified about changes
@@ -56,7 +56,7 @@ class ObserverRegistry {
           }
         }
 
-      let subscriptions = nodes.map { node in subscribeHandler(handler, for: node, identifier: Identifier(node: node)) }
+      let subscriptions = nodes.map { node in subscribeHandler(handler, for: node, identifier: node.id) }
 
         return Subscription {
             subscriptions.forEach { $0.unsubscribe() }
@@ -65,7 +65,7 @@ class ObserverRegistry {
 
     /// Mark a node as changed. Observers won't be notified of the change until ``postChanges`` is called
     func enqueueChange<T>(for node: EntityNode<T>) {
-      enqueueChange(for: node, identifier: Identifier(node: node))
+      enqueueChange(for: node, identifier: node.id)
     }
 
     func enqueueChange<T>(for node: EntityNode<T>, identifier: Identifier) {
@@ -73,7 +73,7 @@ class ObserverRegistry {
     }
 
     func hasPendingChange<T>(for node: EntityNode<T>) -> Bool {
-      hasPendingChange(for: Identifier(node: node))
+      hasPendingChange(for: node.id)
     }
 
     func hasPendingChange(for identifier: Identifier) -> Bool {
