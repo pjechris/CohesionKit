@@ -5,8 +5,8 @@ import Foundation
 /// Storage keeps weak references to objects.
 //// This allows to release entities automatically if no one is using them anymore (freeing memory space)
 struct EntitiesStorage {
-    /// the storage indexer. Stored content is [String: Weak<EntityNode<Object>>]
-    private typealias Storage = [String: AnyWeak]
+    /// the storage indexer. Stored content is [Identifier: Weak<EntityNode<Object>>]
+    private typealias Storage = [Identifier: AnyWeak]
 
     private var indexes: Storage = [:]
 
@@ -15,17 +15,13 @@ struct EntitiesStorage {
     }
 
     subscript<T: Identifiable>(_ type: T.Type, id id: T.ID) -> EntityNode<T>? {
-        get { (indexes[key(for: T.self, id: id)] as? Weak<EntityNode<T>>)?.value }
-        set { indexes[key(for: T.self, id: id)] = Weak(value: newValue) }
+      get { (indexes[Identifier(for: T.self, key: id)] as? Weak<EntityNode<T>>)?.value }
+      set { indexes[Identifier(for: T.self, key: id)] = Weak(value: newValue) }
     }
 
-    subscript(_ key: String) -> AnyWeak? {
-        get { indexes[key] }
-        set { indexes[key] = newValue }
-    }
-
-    private func key<T>(for type: T.Type, id: Any) -> String {
-        "\(type)-\(id)"
+    subscript(_ index: Identifier) -> AnyWeak? {
+        get { indexes[index] }
+        set { indexes[index] = newValue }
     }
 }
 

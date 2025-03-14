@@ -3,14 +3,12 @@ import Combine
 
 struct EntityMetadata {
     /// children this entity is referencing/using
-    // TODO: change key to a ObjectKey
-    var childrenRefs: [String: AnyKeyPath] = [:]
+    var childrenRefs: [Identifier: AnyKeyPath] = [:]
 
     /// parents referencing this entity. This means this entity should be listed inside its parents `EntityMetadata.childrenRefs` attribute
-    // TODO: Change value to ObjectKey
-    var parentsRefs: Set<String> = []
+    var parentsRefs: Set<Identifier> = []
     /// alias referencing this entity
-    var aliasesRefs: Set<String> = []
+    var aliasesRefs: Set<Identifier> = []
 
     /// number of observers
     var observersCount: Int = 0
@@ -24,9 +22,10 @@ struct EntityMetadata {
 protocol AnyEntityNode: AnyObject {
     associatedtype Value
 
+    /// a unique identifier that should represent this node
+    var id: Identifier { get }
     var value: Value { get }
     var metadata: EntityMetadata { get }
-    var storageKey: String { get }
 
     func nullify() -> Bool
     func removeParent(_ node: any AnyEntityNode)
@@ -54,7 +53,7 @@ class EntityNode<T>: AnyEntityNode {
 
     var applyChildrenChanges = true
 
-    let storageKey: String
+    let id: Identifier
 
     /// last time `value` was changed. Any subsequent change must have a higher value to be applied
     /// if nil ref has no stamp and any change will be accepted
@@ -62,15 +61,14 @@ class EntityNode<T>: AnyEntityNode {
     /// entity children
     private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
 
-    init(_ entity: T, key: String, modifiedAt: Stamp?) {
-        self.value = entity
-        self.modifiedAt = modifiedAt
-        self.storageKey = key
+    init(_ entity: T, id: Identifier, modifiedAt: Stamp?) {
+      self.value = entity
+      self.modifiedAt = modifiedAt
+      self.id = id
     }
 
     convenience init(_ entity: T, modifiedAt: Stamp?) where T: Identifiable {
-        let key = "\(T.self)-\(entity.id)"
-        self.init(entity, key: key, modifiedAt: modifiedAt)
+      self.init(entity, id: Identifier(for: entity), modifiedAt: modifiedAt)
     }
 
     /// change the entity to a new value. If modifiedAt is nil or > to previous date update the value will be changed
@@ -106,7 +104,7 @@ class EntityNode<T>: AnyEntityNode {
     }
 
     func removeParent(_ node: any AnyEntityNode) {
-        metadata.parentsRefs.remove(node.storageKey)
+        metadata.parentsRefs.remove(node.id)
     }
 
     func updateEntityRelationship<U: AnyEntityNode>(_ child: U) {
@@ -114,7 +112,7 @@ class EntityNode<T>: AnyEntityNode {
             return
         }
 
-        guard let keyPath = metadata.childrenRefs[child.storageKey] else {
+        guard let keyPath = metadata.childrenRefs[child.id] else {
             return
         }
 
@@ -158,8 +156,8 @@ class EntityNode<T>: AnyEntityNode {
         identity keyPath: KeyPath<T, C>,
         update: @escaping (inout T, Element) -> Void
     ) {
-        metadata.childrenRefs[childNode.storageKey] = keyPath
-        childNode.metadata.parentsRefs.insert(storageKey)
+        metadata.childrenRefs[childNode.id] = keyPath
+        childNode.metadata.parentsRefs.insert(id)
         childrenNodes.append(childNode)
     }
 }
