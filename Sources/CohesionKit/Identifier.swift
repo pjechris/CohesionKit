@@ -1,25 +1,19 @@
 /// a unique identifier to observe an object
-struct Identifier: Hashable, Sendable, ExpressibleByStringLiteral {
-  let identifier: String
+struct Identifier: Hashable {
+    private let objectType: ObjectIdentifier
+    private let key: AnyHashable
 
-  init(_ identifier: String) {
-    self.identifier = identifier
-  }
+    /// Generates an identifier for type T with key as key
+    init<T>(for type: T.Type, key: some Hashable) {
+        self.objectType = ObjectIdentifier(type)
+        self.key = AnyHashable(key)
+    }
 
-  init(stringLiteral value: StringLiteralType) {
-    self.init(value)
-  }
+    init<T: Identifiable>(for object: T) {
+        self.init(for: T.self, key: object.id)
+    }
 
-  /// Generates an identifier for type T with key as key
-  init<T>(for type: T.Type, key: Any) {
-    self.init("\(T.self):\(key)")
-  }
-
-  init<T: Identifiable>(for object: T) {
-    self.init(for: T.self, key: object.id)
-  }
-
-  init<T>(for type: T.Type, key: AliasKey<T>) {
-    self.init("alias:\(T.self):\(key.name)")
-  }
+    init<T>(for type: T.Type, key: AliasKey<T>) {
+        self.init(for: AliasContainer<T>.self, key: key.name)
+    }
 }
