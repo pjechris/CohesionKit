@@ -22,4 +22,17 @@ struct Identifier: Hashable, Sendable, ExpressibleByStringLiteral {
   init<T>(for type: T.Type, key: AliasKey<T>) {
     self.init("alias:\(T.self):\(key.name)")
   }
+    init<T, K: Hashable>(for type: T.Type, key: K) {
+        self.objectType = ObjectIdentifier(type)
+        self.key = AnyHashable(key)
+    }
+
+    init<T: Identifiable>(for object: T) {
+        self.init(for: T.self, key: object.id)
+    }
+
+    init<T>(for type: T.Type, key: AliasKey<T>) {
+        self.objectType = ObjectIdentifier(AliasContainer<T>.self)
+        self.key = AnyHashable(key.name)
+    }
 }
