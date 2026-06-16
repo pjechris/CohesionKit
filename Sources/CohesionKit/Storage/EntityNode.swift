@@ -37,14 +37,6 @@ protocol AnyEntityNode: AnyObject {
 /// will reflect the change on its own value.
 class EntityNode<T>: AnyEntityNode {
     typealias Value = T
-    /// A child subscription used by its EntityNode parent
-    struct SubscribedChild {
-        /// the child subscription. Use it to unsubscribe to child upates
-        let subscription: Subscription
-        /// the child node value
-        let node: any AnyEntityNode
-    }
-
     private(set) var value: Value
 
     var metadata = EntityMetadata()
@@ -58,9 +50,6 @@ class EntityNode<T>: AnyEntityNode {
     /// last time `value` was changed. Any subsequent change must have a higher value to be applied
     /// if nil ref has no stamp and any change will be accepted
     private var modifiedAt: Stamp?
-    /// entity children
-    private(set) var children: [PartialKeyPath<T>: SubscribedChild] = [:]
-
     init(_ entity: T, id: Identifier, modifiedAt: Stamp?) {
       self.value = entity
       self.modifiedAt = modifiedAt
@@ -98,7 +87,6 @@ class EntityNode<T>: AnyEntityNode {
     }
 
     func removeAllChildren() {
-        children = [:]
         metadata.childrenRefs = [:]
         childrenNodes = []
     }
