@@ -121,29 +121,15 @@ class EntityNode<T>: AnyEntityNode {
         registry.enqueueChange(for: self)
     }
 
-    /// observe one of the node child
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C>) {
-        observeChild(childNode, identity: keyPath) { root, newValue in
-            root[keyPath: keyPath] = newValue
-        }
+        registerChild(childNode, keyPath: keyPath)
     }
 
-    /// observe a non nil child but whose keypath is represented by an Optional
     func observeChild<C>(_ childNode: EntityNode<C>, for keyPath: WritableKeyPath<T, C?>) {
-        observeChild(childNode, identity: keyPath) { root, newValue in
-            root[keyPath: keyPath] = .some(newValue)
-        }
+        registerChild(childNode, keyPath: keyPath)
     }
 
-    /// Observe a node child
-    /// - Parameter childNode: the child to observe
-    /// - Parameter keyPath: a **unique** keypath associated to the child. Should have similar type but maybe a little different (optional)
-    /// - Parameter assign: to assign childNode value to current node ref value
-    private func observeChild<C, Element>(
-        _ childNode: EntityNode<Element>,
-        identity keyPath: KeyPath<T, C>,
-        update: @escaping (inout T, Element) -> Void
-    ) {
+    private func registerChild<C, Element>(_ childNode: EntityNode<Element>, keyPath: KeyPath<T, C>) {
         metadata.childrenRefs[childNode.id] = keyPath
         childNode.metadata.parentsRefs.insert(id)
         childrenNodes.append(childNode)
