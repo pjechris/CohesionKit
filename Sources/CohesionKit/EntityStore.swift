@@ -179,15 +179,6 @@ public class EntityStore {
             return node
         }
 
-        for (childRef, _) in node.metadata.childrenRefs {
-            guard let childNode = storage[childRef]?.unwrap() as? any AnyEntityNode else {
-                continue
-            }
-
-            childNode.removeParent(node)
-        }
-
-        // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()
 
         node.applyChildrenChanges = false
