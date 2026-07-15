@@ -39,7 +39,8 @@ class EntityNode<T>: AnyEntityNode {
     typealias Value = T
     private(set) var value: Value
 
-    var metadata = EntityMetadata()
+    private(set) var metadata = EntityMetadata()
+
     // FIXME: to delete, it's "just" to have a strong ref and avoid nodes to be deleted. Need a better memory management
     private var childrenNodes: [any AnyEntityNode] = []
 
@@ -86,7 +87,12 @@ class EntityNode<T>: AnyEntityNode {
         return false
     }
 
+    /// detach previous children: removeAllChildren also removes this node from each child's parents
     func removeAllChildren() {
+        for child in childrenNodes {
+            child.removeParent(self)
+        }
+
         metadata.childrenRefs = [:]
         childrenNodes = []
     }
