@@ -7,15 +7,6 @@ struct EntityMetadata {
 
     /// parents referencing this entity. This means this entity should be listed inside its parents `EntityMetadata.childrenRefs` attribute
     var parentsRefs: Set<Identifier> = []
-    /// alias referencing this entity
-    var aliasesRefs: Set<Identifier> = []
-
-    /// number of observers
-    var observersCount: Int = 0
-
-    var isActivelyUsed: Bool {
-        observersCount > 0 || !parentsRefs.isEmpty || !aliasesRefs.isEmpty
-    }
 }
 
 /// Typed erased protocol
