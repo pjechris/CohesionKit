@@ -204,6 +204,40 @@ extension EntityStoreTests {
         }
     }
 
+    func test_find_aggregateStored_noObserverAdded_nestedEntityReturnNil() {
+        let entityStore = EntityStore()
+        let entity = RootFixture(
+            id: 1,
+            primitive: "a",
+            singleNode: SingleNodeFixture(id: 1),
+            optional: OptionalNodeFixture(id: 1),
+            listNodes: [ListNodeFixture(id: 1)]
+        )
+
+        _ = entityStore.store(entity: entity)
+
+        XCTAssertNil(entityStore.find(SingleNodeFixture.self, id: 1))
+    }
+
+    func test_find_aggregateStored_nestedEntityRemoved_removedEntityReturnNil() {
+        let entityStore = EntityStore()
+        var root = RootFixture(
+            id: 1,
+            primitive: "",
+            singleNode: SingleNodeFixture(id: 1),
+            optional: OptionalNodeFixture(id: 1),
+            listNodes: []
+        )
+
+        withExtendedLifetime(entityStore.store(entity: root)) {
+            root.optional = nil
+
+            _ = entityStore.store(entity: root)
+
+            XCTAssertNil(entityStore.find(OptionalNodeFixture.self, id: 1))
+        }
+    }
+
     func test_find_entityStored_entityUpdatedByAnAggregate_returnUpdatedEntity() {
         let entityStore = EntityStore()
         let entity = SingleNodeFixture(id: 1)
