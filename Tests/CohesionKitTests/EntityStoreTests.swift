@@ -136,6 +136,25 @@ extension EntityStoreTests {
 
         XCTAssertEqual(entityStore.find(named: .listOfNodes).value, [root, root2])
     }
+
+    // Check that if we store [A.b,C.b] then storing again [A'.b',C'.b'] updates all parents
+//    func test_storeEntities_childrenUpdated_parentsAreUpdated() {
+//        let entityStore = EntityStore()
+//        let b = SingleNodeFixture(id: 1, primitive: "b")
+//        let a = RootFixture(id: 1, primitive: "A", singleNode: b, listNodes: [])
+//        let c = RootFixture(id: 2, primitive: "C", singleNode: b, listNodes: [])
+//
+//        withExtendedLifetime(entityStore.store(entities: [a, c], modifiedAt: 0)) {
+//            let updatedB = SingleNodeFixture(id: 1, primitive: "new B")
+//            let updatedA = RootFixture(id: 1, primitive: "new A", singleNode: updatedB, listNodes: [])
+//            let updatedC = RootFixture(id: 2, primitive: "new C", singleNode: updatedB, listNodes: [])
+//
+//            _ = entityStore.store(entities: [updatedA, updatedC], modifiedAt: 1)
+//
+//            XCTAssertEqual(entityStore.find(RootFixture.self, id: 1)?.value, updatedA)
+//            XCTAssertEqual(entityStore.find(RootFixture.self, id: 2)?.value, updatedC)
+//        }
+//    }
 }
 
 // MARK: Store Identifiable
