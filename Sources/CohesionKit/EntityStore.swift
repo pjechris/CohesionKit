@@ -179,15 +179,6 @@ public class EntityStore {
             return node
         }
 
-        for (childRef, _) in node.metadata.childrenRefs {
-            guard let childNode = storage[childRef]?.unwrap() as? any AnyEntityNode else {
-                continue
-            }
-
-            childNode.removeParent(node)
-        }
-
-        // clear all children to avoid a removed child to be kept as child
         node.removeAllChildren()
 
         node.applyChildrenChanges = false
@@ -216,6 +207,8 @@ public class EntityStore {
                 continue
             }
 
+            // FIXME: updateEntityRelationship can silently no-op if its keyPath cast fails (see EntityNode.updateEntityRelationship).
+            // parentNode would then go stale without any error surfacing.
             parentNode.updateEntityRelationship(node)
             parentNode.enqueue(in: registry)
             updateParents(of: parentNode)
