@@ -138,6 +138,8 @@ extension EntityStoreTests {
     }
 
     // Check that if we store [A.b,C.b] then storing again [A'.b',C'.b'] updates all parents
+    // FIXME: updating b for both A and C doesn't work: the update to C is not applied because
+    // hasPendingChange is already true on C (set as a side effect of b's update propagating up).
 //    func test_storeEntities_childrenUpdated_parentsAreUpdated() {
 //        let entityStore = EntityStore()
 //        let b = SingleNodeFixture(id: 1, primitive: "b")
